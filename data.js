@@ -88,11 +88,6 @@ function PP_() {
     { shape: 'P', number: 2, children: [ { shape: 'P', number: 3, children: [] }, DP_() ] },
   ] };
 }
-function VP_transitive() {
-  return { shape: 'V', number: 1, children: [
-    { shape: 'V', number: 2, children: [ { shape: 'V', number: 3, children: [] }, DP_() ] },
-  ] };
-}
 function VP_adjoined() {
   return { shape: 'V', number: 1, children: [
     { shape: 'V', number: 2, children: [
@@ -150,23 +145,16 @@ const LEVEL1_SUBLEVELS = [
     root: partialTDV(),
   },
   {
-    id: 'full-detail',
-    kind: 'build',
-    name: 'Full Detail',
-    description: 'Same idea, but every branch gets resolved all the way down this time.',
-    root: TP_(VP_transitive()),
-  },
-  {
     id: 'one-more-branch',
     kind: 'build',
-    name: 'One More Branch',
-    description: 'Same shape as before, with one extra piece branching off.',
+    name: 'More Pieces',
+    description: 'Combine every piece into one connected shape, fully resolved, with one extra piece branching off.',
     root: TP_(VP_adjoined()),
   },
   {
     id: 'name-them',
     kind: 'reveal',
-    name: 'What Do They Mean?',
+    name: 'Mystery Level',
     description: 'Type what you think each shape and number stands for.',
     root: TP_(VP_adjoined()),
   },

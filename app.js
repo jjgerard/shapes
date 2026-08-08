@@ -43,6 +43,19 @@ function toast(msg) {
   toast._t = setTimeout(() => el.classList.add('hidden'), 1900);
 }
 
+// ---------------- mascot ----------------
+function mascotPulse(className, duration) {
+  const el = document.getElementById('mascot');
+  if (!el) return;
+  el.classList.remove(className);
+  void el.offsetWidth; // force reflow so re-adding the class restarts the animation mid-streak
+  el.classList.add(className);
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove(className), duration);
+}
+function celebrateCorrect() { mascotPulse('jumping', 650); }
+function celebrateComplete() { mascotPulse('dancing', 1350); }
+
 function updateHeader() {
   const info = document.getElementById('player-info');
   if (!player) { info.classList.add('hidden'); return; }
@@ -75,11 +88,23 @@ function renderLevelSelect() {
 
   const roadmap = document.getElementById('roadmap');
   roadmap.innerHTML = '';
-  for (const item of ROADMAP) {
-    const span = document.createElement('span');
-    span.textContent = item;
-    roadmap.appendChild(span);
-  }
+  ROADMAP.forEach((topic, i) => {
+    const card = document.createElement('div');
+    card.className = 'level-card locked';
+    const num = document.createElement('div');
+    num.className = 'level-num';
+    num.textContent = `Level ${i + 2}`;
+    card.appendChild(num);
+    const title = document.createElement('div');
+    title.className = 'level-title';
+    title.textContent = topic;
+    card.appendChild(title);
+    const lock = document.createElement('div');
+    lock.className = 'lock-badge';
+    lock.textContent = '🔒 Locked';
+    card.appendChild(lock);
+    roadmap.appendChild(card);
+  });
 }
 
 // ---------------- shared static (read-only) tree layout + paint ----------------
@@ -225,6 +250,7 @@ function openEditor({ title, hint, inventory, viewW, viewH, onCheck }) {
   editor.open(fit.w, fit.h);
   setSnipButtonActive(false);
   editor.onSnipModeChange = setSnipButtonActive;
+  editor.onSnap = celebrateCorrect;
   editor.onRemoveChunk = (structureId) => {
     const tile = (paletteTilesByStructure[structureId] || []).find(t => t.used);
     if (tile) { tile.used = false; tile.refresh(); }
@@ -324,6 +350,7 @@ function markSubDone(sub, points) {
     state.points += points;
     saveState();
     toast(`✓ ${sub.name} complete — +${points} pts`);
+    celebrateComplete();
   } else {
     toast(`✓ ${sub.name} — already completed, nice practice!`);
   }
@@ -407,7 +434,9 @@ function renderReveal() {
     onCorrect: (key) => {
       state.reveal.shapes[key] = true;
       state.points += POINTS_REVEAL_SLOT;
-      saveState(); updateHeader(); renderReveal();
+      saveState(); updateHeader();
+      revealComplete() ? celebrateComplete() : celebrateCorrect();
+      renderReveal();
     },
   }));
 
@@ -427,7 +456,9 @@ function renderReveal() {
     onCorrect: (key) => {
       state.reveal.numbers[key] = true;
       state.points += POINTS_REVEAL_SLOT;
-      saveState(); updateHeader(); renderReveal();
+      saveState(); updateHeader();
+      revealComplete() ? celebrateComplete() : celebrateCorrect();
+      renderReveal();
     },
   }));
 

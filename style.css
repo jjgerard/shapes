@@ -128,15 +128,16 @@ button { font-family: inherit; cursor: pointer; }
 .level-card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
 .level-progress { margin-top: 12px; font-size: 0.85rem; font-weight: 600; color: var(--ink); }
 
-.roadmap-heading { margin-top: 34px; color: var(--muted); font-size: 0.95rem; }
-.roadmap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.roadmap span {
-  background: #ece8de;
+.level-card.locked {
+  cursor: default;
+  background: #f1efe7;
   color: var(--muted);
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 0.82rem;
 }
+.level-card.locked:hover { transform: none; box-shadow: none; }
+.level-card.locked .level-num { color: var(--muted); }
+.level-card.locked .lock-badge { margin-top: 12px; font-size: 0.85rem; font-weight: 600; }
+
+.roadmap-heading { margin-top: 34px; color: var(--muted); font-size: 0.95rem; }
 
 /* ---- level 1 grid ---- */
 .fragment-grid {
@@ -345,4 +346,41 @@ button { font-family: inherit; cursor: pointer; }
   .canvas-wrap { min-height: 55vh; }
   .editor-footer { flex-wrap: wrap; gap: 10px; }
   .legend-layout { flex-direction: column; }
+  .mascot-wrap { right: 6px; }
+  .mascot { width: 48px; height: 48px; }
 }
+
+/* ---- mascot ---- */
+.mascot-wrap {
+  position: fixed;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  z-index: 999;
+  pointer-events: none;
+}
+.mascot { width: 64px; height: 64px; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.18)); }
+.mascot svg { width: 100%; height: 100%; overflow: visible; }
+.mascot-body { fill: #20c4b0; stroke: rgba(0,0,0,0.15); stroke-width: 2; }
+
+@keyframes mascot-jump {
+  0%   { transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 rgba(255,209,60,0)); }
+  30%  { transform: translateY(-22px) scale(1.1); filter: drop-shadow(0 0 16px rgba(255,209,60,0.95)); }
+  55%  { transform: translateY(-22px) scale(1.1); filter: drop-shadow(0 0 16px rgba(255,209,60,0.95)); }
+  100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 rgba(255,209,60,0)); }
+}
+.mascot.jumping { animation: mascot-jump 0.6s ease-out; }
+
+@keyframes mascot-dance {
+  0%   { transform: translateY(0) rotate(0deg); }
+  10%  { transform: translateY(-16px) rotate(-14deg); }
+  20%  { transform: translateY(0) rotate(12deg); }
+  30%  { transform: translateY(-14px) rotate(-12deg); }
+  40%  { transform: translateY(0) rotate(14deg); }
+  50%  { transform: translateY(-18px) rotate(-10deg); }
+  60%  { transform: translateY(0) rotate(10deg); }
+  75%  { transform: translateY(-10px) rotate(-6deg); }
+  90%  { transform: translateY(0) rotate(6deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+.mascot.dancing { animation: mascot-dance 1.3s ease-in-out; }

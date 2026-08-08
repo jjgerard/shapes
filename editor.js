@@ -40,6 +40,7 @@ class TreeEditor {
     this.onRemoveChunk = null; // callback(structureId) invoked when a whole piece is deleted
     this.onChange = null;      // callback() invoked after any state change (for UI to refresh counters etc.)
     this.onSnipModeChange = null; // callback(bool) invoked whenever snip mode toggles
+    this.onSnap = null;        // callback() invoked whenever two pieces snap together
     this.activePointers = new Map(); // pointerId -> {x,y} in screen space, for two-finger panning
     this.panLast = null; // midpoint of the two pan pointers, last frame
     this._bindGlobalPointerEvents();
@@ -217,6 +218,7 @@ class TreeEditor {
     this.nodes = this.nodes.filter(n => n.id !== rootId);
     this.snapCount++;
     this.setFeedback('Snapped together.', 'ok');
+    if (this.onSnap) this.onSnap();
     if (this.onChange) this.onChange();
   }
 
