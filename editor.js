@@ -312,6 +312,11 @@ class TreeEditor {
   _bindGlobalPointerEvents() {
     window.addEventListener('pointermove', (ev) => {
       if (!this.drag) return;
+      // Non-passive + preventDefault is required here: without it, mobile
+      // browsers can decide mid-gesture that this is a page scroll instead
+      // of our drag, since touch-action on the SVG node isn't reliably
+      // honored on all mobile browsers.
+      ev.preventDefault();
       const p = this.toSvgPoint(ev.clientX, ev.clientY);
       const node = this.nodes.find(n => n.id === this.drag.id);
       if (!node) return;
@@ -325,11 +330,12 @@ class TreeEditor {
       }
       this.snapTargetId = this.findSnapTarget(node.id);
       this.render();
-    }, { passive: true });
+    }, { passive: false });
     window.addEventListener('pointerup', () => {
       if (!this.drag) return;
       const id = this.drag.id;
       this.drag = null;
+      this.svg.parentElement.classList.remove('dragging-active');
       const targetId = this.findSnapTarget(id);
       if (targetId) {
         const pair = this.resolveSnapPair(id, targetId);
@@ -348,6 +354,10 @@ class TreeEditor {
       this.setSnipMode(false);
       return;
     }
+    // Lock out panning/scrolling on the canvas container for the duration
+    // of the drag -- touch-action on the SVG node itself isn't reliably
+    // honored on mobile, so this is the belt-and-suspenders fix.
+    this.svg.parentElement.classList.add('dragging-active');
     const node = this.nodes.find(n => n.id === id);
     const p = this.toSvgPoint(ev.clientX, ev.clientY);
     this.drag = { id, offsetX: p.x - node.x, offsetY: p.y - node.y };

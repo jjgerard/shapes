@@ -225,6 +225,7 @@ button { font-family: inherit; cursor: pointer; }
 .palette-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .palette-btn:disabled:hover { background: #fbfaf7; }
 .canvas-wrap { position: relative; flex: 1; overflow: auto; }
+.canvas-wrap.dragging-active { touch-action: none; overscroll-behavior: none; }
 #editor-canvas { display: block; background:
   radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9; }
 .editor-feedback {
