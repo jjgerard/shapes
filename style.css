@@ -202,7 +202,13 @@ button { font-family: inherit; cursor: pointer; }
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
   padding: 14px 20px; border-bottom: 1px solid var(--line);
 }
-#editor-title { font-weight: 700; font-size: 1.1rem; }
+/* Title truncates instead of wrapping/squeezing -- the button group must
+   never get pushed out of view, that's how it ended up "covered" before. */
+.editor-header-text { min-width: 0; flex: 1 1 auto; }
+#editor-title {
+  font-weight: 700; font-size: 1.1rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .editor-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .editor-body { display: flex; flex: 1; min-height: 380px; }
 /* touch-action:none, always -- touch-action on an SVG child (.tree-node)
@@ -210,13 +216,20 @@ button { font-family: inherit; cursor: pointer; }
    to split "pan here, drag there" by element doesn't work in practice. Pan
    and pinch-zoom are implemented by hand in editor.js instead, driven by
    which element the touch actually started on. */
-.canvas-wrap { position: relative; flex: 1; overflow: auto; touch-action: none; overscroll-behavior: none; }
+/* flex-centers the svg when it's smaller than the visible area (so a small
+   puzzle sits in the middle, not stuck in the top-left corner); once the
+   svg outgrows the wrap, overflow:auto takes over and it scrolls normally. */
+.canvas-wrap {
+  position: relative; flex: 1; overflow: auto; touch-action: none; overscroll-behavior: none;
+  display: flex; align-items: center; justify-content: center;
+}
+#editor-canvas { flex-shrink: 0; }
 #editor-canvas { display: block; background:
   radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9; }
-.editor-feedback {
-  position: absolute; left: 12px; top: 12px; right: 12px;
-  font-size: 0.85rem; font-weight: 600; pointer-events: none;
-}
+/* Lives in the header (not floating over the canvas) so the mascot's
+   speech bubble, which sits fixed at the bottom of the screen, can never
+   cover it. */
+.editor-feedback { font-size: 0.85rem; font-weight: 600; min-height: 1.1em; }
 .editor-feedback.ok { color: var(--accent); }
 .editor-feedback.err { color: var(--danger); }
 
@@ -303,8 +316,11 @@ button { font-family: inherit; cursor: pointer; }
   .btn-primary, .btn-secondary { padding: 13px 22px; font-size: 1rem; min-height: 46px; }
   .overlay { padding: 0; }
   .editor { width: 100%; height: 100%; max-height: 100vh; border-radius: 0; }
-  .editor-header { padding: 12px 14px; flex-wrap: wrap; }
+  .editor-header { padding: 10px 12px; gap: 8px; }
   #editor-title { font-size: 1rem; }
+  .editor-actions { gap: 6px; }
+  .editor-actions .btn-secondary { padding: 10px 14px; }
+  .editor-actions .link-btn { font-size: 0.85rem; }
   .editor-body { min-height: 0; }
   .canvas-wrap { min-height: 0; }
   .btn-icon { width: 50px; height: 50px; font-size: 1.35rem; }

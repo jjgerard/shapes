@@ -318,13 +318,14 @@ function markSubDone(sub, points) {
     state.points += points;
     saveState();
     toast(`✓ ${sub.name} complete — +${points} pts`);
-    celebrateComplete();
   } else {
     toast(`✓ ${sub.name} — already completed, nice practice!`);
   }
+  celebrateComplete();
   updateHeader();
   renderTargetGrid();
-  setTimeout(closeEditor, 900);
+  // Stay open on the finished puzzle -- the mascot's dance is the "you're
+  // done" signal, the student closes manually whenever they're ready.
 }
 
 function openTutorialEditor(sub) {

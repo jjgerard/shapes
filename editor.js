@@ -116,14 +116,18 @@ class TreeEditor {
   }
 
   // Dump every piece for this sub-level onto the canvas at once, laid out
-  // in a grid like a jigsaw puzzle tipped out on a table -- there's no
-  // "add a piece" step, everything needed is already there to drag together.
+  // in a grid centered in the middle of the canvas -- like a jigsaw puzzle
+  // tipped out on a table. There's no "add a piece" step, everything
+  // needed is already there to drag together.
   scatterAll(structureItems) {
     const cols = Math.max(2, Math.ceil(Math.sqrt(structureItems.length * 1.3)));
+    const rows = Math.ceil(structureItems.length / cols);
     const colGap = 140, rowGap = 140;
+    const offsetX = Math.max(colGap / 2 + 20, (this.viewW - cols * colGap) / 2 + colGap / 2);
+    const offsetY = Math.max(rowGap / 2 + 20, (this.viewH - rows * rowGap) / 2 + rowGap / 2);
     structureItems.forEach((item, i) => {
       const col = i % cols, row = Math.floor(i / cols);
-      this.addChunk(item, { x: 90 + col * colGap, y: 80 + row * rowGap });
+      this.addChunk(item, { x: offsetX + col * colGap, y: offsetY + row * rowGap });
     });
   }
 
