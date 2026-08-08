@@ -196,8 +196,11 @@ function expandInventory(inventory) {
 // there as pieces get dragged around.
 function fitCanvasSize(maxW, maxH) {
   const isNarrow = window.innerWidth < 640;
-  const availW = window.innerWidth - (isNarrow ? 24 : 60);
-  const availH = window.innerHeight - (isNarrow ? 130 : 110);
+  // The editor modal now fills essentially the whole viewport (16px overlay
+  // padding, plus the header on top) rather than a capped-width box, so
+  // these margins only need to cover that chrome, not a big unused margin.
+  const availW = window.innerWidth - (isNarrow ? 24 : 40);
+  const availH = window.innerHeight - (isNarrow ? 130 : 95);
   return {
     w: Math.max(300, Math.min(maxW, availW)),
     h: Math.max(360, Math.min(maxH, availH)),
@@ -334,7 +337,7 @@ function openTutorialEditor(sub) {
     title: sub.name,
     hint: 'Drag the two pieces together until they snap. Then tap the scissors and click the joint to pull them apart again.',
     items,
-    viewW: 620, viewH: 560,
+    viewW: 800, viewH: 700,
     onCheck: (silent) => {
       if (editor.snapCount < 1 || editor.snipCount < 1) return;
       editor.setFeedback('Nice work!', 'ok');
@@ -349,7 +352,7 @@ function openTargetEditor(sub) {
     title: sub.name,
     hint: `Drag every piece together until it's one connected shape of ${total}.`,
     items: expandInventory(sub.inventory),
-    viewW: 1150, viewH: 800,
+    viewW: 1600, viewH: 1000,
     onCheck: () => {
       const forest = editor.toForest();
       const ok = editor.nodes.length === total && forest.length === 1 && matchesPattern(forest[0], sub.root);

@@ -30,8 +30,8 @@
 // _applySizing() every time the editor opens, so rotating a device or
 // resizing the window between sub-levels picks up the right sizes.
 const SIZING = {
-  desktop: { nodeRadius: 32, snapDistance: 60, slotSize: 230, scatterMargin: 190, gap: 200, childSpreadX: 76, childSpreadY: 90, springApart: 80 },
-  mobile:  { nodeRadius: 44, snapDistance: 82, slotSize: 250, scatterMargin: 150, gap: 220, childSpreadX: 100, childSpreadY: 120, springApart: 90 },
+  desktop: { nodeRadius: 32, snapDistance: 60, slotSize: 320, scatterMargin: 280, gap: 240, childSpreadX: 76, childSpreadY: 90, springApart: 80 },
+  mobile:  { nodeRadius: 44, snapDistance: 82, slotSize: 300, scatterMargin: 200, gap: 250, childSpreadX: 100, childSpreadY: 120, springApart: 90 },
 };
 
 class TreeEditor {
