@@ -221,10 +221,17 @@ button { font-family: inherit; cursor: pointer; }
    which element the touch actually started on. */
 /* flex-centers the svg when it's smaller than the visible area (so a small
    puzzle sits in the middle, not stuck in the top-left corner); once the
-   svg outgrows the wrap, overflow:auto takes over and it scrolls normally. */
+   svg outgrows the wrap, overflow:auto takes over and it scrolls normally.
+   Plain center alignment on an overflowing flex item makes the start-side
+   (top/left) overflow permanently unreachable by scrolling in every major
+   browser -- that's why zooming out used to still cut off the left edge.
+   "safe center" falls back to start-alignment once it overflows, so the
+   whole thing stays reachable; unsupported browsers just keep plain
+   center from the line above. */
 .canvas-wrap {
   position: relative; flex: 1; overflow: auto; touch-action: none; overscroll-behavior: none;
   display: flex; align-items: center; justify-content: center;
+  align-items: safe center; justify-content: safe center;
 }
 #editor-canvas { flex-shrink: 0; }
 #editor-canvas { display: block; background:

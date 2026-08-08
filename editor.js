@@ -28,6 +28,10 @@ const SLOT_WIDTH = 170;
 const SLOT_HEIGHT = 170;
 const EDGE_MARGIN = NODE_RADIUS;
 const SPRING_APART_OFFSET = 70;
+// Empty buffer left above/left of the scattered piece cluster -- room to
+// drag a piece further up or left without immediately hitting the true
+// canvas edge, and a fixed anchor point the initial view scrolls to.
+const SCATTER_MARGIN = 130;
 
 class TreeEditor {
   constructor(svg, feedbackEl) {
@@ -50,6 +54,7 @@ class TreeEditor {
     this.bgAnchor = null;        // gesture anchor recomputed whenever bgPointers changes size
     this._bindGlobalPointerEvents();
     this._bindBackgroundPointerEvents();
+    this._bindWheelZoom();
   }
 
   open(minViewW, minViewH) {
@@ -125,11 +130,26 @@ class TreeEditor {
     const cols = Math.max(2, Math.ceil(Math.sqrt(structureItems.length * 1.3)));
     const rows = Math.ceil(structureItems.length / cols);
     const colGap = 165, rowGap = 165;
-    const offsetX = Math.max(colGap / 2 + 20, (this.viewW - cols * colGap) / 2 + colGap / 2);
-    const offsetY = Math.max(rowGap / 2 + 20, (this.viewH - rows * rowGap) / 2 + rowGap / 2);
+    const offsetX = SCATTER_MARGIN + colGap / 2;
+    const offsetY = SCATTER_MARGIN + rowGap / 2;
     structureItems.forEach((item, i) => {
       const col = i % cols, row = Math.floor(i / cols);
       this.addChunk(item, { x: offsetX + col * colGap, y: offsetY + row * rowGap });
+    });
+    this.scrollToStart();
+  }
+
+  // Open the view anchored just above/left of the piece cluster (with a
+  // little padding) instead of the empty buffer or dead-center of a much
+  // bigger canvas -- the buffer is still there to drag into, you just
+  // don't start out staring at blank canvas to reach it.
+  scrollToStart() {
+    const wrap = this.svg.parentElement;
+    if (!wrap) return;
+    requestAnimationFrame(() => {
+      const pad = 30;
+      wrap.scrollLeft = Math.max(0, (SCATTER_MARGIN - pad) * this.zoom);
+      wrap.scrollTop = Math.max(0, (SCATTER_MARGIN - pad) * this.zoom);
     });
   }
 
@@ -335,6 +355,29 @@ class TreeEditor {
       this.bgPointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
       this._restartBgGesture();
     });
+  }
+
+  // Trackpad pinch-to-zoom never reaches _bindBackgroundPointerEvents on a
+  // non-touchscreen laptop -- a trackpad pinch has no touch/pointer events
+  // at all, browsers surface it as a 'wheel' event with ctrlKey set (the
+  // same trick maps-style apps rely on). Plain two-finger scrolling (no
+  // ctrlKey) is left alone so it keeps doing the browser's native scroll.
+  _bindWheelZoom() {
+    this.svg.addEventListener('wheel', (ev) => {
+      if (!ev.ctrlKey) return;
+      ev.preventDefault();
+      const wrap = this.svg.parentElement;
+      const rect = wrap.getBoundingClientRect();
+      const oldZoom = this.zoom;
+      const factor = Math.exp(-ev.deltaY * 0.01);
+      const newZoom = Math.max(this.minZoom(), Math.min(this.maxZoom(), oldZoom * factor));
+      const contentX = (wrap.scrollLeft + ev.clientX - rect.left) / oldZoom;
+      const contentY = (wrap.scrollTop + ev.clientY - rect.top) / oldZoom;
+      this.zoom = newZoom;
+      this.render();
+      wrap.scrollLeft = contentX * newZoom - (ev.clientX - rect.left);
+      wrap.scrollTop = contentY * newZoom - (ev.clientY - rect.top);
+    }, { passive: false });
   }
 
   _restartBgGesture() {
