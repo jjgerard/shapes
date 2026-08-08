@@ -1,6 +1,8 @@
-// Drag-and-snap tree editor. Palette pieces are pre-built handout
-// structures (root + its fixed children, exactly as shown on the paper
-// handout) -- students never wire an individual shape-to-shape edge.
+// Drag-and-snap tree editor. Every piece for a sub-level (a pre-built
+// handout structure: root + its fixed children, exactly as shown on the
+// paper handout) is scattered across the canvas up front via scatterAll(),
+// like a jigsaw puzzle tipped out on a table -- there's no "add a piece"
+// step, and students never wire an individual shape-to-shape edge either.
 // Dragging a node carries everything BELOW it (its whole subtree) along,
 // like picking up a mobile by one joint -- but never its parent or
 // siblings, so two branches hanging off the same piece stay independent.
@@ -14,10 +16,11 @@
 // two originally-separate pieces were snapped together, and they spring
 // back apart into two freestanding pieces.
 //
-// The canvas has no fixed size: it's always exactly wide/tall enough for
-// the current tree plus one empty slot, and every new piece drops into that
-// slot at the bottom-right, growing the canvas in whichever direction is
-// needed so nothing ever overlaps.
+// The canvas has no fixed size: it's always exactly wide/tall enough to
+// fit wherever the pieces currently are, growing as they're dragged around.
+// One finger on empty canvas pans; two fingers pinch-zoom, with a minimum
+// zoom that loosens as the puzzle grows so a big one can always be zoomed
+// out to fit.
 
 const SNAP_DISTANCE = 50;
 const SLOT_WIDTH = 150;
@@ -37,11 +40,14 @@ class TreeEditor {
     this.snipMode = false;
     this.snapCount = 0;
     this.snipCount = 0;
-    this.onRemoveChunk = null; // callback(structureId) invoked when a whole piece is deleted
     this.onChange = null;      // callback() invoked after any state change (for UI to refresh counters etc.)
     this.onSnipModeChange = null; // callback(bool) invoked whenever snip mode toggles
     this.onSnap = null;        // callback() invoked whenever two pieces snap together
+    this.zoom = 1;
+    this.bgPointers = new Map(); // pointerId -> {x,y} in screen space, for background pan/pinch (not on a piece)
+    this.bgAnchor = null;        // gesture anchor recomputed whenever bgPointers changes size
     this._bindGlobalPointerEvents();
+    this._bindBackgroundPointerEvents();
   }
 
   open(minViewW, minViewH) {
@@ -49,6 +55,7 @@ class TreeEditor {
     this.minViewH = minViewH;
     this.viewW = minViewW;
     this.viewH = minViewH;
+    this.zoom = 1;
     this.clear();
   }
 
@@ -62,6 +69,21 @@ class TreeEditor {
     this.snipCount = 0;
     this.nextId = 1;
     this.setFeedback('');
+    this.render();
+  }
+
+  // Zoom can go as low as needed to fit the whole tree in the visible
+  // canvas area, so a big tree is never stuck too large to see.
+  minZoom() {
+    const wrap = this.svg.parentElement;
+    const availW = (wrap && wrap.clientWidth) || 300;
+    const availH = (wrap && wrap.clientHeight) || 300;
+    const fit = Math.min(availW / this.viewW, availH / this.viewH);
+    return Math.max(0.15, Math.min(1, fit) * 0.92);
+  }
+  maxZoom() { return 2.5; }
+  setZoom(z) {
+    this.zoom = Math.max(this.minZoom(), Math.min(this.maxZoom(), z));
     this.render();
   }
 
@@ -86,38 +108,29 @@ class TreeEditor {
     if (!this.nodes.length) return 0;
     return Math.max(...this.nodes.map(n => n.y + 40));
   }
-  // Lowest extent of only the nodes that horizontally overlap [left,right]
-  // -- used so a new piece only gets pushed down when it would actually
-  // land on top of something, not just because the tree is tall elsewhere.
-  contentBottomNear(left, right) {
-    const relevant = this.nodes.filter(n => n.x + 26 > left && n.x - 26 < right);
-    if (!relevant.length) return null;
-    return Math.max(...relevant.map(n => n.y + 40));
-  }
   canvasWidth() {
-    return Math.max(this.minViewW || 0, this.contentRight() + SLOT_WIDTH);
+    return Math.max(this.minViewW || 0, this.contentRight() + SLOT_WIDTH / 2);
   }
   canvasHeight() {
-    return Math.max(this.minViewH || 0, this.contentBottom() + SLOT_HEIGHT);
+    return Math.max(this.minViewH || 0, this.contentBottom() + SLOT_HEIGHT / 2);
   }
 
-  // Spawn a whole pre-built handout piece (root + its fixed children),
-  // dropped into the reserved slot at the bottom-right of the canvas. It
-  // only gets pushed lower than the default row if something already
-  // occupies that horizontal slot -- so pieces normally line up in one row
-  // and the canvas only grows taller when it actually has to. Pass `pos` to
-  // place it at an exact spot instead (used to seed the very first piece).
-  addChunk(structureItem, pos) {
-    let baseX, baseY;
-    if (pos) {
-      baseX = pos.x; baseY = pos.y;
-    } else {
-      baseX = this.contentRight() + SLOT_WIDTH / 2;
-      const defaultY = Math.max((this.minViewH || 0) - 110, 40);
-      const nearBottom = this.contentBottomNear(baseX - SLOT_WIDTH / 2, baseX + SLOT_WIDTH / 2);
-      baseY = nearBottom === null ? defaultY : Math.max(defaultY, nearBottom + 40);
-    }
+  // Dump every piece for this sub-level onto the canvas at once, laid out
+  // in a grid like a jigsaw puzzle tipped out on a table -- there's no
+  // "add a piece" step, everything needed is already there to drag together.
+  scatterAll(structureItems) {
+    const cols = Math.max(2, Math.ceil(Math.sqrt(structureItems.length * 1.3)));
+    const colGap = 140, rowGap = 140;
+    structureItems.forEach((item, i) => {
+      const col = i % cols, row = Math.floor(i / cols);
+      this.addChunk(item, { x: 90 + col * colGap, y: 80 + row * rowGap });
+    });
+  }
 
+  // Spawn a whole pre-built handout piece (root + its fixed children) at an
+  // exact position.
+  addChunk(structureItem, pos) {
+    const baseX = pos.x, baseY = pos.y;
     const rootId = this.nextId++;
     const root = {
       id: rootId, catKey: structureItem.shape, number: structureItem.number,
@@ -139,20 +152,6 @@ class TreeEditor {
 
     this.render();
     return root;
-  }
-
-  // Deletes the whole original piece a node came from (you can't take a
-  // pre-built piece apart by deleting -- only snip it apart, or remove it
-  // entirely and try again).
-  removeChunk(anyNodeId) {
-    const node = this.nodes.find(n => n.id === anyNodeId);
-    if (!node) return;
-    const groupId = node.chunkRoot;
-    const idsToRemove = new Set(this.nodes.filter(n => n.chunkRoot === groupId).map(n => n.id));
-    if (this.onRemoveChunk) this.onRemoveChunk(node.structureId);
-    this.nodes = this.nodes.filter(n => !idsToRemove.has(n.id));
-    this.edges = this.edges.filter(e => !idsToRemove.has(e.parent) && !idsToRemove.has(e.child));
-    this.render();
   }
 
   childrenOf(id) {
@@ -265,9 +264,14 @@ class TreeEditor {
   render() {
     this.viewW = this.canvasWidth();
     this.viewH = this.canvasHeight();
+    // viewBox stays in natural (unzoomed) content coordinates -- that's the
+    // space every node's x/y and all the drag/snap math lives in. Zoom is
+    // applied purely by rendering that same viewBox into a bigger or
+    // smaller pixel box; getScreenCTM() (used by toSvgPoint) accounts for
+    // this automatically, so nothing else needs to know zoom exists.
     this.svg.setAttribute('viewBox', `0 0 ${this.viewW} ${this.viewH}`);
-    this.svg.setAttribute('width', this.viewW);
-    this.svg.setAttribute('height', this.viewH);
+    this.svg.setAttribute('width', this.viewW * this.zoom);
+    this.svg.setAttribute('height', this.viewH * this.zoom);
 
     while (this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
     const edgeLayer = svgEl('g', { class: 'edge-layer' });
@@ -299,13 +303,6 @@ class TreeEditor {
       g.setAttribute('transform', `translate(${n.x},${n.y})`);
       g.dataset.id = n.id;
 
-      const del = svgEl('circle', { class: 'node-delete', cx: 20, cy: -20, r: 11 });
-      const delX = svgEl('text', { x: 20, y: -19, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: '#fff', 'font-size': 12, 'pointer-events': 'none' });
-      delX.textContent = '×';
-      g.appendChild(del);
-      g.appendChild(delX);
-
-      del.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); if (!this.snipMode) this.removeChunk(n.id); });
       g.addEventListener('pointerdown', (ev) => this._onNodePointerDown(ev, n.id));
 
       nodeLayer.appendChild(g);
@@ -319,12 +316,61 @@ class TreeEditor {
     return pt.matrixTransform(m);
   }
 
-  // Background touches (pan/pinch-zoom) are handled natively by the
-  // browser via touch-action on .canvas-wrap; a touch that starts on a
-  // piece is captured here instead, since .tree-node overrides touch-action
-  // to none.
+  // A touch that starts on a piece is captured by _onNodePointerDown
+  // (which stopPropagation()s), so anything reaching the svg itself started
+  // on empty canvas: one finger pans, two fingers pinch-zoom (and pan
+  // together via their midpoint). Recomputed from scratch whenever the
+  // number of active background pointers changes, so lifting one finger of
+  // a pinch smoothly continues as a single-finger pan instead of jumping.
+  _bindBackgroundPointerEvents() {
+    this.svg.addEventListener('pointerdown', (ev) => {
+      if (this.snipMode) return;
+      ev.preventDefault();
+      this.bgPointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      this._restartBgGesture();
+    });
+  }
+
+  _restartBgGesture() {
+    const wrap = this.svg.parentElement;
+    const pts = [...this.bgPointers.values()];
+    if (pts.length === 1) {
+      this.bgAnchor = { mode: 'pan', x: pts[0].x, y: pts[0].y, scrollLeft: wrap.scrollLeft, scrollTop: wrap.scrollTop };
+    } else if (pts.length === 2) {
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const midX = (pts[0].x + pts[1].x) / 2, midY = (pts[0].y + pts[1].y) / 2;
+      const rect = wrap.getBoundingClientRect();
+      this.bgAnchor = {
+        mode: 'pinch', dist: dist || 1, zoom: this.zoom,
+        contentX: (wrap.scrollLeft + midX - rect.left) / this.zoom,
+        contentY: (wrap.scrollTop + midY - rect.top) / this.zoom,
+      };
+    } else {
+      this.bgAnchor = null;
+    }
+  }
+
   _bindGlobalPointerEvents() {
     window.addEventListener('pointermove', (ev) => {
+      if (this.bgPointers.has(ev.pointerId)) {
+        ev.preventDefault();
+        this.bgPointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+        const wrap = this.svg.parentElement;
+        const pts = [...this.bgPointers.values()];
+        if (this.bgAnchor && this.bgAnchor.mode === 'pan' && pts.length === 1) {
+          wrap.scrollLeft = this.bgAnchor.scrollLeft - (pts[0].x - this.bgAnchor.x);
+          wrap.scrollTop = this.bgAnchor.scrollTop - (pts[0].y - this.bgAnchor.y);
+        } else if (this.bgAnchor && this.bgAnchor.mode === 'pinch' && pts.length === 2) {
+          const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          const midX = (pts[0].x + pts[1].x) / 2, midY = (pts[0].y + pts[1].y) / 2;
+          this.zoom = Math.max(this.minZoom(), Math.min(this.maxZoom(), this.bgAnchor.zoom * (dist / this.bgAnchor.dist)));
+          this.render();
+          const rect = wrap.getBoundingClientRect();
+          wrap.scrollLeft = this.bgAnchor.contentX * this.zoom - (midX - rect.left);
+          wrap.scrollTop = this.bgAnchor.contentY * this.zoom - (midY - rect.top);
+        }
+        return;
+      }
       if (!this.drag) return;
       // Non-passive + preventDefault is required here: without it, mobile
       // browsers can decide mid-gesture that this is a page scroll instead
@@ -345,6 +391,9 @@ class TreeEditor {
       this.snapTargetId = this.findSnapTarget(node.id);
       this.render();
     }, { passive: false });
+    const releaseBg = (ev) => {
+      if (this.bgPointers.delete(ev.pointerId)) this._restartBgGesture();
+    };
     const endDrag = () => {
       if (!this.drag) return;
       const id = this.drag.id;
@@ -357,12 +406,12 @@ class TreeEditor {
       this.snapTargetId = null;
       this.render();
     };
-    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointerup', (ev) => { releaseBg(ev); endDrag(); });
     // If the browser decides mid-gesture to treat this as a scroll after
     // all, it cancels the pointer instead of sending pointerup -- without
     // handling this too, drag state gets stuck and the NEXT attempt starts
     // from stale state.
-    window.addEventListener('pointercancel', endDrag);
+    window.addEventListener('pointercancel', (ev) => { releaseBg(ev); endDrag(); });
   }
 
   _onNodePointerDown(ev, id) {

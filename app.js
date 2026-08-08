@@ -169,9 +169,8 @@ function paintStaticTree(svg, root, { r = 22, reveal = false, xOffset = 0 } = {}
 
 // ---------------- shared editor modal ----------------
 let editor = null;
-let activeCheck = null;   // function() -> void, called by the Check button
-let currentInventory = null; // the inventory currently loaded, so Clear can restore it
-let paletteTilesByStructure = {}; // structureId -> [{btn, used, refresh}, ...], one tile per piece needed
+let activeCheck = null;  // function() -> void, checked automatically after every move
+let currentItems = null; // flat list of STRUCTURES items for the open sub-level, so Clear can re-scatter them
 
 function ensureEditor() {
   if (!editor) {
@@ -180,54 +179,25 @@ function ensureEditor() {
   return editor;
 }
 
-// A normalized {shape,number,children:[...]} pattern for a handout item,
-// suitable for layoutTree/paintStaticTree (its children are forced leaves,
-// which is correct: a piece's children are exactly as deep as its build).
-function itemPattern(item) {
-  return { shape: item.shape, number: item.number, children: item.children.map(c => ({ ...c, children: [] })) };
-}
-
-// One tile per piece needed -- if a shape is needed twice, that's two
-// identical tiles side by side, not one tile with a count badge.
-function renderPalette(inventory) {
-  const palette = document.getElementById('editor-palette');
-  palette.innerHTML = '';
-  paletteTilesByStructure = {};
+// Expand an inventory ([{id,count}]) into one STRUCTURES item per physical
+// piece -- what scatterAll() lays out on the canvas.
+function expandInventory(inventory) {
+  const items = [];
   for (const g of inventory) {
     const item = STRUCTURES.find(s => s.id === g.id);
-    const tiles = [];
-    for (let i = 0; i < g.count; i++) {
-      const btn = document.createElement('button');
-      btn.className = 'palette-btn';
-      const mini = document.createElementNS(SVG_NS, 'svg');
-      const pattern = itemPattern(item);
-      const dims = layoutTree(pattern);
-      mini.setAttribute('viewBox', `-10 0 ${dims.width + 20} ${dims.height}`);
-      paintStaticTree(mini, pattern, { r: 15 });
-      btn.appendChild(mini);
-
-      const tile = { btn, used: false };
-      tile.refresh = () => { btn.disabled = tile.used; };
-      btn.addEventListener('click', () => {
-        if (tile.used) return;
-        tile.used = true;
-        tile.refresh();
-        editor.addChunk(item);
-      });
-      tiles.push(tile);
-      palette.appendChild(btn);
-    }
-    paletteTilesByStructure[g.id] = tiles;
+    for (let i = 0; i < g.count; i++) items.push(item);
   }
+  return items;
 }
 
 // Fit the canvas to the actual screen instead of a fixed desktop size, so
-// pieces spawn where a small phone screen can actually reach them. This is
-// just the STARTING size -- the editor grows it dynamically from there.
+// the puzzle is scattered where a small phone screen can actually reach it.
+// This is just the STARTING size -- the editor grows it dynamically from
+// there as pieces get dragged around.
 function fitCanvasSize(maxW, maxH) {
   const isNarrow = window.innerWidth < 640;
   const availW = window.innerWidth - (isNarrow ? 24 : 60);
-  const availH = window.innerHeight - (isNarrow ? 260 : 220);
+  const availH = window.innerHeight - (isNarrow ? 130 : 110);
   return {
     w: Math.max(300, Math.min(maxW, availW)),
     h: Math.max(360, Math.min(maxH, availH)),
@@ -238,39 +208,21 @@ function setSnipButtonActive(on) {
   document.getElementById('editor-snip').classList.toggle('active', on);
 }
 
-// The first piece in the inventory is placed for the student, top-left, so
-// there's always something on the canvas to build onto right away.
-function placeFirstPiece(inventory) {
-  if (!inventory || !inventory.length) return;
-  const first = inventory[0];
-  const item = STRUCTURES.find(s => s.id === first.id);
-  editor.addChunk(item, { x: 75, y: 50 });
-  const tile = (paletteTilesByStructure[first.id] || []).find(t => !t.used);
-  if (tile) { tile.used = true; tile.refresh(); }
-}
-
-function openEditor({ title, hint, inventory, viewW, viewH, onCheck }) {
+function openEditor({ title, hint, items, viewW, viewH, onCheck }) {
   ensureEditor();
   document.getElementById('editor-title').textContent = title;
-  document.getElementById('editor-hint').textContent = hint;
-  document.getElementById('editor-subtitle').textContent = '';
   setMascotSpeech(hint);
-  currentInventory = inventory;
-  renderPalette(inventory);
+  currentItems = items;
   const fit = fitCanvasSize(viewW, viewH);
   editor.open(fit.w, fit.h);
+  editor.scatterAll(items);
   setSnipButtonActive(false);
   editor.onSnipModeChange = setSnipButtonActive;
   editor.onSnap = celebrateCorrect;
-  editor.onRemoveChunk = (structureId) => {
-    const tile = (paletteTilesByStructure[structureId] || []).find(t => t.used);
-    if (tile) { tile.used = false; tile.refresh(); }
-  };
   // No Check button here -- a sub-level finishes itself the moment the last
   // correct move is made. onChange fires after every snap/snip; check
   // silently each time, and only act when it's actually complete.
   editor.onChange = () => { if (activeCheck) activeCheck(true); };
-  placeFirstPiece(inventory);
   activeCheck = onCheck;
   document.getElementById('editor-overlay').classList.remove('hidden');
 }
@@ -283,13 +235,10 @@ function closeEditor() {
 
 document.getElementById('editor-close').addEventListener('click', closeEditor);
 document.getElementById('editor-clear').addEventListener('click', () => {
-  if (!editor) return;
+  if (!editor || !currentItems) return;
   editor.clear();
+  editor.scatterAll(currentItems);
   setSnipButtonActive(false);
-  if (currentInventory) {
-    renderPalette(currentInventory);
-    placeFirstPiece(currentInventory);
-  }
 });
 document.getElementById('editor-snip').addEventListener('click', () => {
   if (!editor) return;
@@ -379,11 +328,11 @@ function markSubDone(sub, points) {
 }
 
 function openTutorialEditor(sub) {
-  const inventory = sub.pieceIds.map(id => ({ id, count: 1 }));
+  const items = sub.pieceIds.map(id => STRUCTURES.find(s => s.id === id));
   openEditor({
     title: sub.name,
     hint: 'Drag the two pieces together until they snap. Then tap the scissors and click the joint to pull them apart again.',
-    inventory,
+    items,
     viewW: 480, viewH: 420,
     onCheck: (silent) => {
       if (editor.snapCount < 1 || editor.snipCount < 1) return;
@@ -395,11 +344,10 @@ function openTutorialEditor(sub) {
 
 function openTargetEditor(sub) {
   const total = countNodes(sub.root);
-  const pieceCount = sub.inventory.reduce((s, g) => s + g.count, 0);
   openEditor({
     title: sub.name,
-    hint: `Drag out all ${pieceCount} pieces and snap every open branch to a matching piece, until it's one connected shape of ${total}.`,
-    inventory: sub.inventory,
+    hint: `Drag every piece together until it's one connected shape of ${total}.`,
+    items: expandInventory(sub.inventory),
     viewW: 900, viewH: 620,
     onCheck: () => {
       const forest = editor.toForest();

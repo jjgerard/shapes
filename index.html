@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shape Trees &mdash; Syntax Builder</title>
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=16">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -80,24 +80,17 @@
 <div id="editor-overlay" class="overlay hidden">
   <div class="editor">
     <div class="editor-header">
-      <div>
-        <div id="editor-title">Build it</div>
-        <div id="editor-subtitle" class="muted small"></div>
-      </div>
-      <button id="editor-close" class="link-btn">&times; close</button>
-    </div>
-    <div class="editor-body">
-      <div class="palette" id="editor-palette"></div>
-      <div class="canvas-wrap">
-        <svg id="editor-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
-        <div id="editor-feedback" class="editor-feedback"></div>
-      </div>
-    </div>
-    <div class="editor-footer">
-      <span id="editor-hint" class="muted small"></span>
+      <div id="editor-title">Build it</div>
       <div class="editor-actions">
         <button id="editor-snip" class="btn-icon" title="Snip a joint apart">&#9986;&#65039;</button>
         <button id="editor-clear" class="btn-secondary">Clear</button>
+        <button id="editor-close" class="link-btn">&times; close</button>
+      </div>
+    </div>
+    <div class="editor-body">
+      <div class="canvas-wrap">
+        <svg id="editor-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="editor-feedback" class="editor-feedback"></div>
       </div>
     </div>
   </div>
@@ -117,10 +110,10 @@
   </div>
 </div>
 
-<script src="data.js?v=15"></script>
-<script src="shapes.js?v=15"></script>
-<script src="editor.js?v=15"></script>
-<script src="app.js?v=15"></script>
+<script src="data.js?v=16"></script>
+<script src="shapes.js?v=16"></script>
+<script src="editor.js?v=16"></script>
+<script src="app.js?v=16"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

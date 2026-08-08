@@ -199,38 +199,18 @@ button { font-family: inherit; cursor: pointer; }
   overflow: hidden;
 }
 .editor-header {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  padding: 16px 20px; border-bottom: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 14px 20px; border-bottom: 1px solid var(--line);
 }
 #editor-title { font-weight: 700; font-size: 1.1rem; }
+.editor-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .editor-body { display: flex; flex: 1; min-height: 380px; }
-.palette {
-  width: 190px;
-  border-right: 1px solid var(--line);
-  padding: 14px;
-  overflow-y: auto;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.palette-btn {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  border: 1px solid var(--line);
-  background: #fbfaf7;
-  border-radius: 10px;
-  padding: 8px 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-.palette-btn:hover { background: #f0ede4; }
-.palette-btn svg { width: 100%; height: 52px; flex-shrink: 0; }
-.palette-btn .count { color: var(--muted); font-weight: 700; }
-.palette-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-.palette-btn:disabled:hover { background: #fbfaf7; }
-/* Background touches (empty canvas) get native one-finger pan + pinch-zoom.
-   Individual pieces (.tree-node below) override this to touch-action:none
-   so a touch that STARTS on a piece is captured for dragging instead --
-   touch-action is decided per-element at touchstart time, so this split
-   is what lets both gestures coexist reliably. */
-.canvas-wrap { position: relative; flex: 1; overflow: auto; touch-action: pan-x pan-y pinch-zoom; }
+/* touch-action:none, always -- touch-action on an SVG child (.tree-node)
+   isn't reliably honored on real mobile browsers, so relying on the browser
+   to split "pan here, drag there" by element doesn't work in practice. Pan
+   and pinch-zoom are implemented by hand in editor.js instead, driven by
+   which element the touch actually started on. */
+.canvas-wrap { position: relative; flex: 1; overflow: auto; touch-action: none; overscroll-behavior: none; }
 #editor-canvas { display: block; background:
   radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9; }
 .editor-feedback {
@@ -239,11 +219,6 @@ button { font-family: inherit; cursor: pointer; }
 }
 .editor-feedback.ok { color: var(--accent); }
 .editor-feedback.err { color: var(--danger); }
-.editor-footer {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 20px; border-top: 1px solid var(--line);
-}
-.editor-actions { display: flex; gap: 10px; }
 
 /* svg node styling */
 .tree-node { cursor: grab; touch-action: none; }
@@ -264,17 +239,6 @@ button { font-family: inherit; cursor: pointer; }
 }
 .tree-edge { stroke: #8a8375; stroke-width: 2; fill: none; }
 .tree-edge.seam { stroke: var(--danger); stroke-width: 3; stroke-dasharray: 6 4; }
-.node-delete {
-  cursor: pointer;
-  fill: var(--danger);
-  opacity: 0;
-  transition: opacity .1s;
-}
-.tree-node:hover .node-delete,
-.tree-node:active .node-delete { opacity: 1; }
-@media (hover: none) {
-  .node-delete { opacity: 0.85; }
-}
 
 /* ---- level 3 ---- */
 #level3-body { margin-top: 18px; }
@@ -339,18 +303,10 @@ button { font-family: inherit; cursor: pointer; }
   .btn-primary, .btn-secondary { padding: 13px 22px; font-size: 1rem; min-height: 46px; }
   .overlay { padding: 0; }
   .editor { width: 100%; height: 100%; max-height: 100vh; border-radius: 0; }
-  .editor-body { flex-direction: column; min-height: 0; }
-  .palette {
-    width: 100%; flex-direction: row; flex-wrap: nowrap;
-    overflow-x: auto; -webkit-overflow-scrolling: touch;
-    border-right: none; border-bottom: 1px solid var(--line);
-    padding: 12px; gap: 10px; max-height: 156px;
-  }
-  .palette-btn { min-width: 118px; flex: 0 0 auto; padding: 10px 8px; }
-  .palette-btn svg { height: 78px; }
-  .canvas-wrap { min-height: 48vh; }
-  .editor-footer { flex-wrap: wrap; gap: 12px; padding: 14px 16px; }
-  #editor-hint { font-size: 0.95rem; }
+  .editor-header { padding: 12px 14px; flex-wrap: wrap; }
+  #editor-title { font-size: 1rem; }
+  .editor-body { min-height: 0; }
+  .canvas-wrap { min-height: 0; }
   .btn-icon { width: 50px; height: 50px; font-size: 1.35rem; }
   .legend-layout { flex-direction: column; }
   .legend-slot { min-height: 48px; padding: 10px 12px; }
