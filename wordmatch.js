@@ -180,7 +180,7 @@ class WordMatchEditor {
     if (filled && node.isTrace) {
       const t = svgEl('text', { x: 0, y: 1 });
       t.textContent = node.word;
-      t.style.cssText = `font-size:${s.fontSize - 1}px; font-style:italic; text-decoration:line-through; fill:#9a9284; text-anchor:middle; dominant-baseline:middle; user-select:none;`;
+      t.style.cssText = `font-size:${s.fontSize}px; font-style:italic; text-decoration:line-through; fill:#9a9284; text-anchor:middle; dominant-baseline:middle; user-select:none;`;
       g.appendChild(t);
       return g;
     }
@@ -215,7 +215,13 @@ class WordMatchEditor {
     if (!this.currentChip) return;
     const rect = this.chipEl.getBoundingClientRect();
     this.drag = { offsetX: ev.clientX - rect.left, offsetY: ev.clientY - rect.top };
-    this.chipEl.style.bottom = '';
+    // 'auto', not '' -- clearing the inline value just falls back to the
+    // stylesheet's own `bottom: calc(...)` rule (its home position), which
+    // would then fight with the `top` we're about to drive from pointer
+    // events: with both top AND bottom constraining a position:fixed
+    // element of unspecified height, the browser stretches it to satisfy
+    // both instead of moving it. Explicit 'auto' actually clears it.
+    this.chipEl.style.bottom = 'auto';
     this.chipEl.style.left = rect.left + 'px';
     this.chipEl.style.top = rect.top + 'px';
     this.chipEl.classList.add('dragging');

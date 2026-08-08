@@ -590,13 +590,15 @@ function ensureConstituencyViewer() {
   return constituencyViewer;
 }
 
-// Shared by Level 3 and Level 4 -- `prefix` is 'constituency' or (later) the
-// Level 4 modal's id prefix, each with its own -streak-fill/-streak-label.
+// Shared by Level 3 and Level 4 -- `prefix` is 'constituency' or the Level 4
+// modal's id prefix ('categoryid'), each with its own -streak-fill/-label.
+// Reads the target off the game itself, not a flat constant, since it
+// varies per sub-level (see QUIZ_SUBLEVELS.streakTarget).
 function renderStreakBar(prefix, game) {
   const fill = document.getElementById(`${prefix}-streak-fill`);
   const label = document.getElementById(`${prefix}-streak-label`);
-  fill.style.width = `${Math.round(game.streak / STREAK_TARGET * 100)}%`;
-  label.textContent = `${game.streak} / ${STREAK_TARGET} in a row — ${game.multiplier()}x bonus`;
+  fill.style.width = `${Math.round(game.streak / game.target * 100)}%`;
+  label.textContent = `${game.streak} / ${game.target} in a row — ${game.multiplier()}x bonus`;
 }
 
 function renderQuizSentence(elId, tokens, span) {
@@ -655,9 +657,9 @@ function answerConstituencyQuestion(saidYes) {
 function openConstituencyQuiz(sub) {
   ensureConstituencyViewer();
   currentL3Sub = sub;
-  l3Game = new StreakGame();
+  l3Game = new StreakGame(sub.streakTarget);
   document.getElementById('constituency-title').textContent = sub.name;
-  setMascotSpeech("Is the highlighted string of words a constituent -- the whole yield of some single piece? 10 in a row to finish.");
+  setMascotSpeech(`Is the highlighted string of words a constituent -- the whole yield of some single piece? ${sub.streakTarget} in a row to finish.`);
   const fit = fitCanvasSize(1100, 800);
   constituencyViewer.open(sub.root, fit.w, fit.h);
   renderStreakBar('constituency', l3Game);
@@ -756,7 +758,10 @@ function buildCategoryMatrix() {
     btn.title = CATEGORIES[key].name;
     const svg = document.createElementNS(SVG_NS, 'svg');
     svg.setAttribute('viewBox', '-30 -30 60 60');
-    svg.appendChild(buildShapeGroup(key, '', 26));
+    // Labeled with the phrase-level ("CP", "DP", ...) form, same convention
+    // as the tree itself, rather than left blank -- consistent, readable,
+    // and doesn't require picking an arbitrary bar-level to show.
+    svg.appendChild(buildShapeGroup(key, xbarLabel(key, 1), 26));
     btn.appendChild(svg);
     btn.addEventListener('click', () => answerCategoryQuestion(key));
     matrix.appendChild(btn);
@@ -765,7 +770,10 @@ function buildCategoryMatrix() {
 
 function nextCategoryQuestion() {
   const pools = currentL4Sub.pools;
-  const pool = pools.constituents; // every question here is a genuine constituent
+  // Phrase-level (2+ words) and head-level (single word) constituents both
+  // count as fair game here -- every entry in either pool is a genuine
+  // constituent, just at a different bar level.
+  const pool = pools.constituents.concat(pools.headConstituents);
   const span = pool[Math.floor(Math.random() * pool.length)];
   l4CurrentQuestion = { span, shape: span.shape };
   renderQuizSentence('categoryid-sentence', pools.tokens, span);
@@ -804,9 +812,9 @@ function answerCategoryQuestion(chosenShape) {
 function openCategoryQuiz(sub) {
   ensureCategoryViewer();
   currentL4Sub = sub;
-  l4Game = new StreakGame();
+  l4Game = new StreakGame(sub.streakTarget);
   document.getElementById('categoryid-title').textContent = sub.name;
-  setMascotSpeech('Click the category sticker that matches the highlighted constituent. 10 in a row to finish.');
+  setMascotSpeech(`Click the category sticker that matches the highlighted constituent. ${sub.streakTarget} in a row to finish.`);
   buildCategoryMatrix();
   const fit = fitCanvasSize(1100, 800);
   categoryViewer.open(sub.root, fit.w, fit.h);

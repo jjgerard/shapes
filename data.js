@@ -406,12 +406,12 @@ function computeConstituentSpans(root) {
   return [...bySpan.values()];
 }
 
-// The linear surface sentence itself -- [{word, pos}], sorted -- read
-// straight off the tree so it can never drift out of sync with it.
+// The linear surface sentence itself -- [{word, pos, shape}], sorted --
+// read straight off the tree so it can never drift out of sync with it.
 function surfaceTokens(root) {
   const out = [];
   (function walk(node) {
-    if (node.pos) out.push({ word: node.word, pos: node.pos });
+    if (node.pos) out.push({ word: node.word, pos: node.pos, shape: node.shape });
     node.children.forEach(walk);
   })(root);
   return out.sort((a, b) => a.pos - b.pos);
@@ -435,7 +435,14 @@ function buildQuizPools(root) {
   const constituents = computeConstituentSpans(root);
   const constituentKeys = new Set(constituents.map(c => `${c.start}-${c.end}`));
   const nonConstituents = allSpans(sentenceLength).filter(s => !constituentKeys.has(`${s.start}-${s.end}`));
-  return { tokens, sentenceLength, constituents, nonConstituents };
+  // Head (X⁰, single-word) constituents -- every word is trivially its own
+  // head. Kept separate from `constituents` above: Level 3's yes/no pool
+  // deliberately excludes single words (always "yes", an uninteresting
+  // question), but Level 4 asks for the CATEGORY, not yes/no, so a single
+  // word is a perfectly good -- and different -- kind of question from a
+  // phrase-level one. Level 4 mixes both pools together.
+  const headConstituents = tokens.map(t => ({ start: t.pos, end: t.pos, shape: t.shape }));
+  return { tokens, sentenceLength, constituents, nonConstituents, headConstituents };
 }
 
 // Levels 3 & 4 both walk the same 3 Level 2 trees, in the same order,
@@ -452,6 +459,12 @@ const QUIZ_SUBLEVELS = LEVEL2_SUBLEVELS.filter(s => s.id !== 'the-cat').map(sub 
     sentence: pools.tokens.map(t => t.word).join(' '),
     root: sub.root,
     pools,
+    // The wh-question sentence only has 5 distinct constituent spans, so a
+    // streak target of 10 would force repeats on every single attempt in
+    // Level 4 (which only ever draws from that pool); 5 gives one clean
+    // pass through the unique set instead. The other two sentences have
+    // plenty of spans for the usual target of 10.
+    streakTarget: sub.id === 'which-mouse-did-the-cat-chase' ? 5 : 10,
   };
 });
 
