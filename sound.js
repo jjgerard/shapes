@@ -25,10 +25,43 @@ function playTone(freq, startTime, duration, { type = 'sine', peakGain = 0.2 } =
   osc.stop(startTime + duration + 0.02);
 }
 
-// Two pieces snapping together -- a quick, dry little "tock".
+// Two pieces snapping together -- a short noise "snap" transient layered
+// under a quick pitched-down "tock" body, more like a real plastic-piece
+// click than a bare tone.
 function playClickSound() {
-  const now = getAudioCtx().currentTime;
-  playTone(520, now, 0.07, { type: 'square', peakGain: 0.15 });
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+
+  const bufferSize = Math.floor(ctx.sampleRate * 0.025);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
+  const noiseFilter = ctx.createBiquadFilter();
+  noiseFilter.type = 'bandpass';
+  noiseFilter.frequency.value = 2400;
+  noiseFilter.Q.value = 0.8;
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.setValueAtTime(0.4, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.025);
+  noise.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(ctx.destination);
+  noise.start(now);
+
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(720, now);
+  osc.frequency.exponentialRampToValueAtTime(190, now + 0.08);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.25, now + 0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.1);
 }
 
 // A sub-level (or the whole reveal) is fully complete -- a short ascending
