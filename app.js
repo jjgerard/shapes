@@ -220,6 +220,7 @@ function setSnipButtonActive(on) {
 function openEditor({ title, hint, items, viewW, viewH, onCheck }) {
   ensureEditor();
   document.getElementById('editor-title').textContent = title;
+  document.getElementById('editor-hint').textContent = hint;
   setMascotSpeech(hint);
   currentItems = items;
   const fit = fitCanvasSize(viewW, viewH);
@@ -457,9 +458,10 @@ function openWordMatch(sub) {
   ensureWordMatch();
   currentL2Sub = sub;
   document.getElementById('wordmatch-title').textContent = sub.name;
+  document.getElementById('wordmatch-hint').textContent = sub.hint;
   setMascotSpeech(sub.hint);
   const fit = fitCanvasSize(1100, 800);
-  wordMatch.open(sub.root, fit.w);
+  wordMatch.open(sub.root, fit.w, fit.h);
   renderWmSentence(sub.root);
   setModalDoneState(document.getElementById('wordmatch-close'), false);
   wordMatch.onPlace = () => { celebrateCorrect(); renderWmSentence(sub.root); };
@@ -476,7 +478,7 @@ function closeWordMatch() {
 document.getElementById('wordmatch-close').addEventListener('click', closeWordMatch);
 document.getElementById('wordmatch-clear').addEventListener('click', () => {
   if (!wordMatch || !currentL2Sub) return;
-  wordMatch.open(currentL2Sub.root, wordMatch.viewW);
+  wordMatch.open(currentL2Sub.root, wordMatch.viewW, wordMatch.viewH);
   renderWmSentence(currentL2Sub.root);
   setModalDoneState(document.getElementById('wordmatch-close'), false);
 });

@@ -52,7 +52,7 @@ const SHAPE_FACTORY = {
 // scales along with the shape everywhere this is used -- the interactive
 // canvas (where r varies by device, see editor.js SIZING) as well as the
 // static reveal/legend trees.
-function buildShapeGroup(categoryKey, number, r = 26) {
+function buildShapeGroup(categoryKey, number, r = 26, fontScale = 0.5) {
   const cat = CATEGORIES[categoryKey];
   const g = svgEl('g');
   const shapeEl = SHAPE_FACTORY[cat.shape](r);
@@ -62,7 +62,7 @@ function buildShapeGroup(categoryKey, number, r = 26) {
   const label = svgEl('text', { x: 0, y: 1 });
   label.textContent = number;
   label.style.cssText =
-    `font-size:${Math.round(r * 0.5)}px; font-weight:700; fill:#fff; ` +
+    `font-size:${Math.round(r * fontScale)}px; font-weight:700; fill:#fff; ` +
     'text-anchor:middle; dominant-baseline:middle; pointer-events:none; user-select:none;';
   g.appendChild(label);
   return g;
@@ -93,7 +93,7 @@ function layoutTree(root, nodeGap = 82, levelGap = 86) {
 function maxDepth(node) {
   return node.children.length ? 1 + Math.max(...node.children.map(maxDepth)) : 0;
 }
-function paintStaticTree(svg, root, { r = 26, reveal = false, xOffset = 0 } = {}) {
+function paintStaticTree(svg, root, { r = 26, reveal = false, xOffset = 0, fontScale = 0.5 } = {}) {
   while (svg.firstChild) svg.removeChild(svg.firstChild);
   const edgeLayer = svgEl('g');
   const nodeLayer = svgEl('g');
@@ -110,7 +110,7 @@ function paintStaticTree(svg, root, { r = 26, reveal = false, xOffset = 0 } = {}
     }
   })(root);
   (function walk(node) {
-    const g = buildShapeGroup(node.shape, reveal ? xbarLabel(node.shape, node.number) : node.number, r);
+    const g = buildShapeGroup(node.shape, reveal ? xbarLabel(node.shape, node.number) : node.number, r, fontScale);
     g.setAttribute('transform', `translate(${node._x + xOffset},${node._y})`);
     nodeLayer.appendChild(g);
     node.children.forEach(walk);

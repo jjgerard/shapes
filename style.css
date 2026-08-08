@@ -216,6 +216,14 @@ button { font-family: inherit; cursor: pointer; }
   font-weight: 700; font-size: 1.1rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* The same hint text also goes to the mascot's speech bubble (setMascotSpeech),
+   but that bubble is a page-level fixed element that a modal's own content
+   can render above -- so it can't be the ONLY place a hint shows while a
+   modal is open, or the hint disappears behind the modal (worst on mobile,
+   where the modal is opaque and edge-to-edge). This copy inside the modal
+   itself is always visible regardless of that stacking. */
+.modal-hint { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+.modal-hint:empty { display: none; }
 .editor-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 /* Small "x close" while a puzzle/sentence is still in progress; once it's
    actually finished, setModalDoneState() (app.js) swaps this to a big,
@@ -289,20 +297,21 @@ button { font-family: inherit; cursor: pointer; }
 }
 .wm-word { color: var(--muted); }
 .wm-word.filled { color: var(--ink); }
+/* Natural size, not stretched to fill -- same as #editor-canvas -- so a
+   big tree scrolls/zooms in .canvas-wrap instead of auto-shrinking. */
 #wordmatch-canvas {
-  width: 100%; height: 100%; display: block;
+  flex-shrink: 0; display: block;
   background: radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9;
 }
 /* The one word currently up for grabs -- fixed to the viewport (bottom-
    left), not part of the SVG canvas at all, so it's always visible without
-   scrolling and never sits under the mascot's speech bubble (fixed
-   bottom-right). z-index above the overlay (20) and the toast (1000) is
-   irrelevant here since they never occupy the same corner, but staying
-   under the mascot itself (999) keeps the mascot always the topmost thing
-   on screen. */
+   scrolling. Its home position is also dynamically kept clear of the
+   mascot's speech bubble (see wordmatch.js _resetChipPosition) so the two
+   pieces of readable text never sit on top of each other regardless of
+   which one the mascot/overlay z-index stacking would otherwise favor. */
 .wm-chip-float {
   position: fixed;
-  z-index: 500;
+  z-index: 30;
   border: 1.5px solid var(--line);
   background: #fff;
   border-radius: 999px;
@@ -414,11 +423,19 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* ---- mascot ---- */
+/* Below the modal overlay (20) on purpose -- the mascot is a floating
+   companion, not chrome, so it should never be able to visually cover a
+   button, a piece, or a word slot. Above ordinary page content and the
+   header (5) so it's still visible on the plain level-select screens.
+   When a modal is open, its dark backdrop dims the mascot right along
+   with the rest of the page behind it, same as everything else back
+   there -- clicks were always pass-through anyway (pointer-events: none
+   below), so this is a purely visual fix. */
 .mascot-wrap {
   position: fixed;
   bottom: 16px;
   right: 14px;
-  z-index: 999;
+  z-index: 15;
   pointer-events: none;
   display: flex;
   align-items: flex-end;

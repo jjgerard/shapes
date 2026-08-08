@@ -19,6 +19,9 @@ class WordMatchEditor {
     this.svg = svg;
     this.drag = null;
     this.currentChip = null;
+    this.zoom = 1;
+    this.bgPointers = new Map(); // pointerId -> {x,y}, for background pan/pinch (same scheme as TreeEditor)
+    this.bgAnchor = null;
     this.onPlace = null;    // callback() after any correct placement
     this.onComplete = null; // callback() once every slot is filled
 
@@ -36,9 +39,18 @@ class WordMatchEditor {
     (svg.closest('.overlay') || document.body).appendChild(this.chipEl);
 
     this._bindPointerEvents();
+    this._bindBackgroundPointerEvents();
+    this._bindWheelZoom();
   }
 
-  open(root, viewW) {
+  // Same fixed 5%-500% range as Level 1's canvas, for the same reason: a
+  // dynamic minimum tied to content size means a big tree could hit a floor
+  // well above 5% and still not fit; a flat range means every edge is
+  // always reachable by panning from wherever you've zoomed to.
+  minZoom() { return 0.05; }
+  maxZoom() { return 5; }
+
+  open(root, viewW, viewH) {
     this.root = root;
     this.sizing = window.innerWidth < 640 ? WM_SIZING.mobile : WM_SIZING.desktop;
     const s = this.sizing;
@@ -46,9 +58,10 @@ class WordMatchEditor {
     const dims = layoutTree(root, s.chipW + 18, s.r * 2 + s.slotGapY + 40);
     this.treeWidth = dims.width;
     this.treeHeight = dims.height;
-    this.viewW = Math.max(viewW, dims.width + 40);
-    this.xOffset = Math.max(20, (this.viewW - dims.width) / 2);
-    this.viewH = this.treeHeight + 40;
+    this.viewW = Math.max(viewW || 0, dims.width + 80);
+    this.xOffset = Math.max(40, (this.viewW - dims.width) / 2);
+    this.viewH = Math.max(viewH || 0, this.treeHeight + 80);
+    this.zoom = 1;
 
     this.slotNodes = [];
     const collect = (node) => {
@@ -67,6 +80,29 @@ class WordMatchEditor {
     this.drag = null;
     this._nextChip();
     this.render();
+    this._scrollToStart();
+  }
+
+  // Same idea as TreeEditor.scrollToStart(): zoom to fit and center when
+  // the whole tree fits at a still-readable zoom, otherwise anchor at the
+  // top-left and let panning/pinching reach the rest -- never shrink to an
+  // unreadable size just to force everything into one screen.
+  _scrollToStart() {
+    const wrap = this.svg.parentElement;
+    if (!wrap) return;
+    requestAnimationFrame(() => {
+      const fitZoom = Math.min(1, wrap.clientWidth / this.viewW, wrap.clientHeight / this.viewH);
+      this.zoom = fitZoom >= 0.5 ? fitZoom : 1;
+      this.render();
+      if (fitZoom >= 0.5) {
+        const contentW = this.viewW * this.zoom, contentH = this.viewH * this.zoom;
+        wrap.scrollLeft = Math.max(0, -(wrap.clientWidth - contentW) / 2);
+        wrap.scrollTop = Math.max(0, -(wrap.clientHeight - contentH) / 2);
+      } else {
+        wrap.scrollLeft = 0;
+        wrap.scrollTop = 0;
+      }
+    });
   }
 
   // Pulls the next word off the shuffled queue -- the only chip on screen
@@ -103,11 +139,20 @@ class WordMatchEditor {
   render() {
     const s = this.sizing;
     this.svg.setAttribute('viewBox', `0 0 ${this.viewW} ${this.viewH}`);
+    // Explicit pixel width/height (not CSS 100%) -- the SVG renders at its
+    // natural size scaled only by zoom, same as Level 1's canvas, so a big
+    // tree needs scrolling/zooming to see fully rather than auto-shrinking
+    // its text down to whatever fits the screen.
+    this.svg.setAttribute('width', this.viewW * this.zoom);
+    this.svg.setAttribute('height', this.viewH * this.zoom);
     while (this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
 
     const treeLayer = svgEl('g');
     this.svg.appendChild(treeLayer);
-    paintStaticTree(treeLayer, this.root, { r: s.r, reveal: true, xOffset: this.xOffset });
+    // Bigger than the default 0.5 -- these "DP / D′ / D⁰"-style labels are
+    // read constantly while matching words, so they get their own larger
+    // scale rather than sharing the size tuned for Level 1's bare numbers.
+    paintStaticTree(treeLayer, this.root, { r: s.r, reveal: true, xOffset: this.xOffset, fontScale: 0.62 });
 
     const overlayLayer = svgEl('g', { class: 'wm-overlay' });
     this.svg.appendChild(overlayLayer);
@@ -190,6 +235,83 @@ class WordMatchEditor {
     };
     this.chipEl.addEventListener('pointerup', endDrag);
     this.chipEl.addEventListener('pointercancel', endDrag);
+  }
+
+  // Pan (one finger) / pinch-zoom (two fingers) on the canvas background --
+  // the tree itself has nothing else draggable inside the SVG (the chip
+  // lives outside it now), so every pointer that lands on the svg is a
+  // background gesture; no need to distinguish "started on a piece" like
+  // TreeEditor does.
+  _bindBackgroundPointerEvents() {
+    this.svg.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      this.bgPointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      this._restartBgGesture();
+    });
+    window.addEventListener('pointermove', (ev) => {
+      if (!this.bgPointers.has(ev.pointerId)) return;
+      ev.preventDefault();
+      this.bgPointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      const wrap = this.svg.parentElement;
+      const pts = [...this.bgPointers.values()];
+      if (this.bgAnchor && this.bgAnchor.mode === 'pan' && pts.length === 1) {
+        wrap.scrollLeft = this.bgAnchor.scrollLeft - (pts[0].x - this.bgAnchor.x);
+        wrap.scrollTop = this.bgAnchor.scrollTop - (pts[0].y - this.bgAnchor.y);
+      } else if (this.bgAnchor && this.bgAnchor.mode === 'pinch' && pts.length === 2) {
+        const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        const midX = (pts[0].x + pts[1].x) / 2, midY = (pts[0].y + pts[1].y) / 2;
+        this.zoom = Math.max(this.minZoom(), Math.min(this.maxZoom(), this.bgAnchor.zoom * (dist / this.bgAnchor.dist)));
+        this.render();
+        const rect = wrap.getBoundingClientRect();
+        wrap.scrollLeft = this.bgAnchor.contentX * this.zoom - (midX - rect.left);
+        wrap.scrollTop = this.bgAnchor.contentY * this.zoom - (midY - rect.top);
+      }
+    }, { passive: false });
+    const releaseBg = (ev) => {
+      if (this.bgPointers.delete(ev.pointerId)) this._restartBgGesture();
+    };
+    window.addEventListener('pointerup', releaseBg);
+    window.addEventListener('pointercancel', releaseBg);
+  }
+
+  _restartBgGesture() {
+    const wrap = this.svg.parentElement;
+    const pts = [...this.bgPointers.values()];
+    if (pts.length === 1) {
+      this.bgAnchor = { mode: 'pan', x: pts[0].x, y: pts[0].y, scrollLeft: wrap.scrollLeft, scrollTop: wrap.scrollTop };
+    } else if (pts.length === 2) {
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const midX = (pts[0].x + pts[1].x) / 2, midY = (pts[0].y + pts[1].y) / 2;
+      const rect = wrap.getBoundingClientRect();
+      this.bgAnchor = {
+        mode: 'pinch', dist: dist || 1, zoom: this.zoom,
+        contentX: (wrap.scrollLeft + midX - rect.left) / this.zoom,
+        contentY: (wrap.scrollTop + midY - rect.top) / this.zoom,
+      };
+    } else {
+      this.bgAnchor = null;
+    }
+  }
+
+  // Trackpad pinch-to-zoom on a non-touchscreen laptop surfaces as a
+  // 'wheel' event with ctrlKey set, not a touch/pointer gesture -- same
+  // trick as TreeEditor's _bindWheelZoom.
+  _bindWheelZoom() {
+    this.svg.addEventListener('wheel', (ev) => {
+      if (!ev.ctrlKey) return;
+      ev.preventDefault();
+      const wrap = this.svg.parentElement;
+      const rect = wrap.getBoundingClientRect();
+      const oldZoom = this.zoom;
+      const factor = Math.exp(-ev.deltaY * 0.01);
+      const newZoom = Math.max(this.minZoom(), Math.min(this.maxZoom(), oldZoom * factor));
+      const contentX = (wrap.scrollLeft + ev.clientX - rect.left) / oldZoom;
+      const contentY = (wrap.scrollTop + ev.clientY - rect.top) / oldZoom;
+      this.zoom = newZoom;
+      this.render();
+      wrap.scrollLeft = contentX * newZoom - (ev.clientX - rect.left);
+      wrap.scrollTop = contentY * newZoom - (ev.clientY - rect.top);
+    }, { passive: false });
   }
 
   // Hit-tests in plain screen space against each slot's actual rendered
