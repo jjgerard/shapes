@@ -334,7 +334,7 @@ function openTutorialEditor(sub) {
     title: sub.name,
     hint: 'Drag the two pieces together until they snap. Then tap the scissors and click the joint to pull them apart again.',
     items,
-    viewW: 480, viewH: 420,
+    viewW: 620, viewH: 560,
     onCheck: (silent) => {
       if (editor.snapCount < 1 || editor.snipCount < 1) return;
       editor.setFeedback('Nice work!', 'ok');
@@ -349,7 +349,7 @@ function openTargetEditor(sub) {
     title: sub.name,
     hint: `Drag every piece together until it's one connected shape of ${total}.`,
     items: expandInventory(sub.inventory),
-    viewW: 900, viewH: 620,
+    viewW: 1150, viewH: 800,
     onCheck: () => {
       const forest = editor.toForest();
       const ok = editor.nodes.length === total && forest.length === 1 && matchesPattern(forest[0], sub.root);

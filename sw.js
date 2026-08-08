@@ -4,7 +4,7 @@
 // fall back to whatever's cached if the network fails. A cache-first
 // strategy here would mean every fix shipped keeps getting masked by a
 // stale cached copy on devices that already installed the app.
-const CACHE = 'shape-trees-v5';
+const CACHE = 'shape-trees-v6';
 const ASSETS = [
   './', './index.html', './style.css',
   './data.js', './shapes.js', './editor.js', './app.js',

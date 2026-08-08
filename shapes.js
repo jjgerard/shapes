@@ -48,6 +48,10 @@ const SHAPE_FACTORY = {
 
 // Build a full <g class="tree-node"> for a data node {shape, number}.
 // `shape` here is the CATEGORY KEY (C/T/V/D/N/P) -- callers pass CATEGORIES[key].
+// The label's font-size is derived from r (rather than fixed in CSS) so it
+// scales along with the shape everywhere this is used -- the interactive
+// canvas (where r varies by device, see editor.js SIZING) as well as the
+// static reveal/legend trees.
 function buildShapeGroup(categoryKey, number, r = 26) {
   const cat = CATEGORIES[categoryKey];
   const g = svgEl('g');
@@ -57,6 +61,9 @@ function buildShapeGroup(categoryKey, number, r = 26) {
   g.appendChild(shapeEl);
   const label = svgEl('text', { x: 0, y: 1 });
   label.textContent = number;
+  label.style.cssText =
+    `font-size:${Math.round(r * 0.5)}px; font-weight:700; fill:#fff; ` +
+    'text-anchor:middle; dominant-baseline:middle; pointer-events:none; user-select:none;';
   g.appendChild(label);
   return g;
 }

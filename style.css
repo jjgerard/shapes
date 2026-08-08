@@ -253,7 +253,11 @@ button { font-family: inherit; cursor: pointer; }
   stroke-width: 4;
   filter: drop-shadow(0 0 8px rgba(47,111,94,0.65));
 }
-.tree-node text { font-size: 16px; font-weight: 700; fill: #fff; pointer-events: none; user-select: none; text-anchor: middle; dominant-baseline: middle; }
+/* Label styling (size, weight, fill, anchor) now lives inline on the text
+   element itself -- see buildShapeGroup in shapes.js -- since font-size
+   needs to scale with the shape's radius (which varies by device), and
+   this same element is reused by the static reveal/legend trees, which
+   never had a .tree-node ancestor to pick this rule up from anyway. */
 .tree-node.snip-disabled { opacity: 0.45; }
 .tree-node.snippable .node-shape {
   stroke: var(--danger);

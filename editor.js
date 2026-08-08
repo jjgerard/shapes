@@ -22,16 +22,17 @@
 // zoom that loosens as the puzzle grows so a big one can always be zoomed
 // out to fit.
 
-const NODE_RADIUS = 32;
-const SNAP_DISTANCE = 60;
-const SLOT_WIDTH = 170;
-const SLOT_HEIGHT = 170;
-const EDGE_MARGIN = NODE_RADIUS;
-const SPRING_APART_OFFSET = 70;
-// Empty buffer left above/left of the scattered piece cluster -- room to
-// drag a piece further up or left without immediately hitting the true
-// canvas edge, and a fixed anchor point the initial view scrolls to.
-const SCATTER_MARGIN = 130;
+// Sizing is responsive, not a fixed constant -- a phone screen is where
+// pieces and their numbers are hardest to see/hit, so mobile gets bigger
+// shapes, bigger text (font size is derived from the shape radius, see
+// buildShapeGroup in shapes.js) and more breathing room between pieces,
+// not just a scaled-down copy of the desktop layout. Recomputed by
+// _applySizing() every time the editor opens, so rotating a device or
+// resizing the window between sub-levels picks up the right sizes.
+const SIZING = {
+  desktop: { nodeRadius: 32, snapDistance: 60, slotSize: 230, scatterMargin: 190, gap: 200, childSpreadX: 76, childSpreadY: 90, springApart: 80 },
+  mobile:  { nodeRadius: 44, snapDistance: 82, slotSize: 250, scatterMargin: 150, gap: 220, childSpreadX: 100, childSpreadY: 120, springApart: 90 },
+};
 
 class TreeEditor {
   constructor(svg, feedbackEl) {
@@ -52,12 +53,31 @@ class TreeEditor {
     this.zoom = 1;
     this.bgPointers = new Map(); // pointerId -> {x,y} in screen space, for background pan/pinch (not on a piece)
     this.bgAnchor = null;        // gesture anchor recomputed whenever bgPointers changes size
+    this._applySizing();
     this._bindGlobalPointerEvents();
     this._bindBackgroundPointerEvents();
     this._bindWheelZoom();
   }
 
+  // See SIZING above -- picks desktop vs. mobile proportions from the
+  // current viewport width (same 640px breakpoint style.css uses).
+  _applySizing() {
+    const s = window.innerWidth < 640 ? SIZING.mobile : SIZING.desktop;
+    this.nodeRadius = s.nodeRadius;
+    this.edgeMargin = s.nodeRadius;
+    this.snapDistance = s.snapDistance;
+    this.slotWidth = s.slotSize;
+    this.slotHeight = s.slotSize;
+    this.scatterMargin = s.scatterMargin;
+    this.colGap = s.gap;
+    this.rowGap = s.gap;
+    this.childSpreadX = s.childSpreadX;
+    this.childSpreadY = s.childSpreadY;
+    this.springApart = s.springApart;
+  }
+
   open(minViewW, minViewH) {
+    this._applySizing();
     this.minViewW = minViewW;
     this.minViewH = minViewH;
     this.viewW = minViewW;
@@ -109,17 +129,17 @@ class TreeEditor {
   // ---- dynamic sizing ----
   contentRight() {
     if (!this.nodes.length) return 0;
-    return Math.max(...this.nodes.map(n => n.x + NODE_RADIUS + 8));
+    return Math.max(...this.nodes.map(n => n.x + this.nodeRadius + 8));
   }
   contentBottom() {
     if (!this.nodes.length) return 0;
-    return Math.max(...this.nodes.map(n => n.y + NODE_RADIUS + 8));
+    return Math.max(...this.nodes.map(n => n.y + this.nodeRadius + 8));
   }
   canvasWidth() {
-    return Math.max(this.minViewW || 0, this.contentRight() + SLOT_WIDTH / 2);
+    return Math.max(this.minViewW || 0, this.contentRight() + this.slotWidth / 2);
   }
   canvasHeight() {
-    return Math.max(this.minViewH || 0, this.contentBottom() + SLOT_HEIGHT / 2);
+    return Math.max(this.minViewH || 0, this.contentBottom() + this.slotHeight / 2);
   }
 
   // Dump every piece for this sub-level onto the canvas at once, laid out
@@ -129,12 +149,11 @@ class TreeEditor {
   scatterAll(structureItems) {
     const cols = Math.max(2, Math.ceil(Math.sqrt(structureItems.length * 1.3)));
     const rows = Math.ceil(structureItems.length / cols);
-    const colGap = 165, rowGap = 165;
-    const offsetX = SCATTER_MARGIN + colGap / 2;
-    const offsetY = SCATTER_MARGIN + rowGap / 2;
+    const offsetX = this.scatterMargin + this.colGap / 2;
+    const offsetY = this.scatterMargin + this.rowGap / 2;
     structureItems.forEach((item, i) => {
       const col = i % cols, row = Math.floor(i / cols);
-      this.addChunk(item, { x: offsetX + col * colGap, y: offsetY + row * rowGap });
+      this.addChunk(item, { x: offsetX + col * this.colGap, y: offsetY + row * this.rowGap });
     });
     this.scrollToStart();
   }
@@ -148,8 +167,8 @@ class TreeEditor {
     if (!wrap) return;
     requestAnimationFrame(() => {
       const pad = 30;
-      wrap.scrollLeft = Math.max(0, (SCATTER_MARGIN - pad) * this.zoom);
-      wrap.scrollTop = Math.max(0, (SCATTER_MARGIN - pad) * this.zoom);
+      wrap.scrollLeft = Math.max(0, (this.scatterMargin - pad) * this.zoom);
+      wrap.scrollTop = Math.max(0, (this.scatterMargin - pad) * this.zoom);
     });
   }
 
@@ -166,8 +185,8 @@ class TreeEditor {
 
     const n = structureItem.children.length;
     structureItem.children.forEach((c, i) => {
-      const cx = baseX + (i - (n - 1) / 2) * 68;
-      const cy = baseY + 82;
+      const cx = baseX + (i - (n - 1) / 2) * this.childSpreadX;
+      const cy = baseY + this.childSpreadY;
       const child = {
         id: this.nextId++, catKey: c.shape, number: c.number,
         x: cx, y: cy, chunkRoot: rootId, structureId: structureItem.id,
@@ -220,7 +239,7 @@ class TreeEditor {
       if (!this.resolveSnapPair(nodeId, other.id)) continue;
       const dx = node.x - other.x, dy = node.y - other.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < SNAP_DISTANCE && dist < bestDist) { bestDist = dist; best = other.id; }
+      if (dist < this.snapDistance && dist < bestDist) { bestDist = dist; best = other.id; }
     }
     return best;
   }
@@ -277,8 +296,8 @@ class TreeEditor {
     // by the same amount, so it moves as one rigid piece, not just the root.
     for (const id of this.subtreeOf(newRootId)) {
       const n = this.nodes.find(x => x.id === id);
-      n.x += SPRING_APART_OFFSET;
-      n.y += SPRING_APART_OFFSET;
+      n.x += this.springApart;
+      n.y += this.springApart;
     }
     this.seams.delete(nodeId);
     this.snipCount++;
@@ -311,13 +330,13 @@ class TreeEditor {
       if (!p || !c) continue;
       const path = svgEl('path', {
         class: 'tree-edge' + (this.snipMode && this.isSeam(e.parent, e.child) ? ' seam' : ''),
-        d: `M ${p.x} ${p.y + NODE_RADIUS} C ${p.x} ${(p.y + c.y) / 2}, ${c.x} ${(p.y + c.y) / 2}, ${c.x} ${c.y - NODE_RADIUS}`,
+        d: `M ${p.x} ${p.y + this.nodeRadius} C ${p.x} ${(p.y + c.y) / 2}, ${c.x} ${(p.y + c.y) / 2}, ${c.x} ${c.y - this.nodeRadius}`,
       });
       edgeLayer.appendChild(path);
     }
 
     for (const n of this.nodes) {
-      const g = buildShapeGroup(n.catKey, n.number, NODE_RADIUS);
+      const g = buildShapeGroup(n.catKey, n.number, this.nodeRadius);
       const isDragging = this.drag && this.drag.id === n.id;
       const isTarget = n.id === this.snapTargetId;
       const isSnippable = this.snipMode && this.hasSeam(n.id);
@@ -429,13 +448,13 @@ class TreeEditor {
       const p = this.toSvgPoint(ev.clientX, ev.clientY);
       const node = this.nodes.find(n => n.id === this.drag.id);
       if (!node) return;
-      const nx = Math.max(EDGE_MARGIN, p.x - this.drag.offsetX);
-      const ny = Math.max(EDGE_MARGIN, p.y - this.drag.offsetY);
+      const nx = Math.max(this.edgeMargin, p.x - this.drag.offsetX);
+      const ny = Math.max(this.edgeMargin, p.y - this.drag.offsetY);
       const dx = nx - node.x, dy = ny - node.y;
       for (const id of this.subtreeOf(node.id)) {
         const n = this.nodes.find(x => x.id === id);
-        n.x = Math.max(EDGE_MARGIN, n.x + dx);
-        n.y = Math.max(EDGE_MARGIN, n.y + dy);
+        n.x = Math.max(this.edgeMargin, n.x + dx);
+        n.y = Math.max(this.edgeMargin, n.y + dy);
       }
       this.snapTargetId = this.findSnapTarget(node.id);
       this.render();
