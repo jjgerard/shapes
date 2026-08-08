@@ -30,8 +30,8 @@
 // _applySizing() every time the editor opens, so rotating a device or
 // resizing the window between sub-levels picks up the right sizes.
 const SIZING = {
-  desktop: { nodeRadius: 32, snapDistance: 60, slotSize: 320, scatterMargin: 280, gap: 240, childSpreadX: 76, childSpreadY: 90, springApart: 80 },
-  mobile:  { nodeRadius: 44, snapDistance: 82, slotSize: 300, scatterMargin: 200, gap: 250, childSpreadX: 100, childSpreadY: 120, springApart: 90 },
+  desktop: { nodeRadius: 32, snapDistance: 60, slotSize: 320, scatterMargin: 1120, gap: 240, childSpreadX: 76, childSpreadY: 90, springApart: 80 },
+  mobile:  { nodeRadius: 44, snapDistance: 82, slotSize: 300, scatterMargin: 800, gap: 250, childSpreadX: 100, childSpreadY: 120, springApart: 90 },
 };
 
 class TreeEditor {
@@ -134,10 +134,10 @@ class TreeEditor {
     return Math.max(...this.nodes.map(n => n.y + this.nodeRadius + 8));
   }
   canvasWidth() {
-    return Math.max(this.minViewW || 0, this.contentRight() + this.slotWidth / 2);
+    return Math.max(this.minViewW || 0, this.contentRight() + this.slotWidth * 2);
   }
   canvasHeight() {
-    return Math.max(this.minViewH || 0, this.contentBottom() + this.slotHeight / 2);
+    return Math.max(this.minViewH || 0, this.contentBottom() + this.slotHeight * 2);
   }
 
   // Dump every piece for this sub-level onto the canvas at once, laid out
@@ -160,13 +160,30 @@ class TreeEditor {
   // little padding) instead of the empty buffer or dead-center of a much
   // bigger canvas -- the buffer is still there to drag into, you just
   // don't start out staring at blank canvas to reach it.
+  //
+  // Exception: if every piece already fits inside the visible wrap at the
+  // current zoom (true for small sub-levels, e.g. the first level's two
+  // starter pieces), center on the whole cluster instead -- anchoring to
+  // just the top-left corner could otherwise leave a piece sitting off the
+  // right/bottom edge even though there was room to show it all at once.
   scrollToStart() {
     const wrap = this.svg.parentElement;
-    if (!wrap) return;
+    if (!wrap || !this.nodes.length) return;
     requestAnimationFrame(() => {
       const pad = 30;
-      wrap.scrollLeft = Math.max(0, (this.scatterMargin - pad) * this.zoom);
-      wrap.scrollTop = Math.max(0, (this.scatterMargin - pad) * this.zoom);
+      const minX = Math.min(...this.nodes.map(n => n.x - this.nodeRadius)) - pad;
+      const minY = Math.min(...this.nodes.map(n => n.y - this.nodeRadius)) - pad;
+      const maxX = Math.max(...this.nodes.map(n => n.x + this.nodeRadius)) + pad;
+      const maxY = Math.max(...this.nodes.map(n => n.y + this.nodeRadius)) + pad;
+      const contentW = (maxX - minX) * this.zoom;
+      const contentH = (maxY - minY) * this.zoom;
+      if (contentW <= wrap.clientWidth && contentH <= wrap.clientHeight) {
+        wrap.scrollLeft = Math.max(0, minX * this.zoom - (wrap.clientWidth - contentW) / 2);
+        wrap.scrollTop = Math.max(0, minY * this.zoom - (wrap.clientHeight - contentH) / 2);
+      } else {
+        wrap.scrollLeft = Math.max(0, (this.scatterMargin - pad) * this.zoom);
+        wrap.scrollTop = Math.max(0, (this.scatterMargin - pad) * this.zoom);
+      }
     });
   }
 
