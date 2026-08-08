@@ -274,6 +274,7 @@ class TreeEditor {
     this.nodes = this.nodes.filter(n => n.id !== rootId);
     this.snapCount++;
     this.setFeedback('Snapped together.', 'ok');
+    playClickSound();
     if (this.onSnap) this.onSnap();
     if (this.onChange) this.onChange();
   }

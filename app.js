@@ -61,7 +61,7 @@ function mascotPulse(className, duration) {
   el._t = setTimeout(() => el.classList.remove(className), duration);
 }
 function celebrateCorrect() { mascotPulse('jumping', 650); }
-function celebrateComplete() { mascotPulse('dancing', 1350); }
+function celebrateComplete() { mascotPulse('dancing', 1350); playChimeSound(); }
 
 function setMascotSpeech(text) {
   const bubble = document.getElementById('mascot-bubble');
@@ -472,6 +472,7 @@ function buildRevealGroup({ heading, items, onCorrect }) {
         const val = input.value.trim();
         if (!val) return;
         if (item.isCorrect(val)) {
+          playCorrectSound();
           onCorrect(item.key);
         } else {
           row.classList.add('incorrect');
