@@ -331,11 +331,10 @@ class TreeEditor {
       this.snapTargetId = this.findSnapTarget(node.id);
       this.render();
     }, { passive: false });
-    window.addEventListener('pointerup', () => {
+    const endDrag = () => {
       if (!this.drag) return;
       const id = this.drag.id;
       this.drag = null;
-      this.svg.parentElement.classList.remove('dragging-active');
       const targetId = this.findSnapTarget(id);
       if (targetId) {
         const pair = this.resolveSnapPair(id, targetId);
@@ -343,7 +342,14 @@ class TreeEditor {
       }
       this.snapTargetId = null;
       this.render();
-    });
+    };
+    window.addEventListener('pointerup', endDrag);
+    // If the browser decides mid-gesture to treat this as a scroll after
+    // all, it cancels the pointer instead of sending pointerup -- without
+    // handling this too, drag state gets stuck and the NEXT attempt starts
+    // from stale state, which is what caused "first try scrolls, second
+    // try works."
+    window.addEventListener('pointercancel', endDrag);
   }
 
   _onNodePointerDown(ev, id) {
@@ -354,10 +360,6 @@ class TreeEditor {
       this.setSnipMode(false);
       return;
     }
-    // Lock out panning/scrolling on the canvas container for the duration
-    // of the drag -- touch-action on the SVG node itself isn't reliably
-    // honored on mobile, so this is the belt-and-suspenders fix.
-    this.svg.parentElement.classList.add('dragging-active');
     const node = this.nodes.find(n => n.id === id);
     const p = this.toSvgPoint(ev.clientX, ev.clientY);
     this.drag = { id, offsetX: p.x - node.x, offsetY: p.y - node.y };

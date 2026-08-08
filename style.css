@@ -224,8 +224,12 @@ button { font-family: inherit; cursor: pointer; }
 .palette-btn .count { color: var(--muted); font-weight: 700; }
 .palette-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .palette-btn:disabled:hover { background: #fbfaf7; }
-.canvas-wrap { position: relative; flex: 1; overflow: auto; }
-.canvas-wrap.dragging-active { touch-action: none; overscroll-behavior: none; }
+/* touch-action must be none from page load, not toggled reactively --
+   mobile browsers decide whether a touch becomes a scroll or a custom
+   gesture at touchstart time, before any JS in a pointerdown handler runs.
+   The tradeoff is you can't finger-pan empty canvas area; dragging pieces
+   (the primary interaction here) is what actually needs to be reliable. */
+.canvas-wrap { position: relative; flex: 1; overflow: auto; touch-action: none; overscroll-behavior: none; }
 #editor-canvas { display: block; background:
   radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9; }
 .editor-feedback {

@@ -136,7 +136,7 @@ function paintStaticTree(svg, root, { r = 22, reveal = false, xOffset = 0 } = {}
 let editor = null;
 let activeCheck = null;   // function() -> void, called by the Check button
 let currentInventory = null; // the inventory currently loaded, so Clear can restore it
-let paletteGroupEls = {};
+let paletteTilesByStructure = {}; // structureId -> [{btn, used, refresh}, ...], one tile per piece needed
 
 function ensureEditor() {
   if (!editor) {
@@ -147,47 +147,42 @@ function ensureEditor() {
 
 // A normalized {shape,number,children:[...]} pattern for a handout item,
 // suitable for layoutTree/paintStaticTree (its children are forced leaves,
-// which is correct: a Level 1 item's children are exactly as deep as shown
-// on the handout).
+// which is correct: a piece's children are exactly as deep as its build).
 function itemPattern(item) {
   return { shape: item.shape, number: item.number, children: item.children.map(c => ({ ...c, children: [] })) };
 }
 
+// One tile per piece needed -- if a shape is needed twice, that's two
+// identical tiles side by side, not one tile with a count badge.
 function renderPalette(inventory) {
   const palette = document.getElementById('editor-palette');
   palette.innerHTML = '';
-  paletteGroupEls = {};
+  paletteTilesByStructure = {};
   for (const g of inventory) {
     const item = STRUCTURES.find(s => s.id === g.id);
-    const btn = document.createElement('button');
-    btn.className = 'palette-btn';
-    const mini = document.createElementNS(SVG_NS, 'svg');
-    const pattern = itemPattern(item);
-    const dims = layoutTree(pattern);
-    mini.setAttribute('viewBox', `-10 0 ${dims.width + 20} ${dims.height}`);
-    paintStaticTree(mini, pattern, { r: 15 });
-    btn.appendChild(mini);
-    const label = document.createElement('span');
-    label.textContent = `#${item.id}`;
-    btn.appendChild(label);
-    const count = document.createElement('span');
-    count.className = 'count';
-    count.textContent = `×${g.count}`;
-    btn.appendChild(count);
+    const tiles = [];
+    for (let i = 0; i < g.count; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'palette-btn';
+      const mini = document.createElementNS(SVG_NS, 'svg');
+      const pattern = itemPattern(item);
+      const dims = layoutTree(pattern);
+      mini.setAttribute('viewBox', `-10 0 ${dims.width + 20} ${dims.height}`);
+      paintStaticTree(mini, pattern, { r: 15 });
+      btn.appendChild(mini);
 
-    const entry = { btn, count, remaining: g.count };
-    entry.refresh = () => {
-      count.textContent = `×${entry.remaining}`;
-      btn.disabled = entry.remaining <= 0;
-    };
-    btn.addEventListener('click', () => {
-      if (entry.remaining <= 0) return;
-      entry.remaining--;
-      entry.refresh();
-      editor.addChunk(item);
-    });
-    paletteGroupEls[item.id] = entry;
-    palette.appendChild(btn);
+      const tile = { btn, used: false };
+      tile.refresh = () => { btn.disabled = tile.used; };
+      btn.addEventListener('click', () => {
+        if (tile.used) return;
+        tile.used = true;
+        tile.refresh();
+        editor.addChunk(item);
+      });
+      tiles.push(tile);
+      palette.appendChild(btn);
+    }
+    paletteTilesByStructure[g.id] = tiles;
   }
 }
 
@@ -215,8 +210,8 @@ function placeFirstPiece(inventory) {
   const first = inventory[0];
   const item = STRUCTURES.find(s => s.id === first.id);
   editor.addChunk(item, { x: 75, y: 50 });
-  const entry = paletteGroupEls[first.id];
-  if (entry) { entry.remaining--; entry.refresh(); }
+  const tile = (paletteTilesByStructure[first.id] || []).find(t => !t.used);
+  if (tile) { tile.used = true; tile.refresh(); }
 }
 
 function openEditor({ title, hint, inventory, viewW, viewH, onCheck }) {
@@ -231,10 +226,8 @@ function openEditor({ title, hint, inventory, viewW, viewH, onCheck }) {
   setSnipButtonActive(false);
   editor.onSnipModeChange = setSnipButtonActive;
   editor.onRemoveChunk = (structureId) => {
-    if (paletteGroupEls[structureId]) {
-      paletteGroupEls[structureId].remaining++;
-      paletteGroupEls[structureId].refresh();
-    }
+    const tile = (paletteTilesByStructure[structureId] || []).find(t => t.used);
+    if (tile) { tile.used = false; tile.refresh(); }
   };
   placeFirstPiece(inventory);
   activeCheck = onCheck;
@@ -297,10 +290,11 @@ function renderTargetGrid() {
     card.appendChild(p);
 
     if (sub.kind === 'build') {
-      const ids = document.createElement('div');
-      ids.className = 'frag-ids';
-      ids.textContent = `Pieces: ${sub.inventory.map(g => `#${g.id}${g.count > 1 ? `×${g.count}` : ''}`).join(', ')}`;
-      card.appendChild(ids);
+      const count = document.createElement('div');
+      count.className = 'frag-ids';
+      const pieceCount = sub.inventory.reduce((s, g) => s + g.count, 0);
+      count.textContent = `${pieceCount} pieces`;
+      card.appendChild(count);
     }
 
     if (locked) {
