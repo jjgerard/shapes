@@ -40,7 +40,10 @@ class TreeEditor {
     this.onRemoveChunk = null; // callback(structureId) invoked when a whole piece is deleted
     this.onChange = null;      // callback() invoked after any state change (for UI to refresh counters etc.)
     this.onSnipModeChange = null; // callback(bool) invoked whenever snip mode toggles
+    this.activePointers = new Map(); // pointerId -> {x,y} in screen space, for two-finger panning
+    this.panLast = null; // midpoint of the two pan pointers, last frame
     this._bindGlobalPointerEvents();
+    this._bindBackgroundPointerEvents();
   }
 
   open(minViewW, minViewH) {
@@ -238,12 +241,20 @@ class TreeEditor {
     const newRootId = this.nextId++;
     this.nodes.push({
       id: newRootId, catKey: seam.catKey, number: seam.number,
-      x: leaf.x + SPRING_APART_OFFSET, y: leaf.y + SPRING_APART_OFFSET,
-      chunkRoot: seam.chunkRoot, structureId: seam.structureId,
+      x: leaf.x, y: leaf.y, chunkRoot: seam.chunkRoot, structureId: seam.structureId,
     });
     for (const childId of seam.childIds) {
       const e = this.edges.find(edge => edge.parent === nodeId && edge.child === childId);
       if (e) e.parent = newRootId;
+    }
+    // Spring the WHOLE reconstructed piece apart together -- the new root
+    // starts exactly where it was consumed, then the entire subtree
+    // (root + every descendant, wherever they've been dragged to) shifts
+    // by the same amount, so it moves as one rigid piece, not just the root.
+    for (const id of this.subtreeOf(newRootId)) {
+      const n = this.nodes.find(x => x.id === id);
+      n.x += SPRING_APART_OFFSET;
+      n.y += SPRING_APART_OFFSET;
     }
     this.seams.delete(nodeId);
     this.snipCount++;
@@ -309,8 +320,42 @@ class TreeEditor {
     return pt.matrixTransform(m);
   }
 
+  // Two fingers on empty canvas pans the view (scrolls the container);
+  // one finger only ever drags a piece. This is what lets touch-action be
+  // locked to "none" (so a single-finger drag never gets hijacked as a
+  // scroll) while still leaving a way to scroll around a big canvas.
+  _bindBackgroundPointerEvents() {
+    this.svg.addEventListener('pointerdown', (ev) => {
+      if (this.snipMode) return; // node handler deals with snip clicks; background does nothing in snip mode
+      this.activePointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      if (this.activePointers.size === 2) {
+        this.panLast = this._pointersMidpoint();
+        this.drag = null; // two fingers always wins over an in-progress single-finger drag
+      }
+    });
+  }
+
+  _pointersMidpoint() {
+    const pts = [...this.activePointers.values()];
+    return { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+  }
+
   _bindGlobalPointerEvents() {
     window.addEventListener('pointermove', (ev) => {
+      if (this.activePointers.has(ev.pointerId)) {
+        this.activePointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      }
+      if (this.activePointers.size === 2) {
+        ev.preventDefault();
+        const mid = this._pointersMidpoint();
+        if (this.panLast) {
+          const wrap = this.svg.parentElement;
+          wrap.scrollLeft -= mid.x - this.panLast.x;
+          wrap.scrollTop -= mid.y - this.panLast.y;
+        }
+        this.panLast = mid;
+        return;
+      }
       if (!this.drag) return;
       // Non-passive + preventDefault is required here: without it, mobile
       // browsers can decide mid-gesture that this is a page scroll instead
@@ -331,6 +376,10 @@ class TreeEditor {
       this.snapTargetId = this.findSnapTarget(node.id);
       this.render();
     }, { passive: false });
+    const releasePointer = (ev) => {
+      this.activePointers.delete(ev.pointerId);
+      if (this.activePointers.size < 2) this.panLast = null;
+    };
     const endDrag = () => {
       if (!this.drag) return;
       const id = this.drag.id;
@@ -343,13 +392,13 @@ class TreeEditor {
       this.snapTargetId = null;
       this.render();
     };
-    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointerup', (ev) => { releasePointer(ev); endDrag(); });
     // If the browser decides mid-gesture to treat this as a scroll after
     // all, it cancels the pointer instead of sending pointerup -- without
     // handling this too, drag state gets stuck and the NEXT attempt starts
     // from stale state, which is what caused "first try scrolls, second
     // try works."
-    window.addEventListener('pointercancel', endDrag);
+    window.addEventListener('pointercancel', (ev) => { releasePointer(ev); endDrag(); });
   }
 
   _onNodePointerDown(ev, id) {
@@ -360,6 +409,7 @@ class TreeEditor {
       this.setSnipMode(false);
       return;
     }
+    if (this.activePointers.size >= 1) return; // a pan gesture is already in progress with another finger
     const node = this.nodes.find(n => n.id === id);
     const p = this.toSvgPoint(ev.clientX, ev.clientY);
     this.drag = { id, offsetX: p.x - node.x, offsetY: p.y - node.y };
