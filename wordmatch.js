@@ -9,9 +9,13 @@
 // real match target like any other, it just reveals itself struck through,
 // not in its category's color, once it's filled.
 
+// `margin` matches Level 1's SIZING.scatterMargin exactly -- same amount of
+// breathing room around the content on all four sides, even though this
+// tree is static rather than draggable, for a consistent feel between the
+// two canvases.
 const WM_SIZING = {
-  desktop: { r: 26, chipW: 92, chipH: 42, fontSize: 15, snapDist: 90, slotGapY: 34 },
-  mobile:  { r: 36, chipW: 122, chipH: 54, fontSize: 18, snapDist: 120, slotGapY: 44 },
+  desktop: { r: 26, chipW: 92, chipH: 42, fontSize: 15, snapDist: 90, slotGapY: 34, margin: 1120 },
+  mobile:  { r: 36, chipW: 122, chipH: 54, fontSize: 18, snapDist: 120, slotGapY: 44, margin: 800 },
 };
 
 class WordMatchEditor {
@@ -27,11 +31,9 @@ class WordMatchEditor {
 
     // The word-to-place lives OUTSIDE the (scrollable/scalable) SVG canvas
     // entirely -- a plain fixed-position element pinned near the bottom of
-    // the screen, above-left of the mascot's speech bubble (which sits
-    // fixed bottom-right). It used to be drawn inside the SVG content
-    // itself, which meant it could end up needing a scroll to reach on a
-    // tall tree, or sitting right where the mascot bubble covers it; fixed
-    // screen positioning makes it always visible and never covered.
+    // the screen. Its home position (see the .wm-chip-float CSS rule) sits
+    // just above the docked mascot bar, so it's always visible without
+    // scrolling and never sits underneath anything else.
     this.chipEl = document.createElement('button');
     this.chipEl.type = 'button';
     this.chipEl.className = 'wm-chip-float hidden';
@@ -58,9 +60,10 @@ class WordMatchEditor {
     const dims = layoutTree(root, s.chipW + 18, s.r * 2 + s.slotGapY + 40);
     this.treeWidth = dims.width;
     this.treeHeight = dims.height;
-    this.viewW = Math.max(viewW || 0, dims.width + 80);
-    this.xOffset = Math.max(40, (this.viewW - dims.width) / 2);
-    this.viewH = Math.max(viewH || 0, this.treeHeight + 80);
+    this.viewW = Math.max(viewW || 0, dims.width + s.margin * 2);
+    this.xOffset = Math.max(s.margin, (this.viewW - dims.width) / 2);
+    this.viewH = Math.max(viewH || 0, this.treeHeight + s.margin * 2);
+    this.yOffset = s.margin;
     this.zoom = 1;
 
     this.slotNodes = [];
@@ -84,23 +87,26 @@ class WordMatchEditor {
   }
 
   // Same idea as TreeEditor.scrollToStart(): zoom to fit and center when
-  // the whole tree fits at a still-readable zoom, otherwise anchor at the
-  // top-left and let panning/pinching reach the rest -- never shrink to an
-  // unreadable size just to force everything into one screen.
+  // the whole TREE (not the huge margin-inflated canvas -- that's scroll
+  // room to have around it, not content that needs to fit on screen) fits
+  // at a still-readable zoom; otherwise anchor at the top-left corner of
+  // the tree itself and let panning/pinching reach the rest.
   _scrollToStart() {
     const wrap = this.svg.parentElement;
     if (!wrap) return;
     requestAnimationFrame(() => {
-      const fitZoom = Math.min(1, wrap.clientWidth / this.viewW, wrap.clientHeight / this.viewH);
+      const pad = 30;
+      const rawW = this.treeWidth + pad * 2, rawH = this.treeHeight + pad * 2;
+      const fitZoom = Math.min(1, wrap.clientWidth / rawW, wrap.clientHeight / rawH);
       this.zoom = fitZoom >= 0.5 ? fitZoom : 1;
       this.render();
       if (fitZoom >= 0.5) {
-        const contentW = this.viewW * this.zoom, contentH = this.viewH * this.zoom;
-        wrap.scrollLeft = Math.max(0, -(wrap.clientWidth - contentW) / 2);
-        wrap.scrollTop = Math.max(0, -(wrap.clientHeight - contentH) / 2);
+        const contentW = rawW * this.zoom, contentH = rawH * this.zoom;
+        wrap.scrollLeft = Math.max(0, (this.xOffset - pad) * this.zoom - (wrap.clientWidth - contentW) / 2);
+        wrap.scrollTop = Math.max(0, (this.yOffset - pad) * this.zoom - (wrap.clientHeight - contentH) / 2);
       } else {
-        wrap.scrollLeft = 0;
-        wrap.scrollTop = 0;
+        wrap.scrollLeft = Math.max(0, (this.xOffset - pad) * this.zoom);
+        wrap.scrollTop = Math.max(0, (this.yOffset - pad) * this.zoom);
       }
     });
   }
@@ -116,24 +122,14 @@ class WordMatchEditor {
     this._resetChipPosition();
   }
 
-  // Home position: fixed to the viewport, bottom-left -- clear of the
-  // mascot's speech bubble, which sits fixed bottom-right. The bubble's
-  // height varies with how long its hint text is, so a flat pixel offset
-  // isn't enough on its own -- read the bubble's actual current top edge
-  // and clear it, growing the offset on long hints instead of sitting
-  // under them.
+  // Home position comes from the .wm-chip-float CSS rule (left/bottom,
+  // the latter keyed off --mascot-bar-h) -- just clear whatever inline
+  // left/top/bottom a drag left behind so that rule applies again.
   _resetChipPosition() {
-    const isMobile = window.innerWidth < 640;
     this.chipEl.classList.remove('dragging');
-    this.chipEl.style.left = (isMobile ? 12 : 20) + 'px';
-    let bottom = isMobile ? 84 : 96;
-    const mascotWrap = document.querySelector('.mascot-wrap');
-    if (mascotWrap) {
-      const r = mascotWrap.getBoundingClientRect();
-      bottom = Math.max(bottom, (window.innerHeight - r.top) + 14);
-    }
-    this.chipEl.style.bottom = bottom + 'px';
+    this.chipEl.style.left = '';
     this.chipEl.style.top = '';
+    this.chipEl.style.bottom = '';
   }
 
   render() {
@@ -147,15 +143,22 @@ class WordMatchEditor {
     this.svg.setAttribute('height', this.viewH * this.zoom);
     while (this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
 
+    // xOffset is baked into paintStaticTree's own node coordinates (it
+    // takes an xOffset param); yOffset is simpler as one wrapping
+    // transform over both layers rather than threading it through every
+    // node's y as well.
+    const contentLayer = svgEl('g', { transform: `translate(0,${this.yOffset})` });
+    this.svg.appendChild(contentLayer);
+
     const treeLayer = svgEl('g');
-    this.svg.appendChild(treeLayer);
+    contentLayer.appendChild(treeLayer);
     // Bigger than the default 0.5 -- these "DP / D′ / D⁰"-style labels are
     // read constantly while matching words, so they get their own larger
     // scale rather than sharing the size tuned for Level 1's bare numbers.
     paintStaticTree(treeLayer, this.root, { r: s.r, reveal: true, xOffset: this.xOffset, fontScale: 0.62 });
 
     const overlayLayer = svgEl('g', { class: 'wm-overlay' });
-    this.svg.appendChild(overlayLayer);
+    contentLayer.appendChild(overlayLayer);
     const walk = (node) => {
       const x = node._x + this.xOffset, y = node._y + s.r + s.slotGapY;
       if (node.word) overlayLayer.appendChild(this._buildSlot(node, x, y));

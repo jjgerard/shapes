@@ -8,6 +8,11 @@
   --accent-ink: #ffffff;
   --danger: #c1443a;
   --radius: 14px;
+  /* Actual rendered height of the docked mascot bar, kept in sync by
+     syncMascotBarHeight() (app.js) whenever its text changes or the window
+     resizes. Everything that shouldn't render underneath it (main, modal
+     overlays) reads this instead of a guessed flat number. */
+  --mascot-bar-h: 90px;
   font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   /* Base bumped up from the 16px default for readability -- everything
      sized in rem scales from this. */
@@ -46,7 +51,7 @@ body {
   font-size: 0.85rem;
 }
 
-main { max-width: 1080px; margin: 0 auto; padding: 28px 20px 80px; }
+main { max-width: 1080px; margin: 0 auto; padding: 28px 20px calc(var(--mascot-bar-h) + 24px); }
 
 h1 { font-size: 1.7rem; margin: 0 0 8px; }
 h2 { font-size: 1.25rem; }
@@ -189,7 +194,11 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---- editor modal ---- */
 .overlay {
-  position: fixed; inset: 0; background: rgba(20, 18, 15, 0.55);
+  /* Stops short of the true viewport bottom by the mascot bar's height,
+     same idea as main's padding -- the modal's own box just never reaches
+     into that reserved strip, rather than needing to out-z-index it. */
+  position: fixed; top: 0; left: 0; right: 0; bottom: var(--mascot-bar-h);
+  background: rgba(20, 18, 15, 0.55);
   display: flex; align-items: center; justify-content: center;
   z-index: 20; padding: 16px;
 }
@@ -216,14 +225,6 @@ button { font-family: inherit; cursor: pointer; }
   font-weight: 700; font-size: 1.1rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-/* The same hint text also goes to the mascot's speech bubble (setMascotSpeech),
-   but that bubble is a page-level fixed element that a modal's own content
-   can render above -- so it can't be the ONLY place a hint shows while a
-   modal is open, or the hint disappears behind the modal (worst on mobile,
-   where the modal is opaque and edge-to-edge). This copy inside the modal
-   itself is always visible regardless of that stacking. */
-.modal-hint { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
-.modal-hint:empty { display: none; }
 .editor-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 /* Small "x close" while a puzzle/sentence is still in progress; once it's
    actually finished, setModalDoneState() (app.js) swaps this to a big,
@@ -305,12 +306,14 @@ button { font-family: inherit; cursor: pointer; }
 }
 /* The one word currently up for grabs -- fixed to the viewport (bottom-
    left), not part of the SVG canvas at all, so it's always visible without
-   scrolling. Its home position is also dynamically kept clear of the
-   mascot's speech bubble (see wordmatch.js _resetChipPosition) so the two
-   pieces of readable text never sit on top of each other regardless of
-   which one the mascot/overlay z-index stacking would otherwise favor. */
+   scrolling. Home position sits just above the reserved mascot-bar strip
+   (via the shared --mascot-bar-h variable) -- during an active drag,
+   JS switches it to explicit left/top pixels to follow the pointer and
+   this rule's bottom/left no longer apply. */
 .wm-chip-float {
   position: fixed;
+  left: 20px;
+  bottom: calc(var(--mascot-bar-h) + 16px);
   z-index: 30;
   border: 1.5px solid var(--line);
   background: #fff;
@@ -411,70 +414,51 @@ button { font-family: inherit; cursor: pointer; }
   .legend-slot svg { width: 32px; height: 32px; }
   .reveal-input { font-size: 1.05rem; padding: 11px; }
   .legend-slot .btn-secondary { padding: 10px 16px; font-size: 1rem; min-height: 42px; }
-  .mascot-wrap { right: 10px; bottom: 10px; }
-  .mascot { width: 60px; height: 60px; }
-  .mascot-bubble { max-width: 62vw; font-size: 0.95rem; }
+  .mascot-wrap { padding: 8px 12px; gap: 8px; }
+  .mascot { width: 48px; height: 48px; }
+  .mascot-bubble { font-size: 0.9rem; }
   .toast { top: 66px; font-size: 0.85rem; padding: 9px 16px; }
   .btn-return { padding: 18px 26px; font-size: 1.1rem; min-height: 52px; }
   .wm-sentence { font-size: 1.15rem; padding: 12px; gap: 8px; }
   .hint-btn { font-size: 0.95rem; }
   .hint-text { font-size: 0.9rem; }
-  .wm-chip-float { padding: 14px 24px; font-size: 1.15rem; }
+  .wm-chip-float { left: 12px; padding: 14px 24px; font-size: 1.15rem; }
 }
 
 /* ---- mascot ---- */
-/* Below the modal overlay (20) on purpose -- the mascot is a floating
-   companion, not chrome, so it should never be able to visually cover a
-   button, a piece, or a word slot. Above ordinary page content and the
-   header (5) so it's still visible on the plain level-select screens.
-   When a modal is open, its dark backdrop dims the mascot right along
-   with the rest of the page behind it, same as everything else back
-   there -- clicks were always pass-through anyway (pointer-events: none
-   below), so this is a purely visual fix. */
+/* A docked bar spanning the bottom of the viewport, not a floating corner
+   element -- it RESERVES its own strip of the page (main and .overlay both
+   pad/inset themselves by --mascot-bar-h, kept in sync with its actual
+   rendered height by syncMascotBarHeight() in app.js) instead of floating
+   on top of content at a z-index that has to keep winning or losing fights
+   with everything else. Nothing else should ever need to render in this
+   strip, so overlap simply can't happen -- no z-index games required. */
 .mascot-wrap {
   position: fixed;
-  bottom: 16px;
-  right: 14px;
-  z-index: 15;
-  pointer-events: none;
+  left: 0; right: 0; bottom: 0;
+  z-index: 50;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  padding: 10px 16px;
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  max-width: calc(100vw - 30px);
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  pointer-events: none;
 }
-.mascot { width: 76px; height: 76px; flex-shrink: 0; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.18)); }
+.mascot { width: 60px; height: 60px; flex-shrink: 0; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.18)); }
 .mascot svg { width: 100%; height: 100%; overflow: visible; }
 .mascot-body { fill: #20c4b0; stroke: rgba(0,0,0,0.15); stroke-width: 2; }
 
 .mascot-bubble {
-  position: relative;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 10px 14px;
-  margin-bottom: 10px;
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--ink);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-  max-width: 260px;
   opacity: 0;
-  transform: translateY(6px) scale(0.96);
-  transition: opacity 0.2s, transform 0.2s;
+  transition: opacity 0.2s;
 }
 .mascot-bubble:empty { opacity: 0 !important; }
-.mascot-bubble.visible { opacity: 1; transform: translateY(0) scale(1); }
-.mascot-bubble::after {
-  content: '';
-  position: absolute;
-  right: -6px;
-  bottom: 18px;
-  width: 12px; height: 12px;
-  background: #fff;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  transform: rotate(-45deg);
-}
+.mascot-bubble.visible { opacity: 1; }
 
 @keyframes mascot-jump {
   0%   { transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 rgba(255,209,60,0)); }

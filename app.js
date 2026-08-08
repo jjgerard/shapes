@@ -98,7 +98,19 @@ function setMascotSpeech(text) {
   if (!bubble) return;
   bubble.textContent = text || '';
   bubble.classList.toggle('visible', !!text);
+  syncMascotBarHeight();
 }
+
+// The mascot bar's actual rendered height (which varies with how long its
+// current text is) feeds --mascot-bar-h, which main and .overlay use to
+// reserve exactly that much space at the bottom of the screen -- so
+// nothing else ever needs to know or care how tall the bar currently is.
+function syncMascotBarHeight() {
+  const el = document.querySelector('.mascot-wrap');
+  if (!el) return;
+  document.documentElement.style.setProperty('--mascot-bar-h', el.offsetHeight + 'px');
+}
+window.addEventListener('resize', syncMascotBarHeight);
 
 function updateHeader() {
   const info = document.getElementById('player-info');
@@ -220,7 +232,6 @@ function setSnipButtonActive(on) {
 function openEditor({ title, hint, items, viewW, viewH, onCheck }) {
   ensureEditor();
   document.getElementById('editor-title').textContent = title;
-  document.getElementById('editor-hint').textContent = hint;
   setMascotSpeech(hint);
   currentItems = items;
   const fit = fitCanvasSize(viewW, viewH);
@@ -458,7 +469,6 @@ function openWordMatch(sub) {
   ensureWordMatch();
   currentL2Sub = sub;
   document.getElementById('wordmatch-title').textContent = sub.name;
-  document.getElementById('wordmatch-hint').textContent = sub.hint;
   setMascotSpeech(sub.hint);
   const fit = fitCanvasSize(1100, 800);
   wordMatch.open(sub.root, fit.w, fit.h);
