@@ -22,7 +22,7 @@ function storageKey(name, code) {
 }
 function defaultState() {
   return {
-    points: 0, trees: [], sentences: [], constituency: [],
+    points: 0, trees: [], sentences: [], constituency: [], categoryid: [],
     reveal: { shapes: {}, numbers: {} },
     revealSolved: { shapes: {}, numbers: {} },
   };
@@ -52,6 +52,7 @@ const SCREEN_SPEECH = {
   level1: 'Choose a sub-level below!',
   level2: 'Choose a sentence below!',
   level3: 'Choose a sub-level below!',
+  level4: 'Choose a sub-level below!',
   reveal: 'Type what you think each shape and number means!',
 };
 function showScreen(id) {
@@ -184,6 +185,20 @@ function renderLevelSelect() {
     level3Card.innerHTML = '<div class="level-num">Level 3</div><div class="lock-badge">🔒 Locked</div>';
   }
 
+  const level4Card = document.getElementById('level4-card');
+  const level4Unlocked = QUIZ_SUBLEVELS.every(isL3SubComplete);
+  level4Card.classList.toggle('locked', !level4Unlocked);
+  if (level4Unlocked) {
+    const doneCount4 = QUIZ_SUBLEVELS.filter(isL4SubComplete).length;
+    level4Card.innerHTML =
+      '<div class="level-num">Level 4</div>' +
+      '<div class="level-title">Categories</div>' +
+      '<p>Click the category sticker that matches the highlighted constituent.</p>' +
+      `<div class="level-progress">${doneCount4} / ${QUIZ_SUBLEVELS.length} sub-levels done</div>`;
+  } else {
+    level4Card.innerHTML = '<div class="level-num">Level 4</div><div class="lock-badge">🔒 Locked</div>';
+  }
+
   const roadmap = document.getElementById('roadmap');
   roadmap.innerHTML = '';
   ROADMAP.forEach((topic, i) => {
@@ -191,7 +206,7 @@ function renderLevelSelect() {
     card.className = 'level-card locked';
     const num = document.createElement('div');
     num.className = 'level-num';
-    num.textContent = `Level ${i + 4}`;
+    num.textContent = `Level ${i + 5}`;
     card.appendChild(num);
     const lock = document.createElement('div');
     lock.className = 'lock-badge';
@@ -662,6 +677,154 @@ document.getElementById('constituency-close').addEventListener('click', closeCon
 document.getElementById('constituency-yes').addEventListener('click', () => answerConstituencyQuestion(true));
 document.getElementById('constituency-no').addEventListener('click', () => answerConstituencyQuestion(false));
 
+// ================= LEVEL 4: category ID =================
+function isL4SubComplete(sub) {
+  return state.categoryid.includes(sub.id);
+}
+
+function renderCategoryIdGrid() {
+  const grid = document.getElementById('categoryid-grid');
+  grid.innerHTML = '';
+  QUIZ_SUBLEVELS.forEach((sub, i) => {
+    const done = isL4SubComplete(sub);
+    const locked = i > 0 && !isL4SubComplete(QUIZ_SUBLEVELS[i - 1]);
+    const card = document.createElement('div');
+    card.className = 'target-card' + (done ? ' done' : '') + (locked ? ' locked' : '');
+
+    const h3 = document.createElement('h3');
+    h3.textContent = locked ? `${i + 1}. Locked` : `${i + 1}. ${done ? '✓ ' : ''}${sub.name}`;
+    card.appendChild(h3);
+
+    if (!locked) {
+      const p = document.createElement('p');
+      p.textContent = `"${sub.sentence}"`;
+      card.appendChild(p);
+    }
+
+    if (locked) {
+      const note = document.createElement('p');
+      note.className = 'lock-note';
+      note.textContent = 'Locked — finish the previous sub-level first.';
+      card.appendChild(note);
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'btn-primary';
+      btn.textContent = done ? 'Practice again' : 'Start';
+      btn.addEventListener('click', () => openCategoryQuiz(sub));
+      card.appendChild(btn);
+    }
+    grid.appendChild(card);
+  });
+}
+
+function markL4SubDone(sub) {
+  const already = state.categoryid.includes(sub.id);
+  if (!already) {
+    state.categoryid.push(sub.id);
+    state.points += POINTS_STREAK_COMPLETE;
+    saveState();
+    toast(`✓ ${sub.name} complete — +${POINTS_STREAK_COMPLETE} pts`);
+  } else {
+    toast(`✓ ${sub.name} — already completed, nice practice!`);
+  }
+  celebrateComplete();
+  updateHeader();
+  renderCategoryIdGrid();
+  setModalDoneState(document.getElementById('categoryid-close'), true);
+}
+
+let categoryViewer = null;
+let currentL4Sub = null;
+let l4Game = null;
+let l4CurrentQuestion = null; // {span: {start,end,shape}, shape}
+
+function ensureCategoryViewer() {
+  if (!categoryViewer) categoryViewer = new TreeViewer(document.getElementById('categoryid-canvas'));
+  return categoryViewer;
+}
+
+// Always all 6 categories, every sub-level -- not scaffolded down to just
+// whatever's in the current sentence, since by Level 4 the whole system
+// has already been taught.
+function buildCategoryMatrix() {
+  const matrix = document.getElementById('categoryid-matrix');
+  matrix.innerHTML = '';
+  Object.keys(CATEGORIES).forEach(key => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'quiz-sticker';
+    btn.title = CATEGORIES[key].name;
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '-30 -30 60 60');
+    svg.appendChild(buildShapeGroup(key, '', 26));
+    btn.appendChild(svg);
+    btn.addEventListener('click', () => answerCategoryQuestion(key));
+    matrix.appendChild(btn);
+  });
+}
+
+function nextCategoryQuestion() {
+  const pools = currentL4Sub.pools;
+  const pool = pools.constituents; // every question here is a genuine constituent
+  const span = pool[Math.floor(Math.random() * pool.length)];
+  l4CurrentQuestion = { span, shape: span.shape };
+  renderQuizSentence('categoryid-sentence', pools.tokens, span);
+  const feedback = document.getElementById('categoryid-feedback');
+  feedback.textContent = '';
+  feedback.className = 'quiz-feedback';
+}
+
+function answerCategoryQuestion(chosenShape) {
+  if (!l4CurrentQuestion) return;
+  const correct = chosenShape === l4CurrentQuestion.shape;
+  const result = l4Game.answer(correct);
+  state.points = Math.max(0, state.points + result.pointsDelta);
+  saveState(); updateHeader();
+  renderStreakBar('categoryid', l4Game);
+
+  const feedback = document.getElementById('categoryid-feedback');
+  if (correct) {
+    feedback.textContent = `Correct! ${result.pointsDelta >= 0 ? '+' : ''}${result.pointsDelta} pts`;
+    feedback.className = 'quiz-feedback ok';
+    playCorrectSound();
+    if (!result.complete) celebrateCorrect();
+  } else {
+    feedback.textContent = `Not quite — that's ${CATEGORIES[l4CurrentQuestion.shape].name} (${l4CurrentQuestion.shape}). ${result.pointsDelta} pts`;
+    feedback.className = 'quiz-feedback err';
+  }
+
+  if (result.complete) {
+    l4CurrentQuestion = null;
+    markL4SubDone(currentL4Sub);
+    return;
+  }
+  nextCategoryQuestion();
+}
+
+function openCategoryQuiz(sub) {
+  ensureCategoryViewer();
+  currentL4Sub = sub;
+  l4Game = new StreakGame();
+  document.getElementById('categoryid-title').textContent = sub.name;
+  setMascotSpeech('Click the category sticker that matches the highlighted constituent. 10 in a row to finish.');
+  buildCategoryMatrix();
+  const fit = fitCanvasSize(1100, 800);
+  categoryViewer.open(sub.root, fit.w, fit.h);
+  renderStreakBar('categoryid', l4Game);
+  setModalDoneState(document.getElementById('categoryid-close'), false);
+  nextCategoryQuestion();
+  document.getElementById('categoryid-overlay').classList.remove('hidden');
+}
+
+function closeCategoryQuiz() {
+  document.getElementById('categoryid-overlay').classList.add('hidden');
+  currentL4Sub = null;
+  l4CurrentQuestion = null;
+  setMascotSpeech(SCREEN_SPEECH.level4);
+}
+
+document.getElementById('categoryid-close').addEventListener('click', closeCategoryQuiz);
+
 // ================= REVEAL: fill in what the shapes mean =================
 function renderReveal() {
   const body = document.getElementById('reveal-body');
@@ -859,6 +1022,7 @@ document.querySelectorAll('.level-card[data-level]').forEach(card => {
     if (card.classList.contains('locked')) return;
     if (card.dataset.level === '2') { renderLevel2Grid(); showScreen('level2'); }
     else if (card.dataset.level === '3') { renderConstituencyGrid(); showScreen('level3'); }
+    else if (card.dataset.level === '4') { renderCategoryIdGrid(); showScreen('level4'); }
     else { renderTargetGrid(); showScreen('level1'); }
   });
 });

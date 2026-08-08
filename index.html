@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shapes</title>
-<link rel="stylesheet" href="style.css?v=34">
-<link rel="icon" href="icon.svg?v=34" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=35">
+<link rel="icon" href="icon.svg?v=35" type="image/svg+xml">
 <meta name="theme-color" content="#2f6f5e">
 </head>
 <body>
@@ -55,6 +55,10 @@
           <div class="level-num">Level 3</div>
           <div class="lock-badge">🔒 Locked</div>
         </button>
+        <button class="level-card locked" data-level="4" id="level4-card">
+          <div class="level-num">Level 4</div>
+          <div class="lock-badge">🔒 Locked</div>
+        </button>
       </div>
       <div class="level-grid roadmap-grid" id="roadmap"></div>
     </section>
@@ -81,6 +85,14 @@
       <h1>Level 3 &mdash; Constituents</h1>
       <p class="muted">A string of words from the sentence is highlighted below the tree &mdash; is it a constituent (the whole yield of some single piece) or not? Get 10 in a row to finish.</p>
       <div class="target-grid" id="constituency-grid"></div>
+    </section>
+
+    <!-- ============ LEVEL 4 (category ID) ============ -->
+    <section id="screen-level4" class="screen hidden">
+      <button class="link-btn back-btn" data-back>&larr; Levels</button>
+      <h1>Level 4 &mdash; Categories</h1>
+      <p class="muted">A constituent from the sentence is highlighted below the tree &mdash; click the matching category sticker. Get 10 in a row to finish.</p>
+      <div class="target-grid" id="categoryid-grid"></div>
     </section>
 
     <!-- ============ REVEAL (final sub-level: fill in the blanks) ============ -->
@@ -169,6 +181,34 @@
   </div>
 </div>
 
+<!-- ============ CATEGORY ID QUIZ MODAL (used by Level 4) ============ -->
+<div id="categoryid-overlay" class="overlay hidden">
+  <div class="editor">
+    <div class="editor-header">
+      <div class="editor-header-text">
+        <div id="categoryid-title">Build it</div>
+      </div>
+      <div class="editor-actions">
+        <button id="categoryid-close" class="link-btn">&times; close</button>
+      </div>
+    </div>
+    <div class="editor-body quiz-body">
+      <div class="quiz-question-panel">
+        <div class="streak-bar-wrap">
+          <div class="streak-bar"><div id="categoryid-streak-fill" class="streak-bar-fill"></div></div>
+          <div id="categoryid-streak-label" class="streak-label"></div>
+        </div>
+        <div id="categoryid-sentence" class="quiz-sentence"></div>
+        <div id="categoryid-feedback" class="quiz-feedback"></div>
+        <div id="categoryid-matrix" class="quiz-category-matrix"></div>
+      </div>
+      <div class="canvas-wrap">
+        <svg id="categoryid-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast hidden"></div>
 
 <div class="mascot-wrap" aria-hidden="true">
@@ -183,14 +223,14 @@
   </div>
 </div>
 
-<script src="sound.js?v=34"></script>
-<script src="data.js?v=34"></script>
-<script src="shapes.js?v=34"></script>
-<script src="wordmatch.js?v=34"></script>
-<script src="editor.js?v=34"></script>
-<script src="streak.js?v=34"></script>
-<script src="treeviewer.js?v=34"></script>
-<script src="app.js?v=34"></script>
+<script src="sound.js?v=35"></script>
+<script src="data.js?v=35"></script>
+<script src="shapes.js?v=35"></script>
+<script src="wordmatch.js?v=35"></script>
+<script src="editor.js?v=35"></script>
+<script src="streak.js?v=35"></script>
+<script src="treeviewer.js?v=35"></script>
+<script src="app.js?v=35"></script>
 <script>
   // Plain webpage, not an installable app -- clean up any service worker
   // and caches left over from when it registered one, so nobody's stuck
