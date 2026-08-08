@@ -10,8 +10,8 @@
 // not in its category's color, once it's filled.
 
 const WM_SIZING = {
-  desktop: { r: 26, chipW: 92, chipH: 42, fontSize: 15, snapDist: 62, slotGapY: 34, bankGapY: 46 },
-  mobile:  { r: 36, chipW: 122, chipH: 54, fontSize: 18, snapDist: 90, slotGapY: 44, bankGapY: 56 },
+  desktop: { r: 26, chipW: 92, chipH: 42, fontSize: 15, snapDist: 90, slotGapY: 34 },
+  mobile:  { r: 36, chipW: 122, chipH: 54, fontSize: 18, snapDist: 120, slotGapY: 44 },
 };
 
 class WordMatchEditor {
@@ -21,6 +21,20 @@ class WordMatchEditor {
     this.currentChip = null;
     this.onPlace = null;    // callback() after any correct placement
     this.onComplete = null; // callback() once every slot is filled
+
+    // The word-to-place lives OUTSIDE the (scrollable/scalable) SVG canvas
+    // entirely -- a plain fixed-position element pinned near the bottom of
+    // the screen, above-left of the mascot's speech bubble (which sits
+    // fixed bottom-right). It used to be drawn inside the SVG content
+    // itself, which meant it could end up needing a scroll to reach on a
+    // tall tree, or sitting right where the mascot bubble covers it; fixed
+    // screen positioning makes it always visible and never covered.
+    this.chipEl = document.createElement('button');
+    this.chipEl.type = 'button';
+    this.chipEl.className = 'wm-chip-float hidden';
+    this.chipEl.addEventListener('pointerdown', (ev) => this._onChipPointerDown(ev));
+    (svg.closest('.overlay') || document.body).appendChild(this.chipEl);
+
     this._bindPointerEvents();
   }
 
@@ -34,11 +48,12 @@ class WordMatchEditor {
     this.treeHeight = dims.height;
     this.viewW = Math.max(viewW, dims.width + 40);
     this.xOffset = Math.max(20, (this.viewW - dims.width) / 2);
-    this.viewH = this.treeHeight + s.bankGapY + s.chipH + 30;
+    this.viewH = this.treeHeight + 40;
 
     this.slotNodes = [];
     const collect = (node) => {
       node._filled = false;
+      node._slotEl = null;
       if (node.word) this.slotNodes.push(node);
       node.children.forEach(collect);
     };
@@ -57,11 +72,32 @@ class WordMatchEditor {
   // Pulls the next word off the shuffled queue -- the only chip on screen
   // at any given time.
   _nextChip() {
-    const s = this.sizing;
     const word = this.queue.shift();
-    if (word === undefined) { this.currentChip = null; return; }
-    const homeX = this.viewW / 2, homeY = this.treeHeight + s.bankGapY + s.chipH / 2;
-    this.currentChip = { word, x: homeX, y: homeY, homeX, homeY };
+    if (word === undefined) { this.currentChip = null; this.chipEl.classList.add('hidden'); return; }
+    this.currentChip = { word };
+    this.chipEl.textContent = word;
+    this.chipEl.classList.remove('hidden');
+    this._resetChipPosition();
+  }
+
+  // Home position: fixed to the viewport, bottom-left -- clear of the
+  // mascot's speech bubble, which sits fixed bottom-right. The bubble's
+  // height varies with how long its hint text is, so a flat pixel offset
+  // isn't enough on its own -- read the bubble's actual current top edge
+  // and clear it, growing the offset on long hints instead of sitting
+  // under them.
+  _resetChipPosition() {
+    const isMobile = window.innerWidth < 640;
+    this.chipEl.classList.remove('dragging');
+    this.chipEl.style.left = (isMobile ? 12 : 20) + 'px';
+    let bottom = isMobile ? 84 : 96;
+    const mascotWrap = document.querySelector('.mascot-wrap');
+    if (mascotWrap) {
+      const r = mascotWrap.getBoundingClientRect();
+      bottom = Math.max(bottom, (window.innerHeight - r.top) + 14);
+    }
+    this.chipEl.style.bottom = bottom + 'px';
+    this.chipEl.style.top = '';
   }
 
   render() {
@@ -82,17 +118,12 @@ class WordMatchEditor {
       node.children.forEach(walk);
     };
     walk(this.root);
-
-    if (this.currentChip) {
-      const bankLayer = svgEl('g', { class: 'wm-bank' });
-      this.svg.appendChild(bankLayer);
-      bankLayer.appendChild(this._buildChip(this.currentChip));
-    }
   }
 
   _buildSlot(node, x, y) {
     const s = this.sizing;
     const g = svgEl('g', { class: 'wm-slot', transform: `translate(${x},${y})` });
+    node._slotEl = g;
     const filled = !!node._filled;
 
     // A filled trace reveals itself as a struck-through "ghost" of the
@@ -131,72 +162,54 @@ class WordMatchEditor {
     return t;
   }
 
-  _buildChip(chip) {
-    const s = this.sizing;
-    const g = svgEl('g', { class: 'wm-chip' + (this.drag ? ' dragging' : ''), transform: `translate(${chip.x},${chip.y})` });
-    g.appendChild(svgEl('rect', {
-      x: -s.chipW / 2, y: -s.chipH / 2, width: s.chipW, height: s.chipH, rx: 999,
-      fill: '#fff', stroke: '#e2ddd3', 'stroke-width': 1.5,
-    }));
-    const t = svgEl('text', { x: 0, y: 1 });
-    t.textContent = chip.word;
-    t.style.cssText = `font-size:${s.fontSize}px; font-weight:700; fill:#262220; text-anchor:middle; dominant-baseline:middle; pointer-events:none; user-select:none;`;
-    g.appendChild(t);
-    g.addEventListener('pointerdown', (ev) => this._onChipPointerDown(ev));
-    return g;
-  }
-
-  toSvgPoint(clientX, clientY) {
-    const pt = this.svg.createSVGPoint();
-    pt.x = clientX; pt.y = clientY;
-    return pt.matrixTransform(this.svg.getScreenCTM().inverse());
-  }
-
   _onChipPointerDown(ev) {
     ev.preventDefault();
-    ev.stopPropagation();
     if (!this.currentChip) return;
-    const p = this.toSvgPoint(ev.clientX, ev.clientY);
-    this.drag = { offsetX: p.x - this.currentChip.x, offsetY: p.y - this.currentChip.y };
-    this.render();
+    const rect = this.chipEl.getBoundingClientRect();
+    this.drag = { offsetX: ev.clientX - rect.left, offsetY: ev.clientY - rect.top };
+    this.chipEl.style.bottom = '';
+    this.chipEl.style.left = rect.left + 'px';
+    this.chipEl.style.top = rect.top + 'px';
+    this.chipEl.classList.add('dragging');
+    this.chipEl.setPointerCapture(ev.pointerId);
   }
 
   _bindPointerEvents() {
-    window.addEventListener('pointermove', (ev) => {
-      if (!this.drag || !this.currentChip) return;
+    this.chipEl.addEventListener('pointermove', (ev) => {
+      if (!this.drag) return;
       ev.preventDefault();
-      const p = this.toSvgPoint(ev.clientX, ev.clientY);
-      this.currentChip.x = p.x - this.drag.offsetX;
-      this.currentChip.y = p.y - this.drag.offsetY;
-      this.render();
-    }, { passive: false });
-    const endDrag = () => {
+      this.chipEl.style.left = (ev.clientX - this.drag.offsetX) + 'px';
+      this.chipEl.style.top = (ev.clientY - this.drag.offsetY) + 'px';
+    });
+    const endDrag = (ev) => {
       if (!this.drag) return;
       this.drag = null;
-      const chip = this.currentChip;
-      if (!chip) return;
-      const target = this._findNearestSlot(chip);
-      if (target) this._attemptPlace(chip, target);
-      else { chip.x = chip.homeX; chip.y = chip.homeY; this.render(); }
+      const target = this._findNearestSlot(ev.clientX, ev.clientY);
+      if (target) this._attemptPlace(target);
+      else this._resetChipPosition();
     };
-    window.addEventListener('pointerup', endDrag);
-    window.addEventListener('pointercancel', endDrag);
+    this.chipEl.addEventListener('pointerup', endDrag);
+    this.chipEl.addEventListener('pointercancel', endDrag);
   }
 
-  _findNearestSlot(chip) {
+  // Hit-tests in plain screen space against each slot's actual rendered
+  // position -- no SVG coordinate conversion needed, since both the chip
+  // and the slots can just answer getBoundingClientRect().
+  _findNearestSlot(clientX, clientY) {
     const s = this.sizing;
     let best = null, bestDist = Infinity;
     for (const node of this.slotNodes) {
-      if (node._filled) continue;
-      const sx = node._x + this.xOffset, sy = node._y + s.r + s.slotGapY;
-      const d = Math.hypot(chip.x - sx, chip.y - sy);
+      if (node._filled || !node._slotEl) continue;
+      const r = node._slotEl.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const d = Math.hypot(clientX - cx, clientY - cy);
       if (d < s.snapDist && d < bestDist) { bestDist = d; best = node; }
     }
     return best;
   }
 
-  _attemptPlace(chip, node) {
-    if (normalizeAnswer(chip.word) === normalizeAnswer(node.word)) {
+  _attemptPlace(node) {
+    if (normalizeAnswer(this.currentChip.word) === normalizeAnswer(node.word)) {
       node._filled = true;
       playClickSound();
       this._nextChip();
@@ -204,8 +217,7 @@ class WordMatchEditor {
       if (this.onPlace) this.onPlace();
       if (this.slotNodes.every(n => n._filled) && this.onComplete) this.onComplete();
     } else {
-      chip.x = chip.homeX; chip.y = chip.homeY;
-      this.render();
+      this._resetChipPosition();
     }
   }
 }

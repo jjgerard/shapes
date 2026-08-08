@@ -161,11 +161,14 @@ class TreeEditor {
   // bigger canvas -- the buffer is still there to drag into, you just
   // don't start out staring at blank canvas to reach it.
   //
-  // Exception: if every piece already fits inside the visible wrap at the
-  // current zoom (true for small sub-levels, e.g. the first level's two
-  // starter pieces), center on the whole cluster instead -- anchoring to
-  // just the top-left corner could otherwise leave a piece sitting off the
-  // right/bottom edge even though there was room to show it all at once.
+  // Exception: if every piece can fit inside the visible wrap at a still-
+  // readable zoom (true for small sub-levels, e.g. the first level's two
+  // starter pieces), zoom to fit and center on the whole cluster instead --
+  // anchoring to just the top-left corner at 100% could otherwise leave a
+  // piece sitting off the right/bottom edge on a narrow phone screen even
+  // though there was room to show both by zooming out just slightly (mobile
+  // pieces are bigger/further apart than desktop ones to begin with, so a
+  // strict "already fits at 100%" check was failing there in practice).
   scrollToStart() {
     const wrap = this.svg.parentElement;
     if (!wrap || !this.nodes.length) return;
@@ -175,9 +178,12 @@ class TreeEditor {
       const minY = Math.min(...this.nodes.map(n => n.y - this.nodeRadius)) - pad;
       const maxX = Math.max(...this.nodes.map(n => n.x + this.nodeRadius)) + pad;
       const maxY = Math.max(...this.nodes.map(n => n.y + this.nodeRadius)) + pad;
-      const contentW = (maxX - minX) * this.zoom;
-      const contentH = (maxY - minY) * this.zoom;
-      if (contentW <= wrap.clientWidth && contentH <= wrap.clientHeight) {
+      const rawW = maxX - minX, rawH = maxY - minY;
+      const fitZoom = Math.min(1, wrap.clientWidth / rawW, wrap.clientHeight / rawH);
+      if (fitZoom >= 0.5) {
+        this.zoom = fitZoom;
+        this.render();
+        const contentW = rawW * this.zoom, contentH = rawH * this.zoom;
         wrap.scrollLeft = Math.max(0, minX * this.zoom - (wrap.clientWidth - contentW) / 2);
         wrap.scrollTop = Math.max(0, minY * this.zoom - (wrap.clientHeight - contentH) / 2);
       } else {

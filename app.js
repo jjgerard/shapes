@@ -10,20 +10,34 @@ const POINTS_REVEAL_SLOT = 10;
 const POINTS_SENTENCE = 30;
 
 let player = null;   // {name, code, key}
-let state = null;    // {points, trees:[ids], sentences:[ids], reveal:{shapes:{}, numbers:{}}}
+// {points, trees:[ids], sentences:[ids],
+//  reveal:{shapes:{}, numbers:{}} -- current answers shown on screen, reset-able via Redo,
+//  revealSolved:{shapes:{}, numbers:{}} -- permanent "ever gotten this one right" record}
+let state = null;
 
 // ---------------- storage ----------------
 function storageKey(name, code) {
   return `stb:${name.trim().toLowerCase()}|${code.trim().toLowerCase()}`;
 }
 function defaultState() {
-  return { points: 0, trees: [], sentences: [], reveal: { shapes: {}, numbers: {} } };
+  return {
+    points: 0, trees: [], sentences: [],
+    reveal: { shapes: {}, numbers: {} },
+    revealSolved: { shapes: {}, numbers: {} },
+  };
 }
 function loadState(key) {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return defaultState();
-    return { ...defaultState(), ...JSON.parse(raw) };
+    const merged = { ...defaultState(), ...JSON.parse(raw) };
+    // Backfill revealSolved from whatever's already filled in on state.reveal
+    // -- covers saves from before revealSolved existed, and is a harmless
+    // no-op otherwise (only ever sets true, never clears it), so a Redo's
+    // reset of state.reveal can never un-solve something already earned.
+    for (const k of Object.keys(CATEGORIES)) if (merged.reveal.shapes[k]) merged.revealSolved.shapes[k] = true;
+    for (const n of [1, 2, 3]) if (merged.reveal.numbers[n]) merged.revealSolved.numbers[n] = true;
+    return merged;
   } catch { return defaultState(); }
 }
 function saveState() {
@@ -104,11 +118,20 @@ function loginAs(name, code) {
 }
 
 // ---------------- sub-level completion ----------------
+// Whether the CURRENT on-screen attempt is fully filled in -- drives the
+// tree-reveal visual and the "you cracked the code" message, and resets
+// (goes back to false) whenever Redo clears state.reveal.
 function revealComplete() {
   return Object.keys(CATEGORIES).every(k => state.reveal.shapes[k]) && [1, 2, 3].every(n => state.reveal.numbers[n]);
 }
+// Whether it's EVER been fully solved -- permanent, drives Level 2's lock
+// and the sub-level's own done/locked state, so a Redo (for practice) can
+// never re-lock Level 2 or take back an already-earned sub-level.
+function revealEverSolved() {
+  return Object.keys(CATEGORIES).every(k => state.revealSolved.shapes[k]) && [1, 2, 3].every(n => state.revealSolved.numbers[n]);
+}
 function isSubComplete(sub) {
-  return sub.kind === 'reveal' ? revealComplete() : state.trees.includes(sub.id);
+  return sub.kind === 'reveal' ? revealEverSolved() : state.trees.includes(sub.id);
 }
 
 // ---------------- level select ----------------
@@ -368,7 +391,7 @@ function renderLevel2Grid() {
 
     if (!locked) {
       const p = document.createElement('p');
-      p.textContent = `"${sub.sentence}"`;
+      p.textContent = sub.description;
       card.appendChild(p);
     }
 
@@ -492,10 +515,14 @@ function renderReveal() {
       },
       isCorrect: (val) => isCorrectShapeAnswer(key, val),
       correctMap: state.reveal.shapes,
+      hint: SHAPE_HINTS[key],
     })),
-    onCorrect: (key) => {
-      state.reveal.shapes[key] = true;
-      state.points += POINTS_REVEAL_SLOT;
+    onCorrect: (key, val) => {
+      state.reveal.shapes[key] = val;
+      if (!state.revealSolved.shapes[key]) {
+        state.revealSolved.shapes[key] = true;
+        state.points += POINTS_REVEAL_SLOT;
+      }
       saveState(); updateHeader();
       revealComplete() ? celebrateComplete() : celebrateCorrect();
       renderReveal();
@@ -514,10 +541,15 @@ function renderReveal() {
       },
       isCorrect: (val) => isCorrectLevelAnswer(n, val),
       correctMap: state.reveal.numbers,
+      hint: LEVEL_HINTS[n],
+      looseNote: (val) => looseAnswerNote(n, val),
     })),
-    onCorrect: (key) => {
-      state.reveal.numbers[key] = true;
-      state.points += POINTS_REVEAL_SLOT;
+    onCorrect: (key, val) => {
+      state.reveal.numbers[key] = val;
+      if (!state.revealSolved.numbers[key]) {
+        state.revealSolved.numbers[key] = true;
+        state.points += POINTS_REVEAL_SLOT;
+      }
       saveState(); updateHeader();
       revealComplete() ? celebrateComplete() : celebrateCorrect();
       renderReveal();
@@ -546,15 +578,23 @@ function buildRevealGroup({ heading, items, onCorrect }) {
   group.appendChild(slotsWrap);
 
   for (const item of items) {
+    const wrap = document.createElement('div');
+    wrap.className = 'legend-item';
+
     const row = document.createElement('div');
     const isDone = !!item.correctMap[item.key];
     row.className = 'legend-slot' + (isDone ? ' filled correct' : '');
     item.render(row);
+    wrap.appendChild(row);
 
     if (isDone) {
+      // Keep the student's own answer on screen (not just a checkmark) --
+      // legacy saves from before this stored a bare `true` here, so fall
+      // back to a plain check for those instead of printing "true".
+      const val = item.correctMap[item.key];
       const fill = document.createElement('span');
       fill.className = 'slot-fill';
-      fill.textContent = '✓';
+      fill.textContent = typeof val === 'string' ? `✓ ${val}` : '✓';
       row.appendChild(fill);
     } else {
       const input = document.createElement('input');
@@ -568,7 +608,9 @@ function buildRevealGroup({ heading, items, onCorrect }) {
         if (!val) return;
         if (item.isCorrect(val)) {
           playCorrectSound();
-          onCorrect(item.key);
+          const note = item.looseNote && item.looseNote(val);
+          onCorrect(item.key, val);
+          if (note) toast(note);
         } else {
           row.classList.add('incorrect');
           setTimeout(() => row.classList.remove('incorrect'), 700);
@@ -582,8 +624,25 @@ function buildRevealGroup({ heading, items, onCorrect }) {
       btn.addEventListener('click', attempt);
       row.appendChild(input);
       row.appendChild(btn);
+
+      if (item.hint) {
+        const hintText = document.createElement('p');
+        hintText.className = 'hint-text hidden';
+        hintText.textContent = item.hint;
+
+        const hintBtn = document.createElement('button');
+        hintBtn.type = 'button';
+        hintBtn.className = 'link-btn hint-btn';
+        hintBtn.textContent = 'Hint';
+        hintBtn.addEventListener('click', () => {
+          hintText.classList.remove('hidden');
+          hintBtn.classList.add('hidden');
+        });
+        row.appendChild(hintBtn);
+        wrap.appendChild(hintText);
+      }
     }
-    slotsWrap.appendChild(row);
+    slotsWrap.appendChild(wrap);
   }
 
   return group;
@@ -603,6 +662,15 @@ document.getElementById('btn-switch-player').addEventListener('click', () => {
   document.getElementById('input-name').value = '';
   document.getElementById('input-code').value = '';
   showScreen('name');
+});
+
+document.getElementById('btn-redo-reveal').addEventListener('click', () => {
+  // Only resets the CURRENT on-screen attempt -- revealSolved (points,
+  // Level 2's unlock) is untouched, same as "Rebuild" elsewhere never
+  // takes back an already-earned sub-level.
+  state.reveal = { shapes: {}, numbers: {} };
+  saveState();
+  renderReveal();
 });
 
 document.querySelectorAll('.level-card[data-level]').forEach(card => {

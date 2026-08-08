@@ -215,9 +215,15 @@ const SHAPE_ANSWERS = {
   P: ['p', 'prep', 'preposition'],
 };
 const LEVEL_ANSWERS = {
-  1: ['xp', 'x-bar phrase', 'phrase', 'maximal projection', 'maximal phrase'],
+  1: ['xp', 'x-bar phrase', 'phrase', 'phrase level', 'maximal projection', 'maximal phrase'],
   2: ["x'", 'x bar', 'x-bar', 'xbar', 'bar level', 'bar'],
-  3: ['x0', 'xzero', 'x-zero', 'head'],
+  3: ['x0', 'xzero', 'x-zero', 'head', 'word'],
+};
+// Answers that are accepted but not the term we actually want students to
+// land on -- still marked correct, just paired with a gentle nudge toward
+// the more precise vocabulary.
+const LEVEL_ANSWER_NOTES = {
+  3: { word: 'Good instinct -- the precise term for this is "head."' },
 };
 function normalizeAnswer(s) {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -228,6 +234,26 @@ function isCorrectShapeAnswer(catKey, answer) {
 function isCorrectLevelAnswer(number, answer) {
   return LEVEL_ANSWERS[number].includes(normalizeAnswer(answer));
 }
+function looseAnswerNote(number, answer) {
+  const notes = LEVEL_ANSWER_NOTES[number];
+  return notes ? notes[normalizeAnswer(answer)] : undefined;
+}
+
+// Hints for the Mystery Level's optional "Hint" button -- a conceptual
+// nudge, not the accepted answer itself.
+const SHAPE_HINTS = {
+  C: 'Introduces a subordinate clause, like "that" or "if."',
+  T: "Carries the sentence's tense/agreement -- an auxiliary like \"will\" or \"did\" lives here.",
+  V: "The action or state word -- what's happening.",
+  D: 'Picks out a specific referent -- "the," "a," "this," "my."',
+  N: 'The thing being talked about.',
+  P: 'Relates a phrase to something else in space, time, etc. -- "in," "on," "with."',
+};
+const LEVEL_HINTS = {
+  1: 'The biggest, outermost layer of a piece -- everything else it needs is inside it.',
+  2: 'A layer in between -- bigger than a bare word, smaller than the whole phrase.',
+  3: "The smallest layer -- an actual word, not built out of anything smaller.",
+};
 
 // ---------------------------------------------------------------------------
 // Level 2 sentences: pre-made, already-labeled X-bar trees (word matching --
@@ -265,16 +291,16 @@ function wmDP(detWord, detPos, nounWord, nounPos, opts = {}) {
 const LEVEL2_SUBLEVELS = [
   {
     id: 'the-cat',
-    name: 'The Cat',
-    sentence: 'the cat',
+    name: 'First Phrase',
+    description: "Two pieces, matched by category alone -- you won't see the sentence until you've placed them.",
     hint: 'Drag each word onto the piece it belongs to.',
     root: wmDP('the', 1, 'cat', 2),
   },
   {
     id: 'the-cat-chased-the-mouse',
-    name: 'The Cat Chased The Mouse',
-    sentence: 'the cat chased the mouse',
-    hint: "Same idea, just more pieces. There's no auxiliary in this sentence, so Tense has no word of its own (∅) -- its tense just rides along on the verb.",
+    name: '4 Pieces',
+    description: 'The same idea, just with more pieces to match.',
+    hint: "There's no auxiliary in this sentence, so Tense has no word of its own (∅) -- its tense just rides along on the verb.",
     root: {
       shape: 'T', number: 1, children: [
         wmDP('the', 1, 'cat', 2),
@@ -292,9 +318,9 @@ const LEVEL2_SUBLEVELS = [
   },
   {
     id: 'did-the-cat-chase-the-mouse',
-    name: 'Did The Cat Chase The Mouse',
-    sentence: 'did the cat chase the mouse',
-    hint: 'For a yes/no question, Tense hops up into Complementizer -- "did" shows up in C, and leaves a crossed-out copy of itself behind in T.',
+    name: 'More Pieces',
+    description: 'A question this time -- one piece moves, and leaves a crossed-out trace behind where it started.',
+    hint: 'For a yes/no question, Tense hops up into Complementizer, and leaves a crossed-out copy of itself behind in T.',
     root: {
       shape: 'C', number: 1, children: [
         { shape: 'C', number: 2, children: [
@@ -317,9 +343,9 @@ const LEVEL2_SUBLEVELS = [
   },
   {
     id: 'which-mouse-did-the-cat-chase',
-    name: 'Which Mouse Did The Cat Chase',
-    sentence: 'which mouse did the cat chase',
-    hint: 'The question phrase "which mouse" fronts all the way to Spec-CP, leaving a crossed-out copy of itself right where the verb needed it, as its object.',
+    name: 'Even More Pieces',
+    description: 'A bigger question -- more than one piece moves this time, each leaving its own trace behind.',
+    hint: 'The question phrase in the object position fronts all the way to Spec-CP, leaving a crossed-out copy of itself right where the verb needed it.',
     root: {
       shape: 'C', number: 1, children: [
         wmDP('which', 1, 'mouse', 2),

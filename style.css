@@ -293,8 +293,29 @@ button { font-family: inherit; cursor: pointer; }
   width: 100%; height: 100%; display: block;
   background: radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9;
 }
-.wm-chip { cursor: grab; touch-action: none; }
-.wm-chip.dragging { cursor: grabbing; }
+/* The one word currently up for grabs -- fixed to the viewport (bottom-
+   left), not part of the SVG canvas at all, so it's always visible without
+   scrolling and never sits under the mascot's speech bubble (fixed
+   bottom-right). z-index above the overlay (20) and the toast (1000) is
+   irrelevant here since they never occupy the same corner, but staying
+   under the mascot itself (999) keeps the mascot always the topmost thing
+   on screen. */
+.wm-chip-float {
+  position: fixed;
+  z-index: 500;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  border-radius: 999px;
+  padding: 12px 26px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--ink);
+  cursor: grab;
+  touch-action: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+}
+.wm-chip-float.dragging { cursor: grabbing; }
 
 /* ---- level 3 ---- */
 #level3-body { margin-top: 18px; }
@@ -304,6 +325,10 @@ button { font-family: inherit; cursor: pointer; }
 .legend-lists { flex: 1 1 300px; display: flex; flex-direction: column; gap: 18px; }
 .legend-group h3 { margin: 0 0 8px; font-size: 0.95rem; }
 .legend-slots { display: flex; flex-direction: column; gap: 6px; }
+.legend-item { display: flex; flex-direction: column; gap: 4px; }
+.hint-btn { font-size: 0.78rem; flex-shrink: 0; }
+.hint-text { margin: 0; padding-left: 2px; font-size: 0.82rem; font-style: italic; color: var(--muted); }
+.redo-btn { display: block; margin: 14px 0 0; }
 .legend-slot {
   display: flex; align-items: center; gap: 10px;
   border: 1px dashed var(--line);
@@ -383,6 +408,9 @@ button { font-family: inherit; cursor: pointer; }
   .toast { top: 66px; font-size: 0.85rem; padding: 9px 16px; }
   .btn-return { padding: 18px 26px; font-size: 1.1rem; min-height: 52px; }
   .wm-sentence { font-size: 1.15rem; padding: 12px; gap: 8px; }
+  .hint-btn { font-size: 0.95rem; }
+  .hint-text { font-size: 0.9rem; }
+  .wm-chip-float { padding: 14px 24px; font-size: 1.15rem; }
 }
 
 /* ---- mascot ---- */
