@@ -24,6 +24,12 @@ const XBAR_LEVELS = {
   2: { code: "X′", name: 'Bar level (intermediate projection)' },
   3: { code: 'X⁰', name: 'Head (terminal / lexical item)' },
 };
+// The conventional X-bar notation with the actual category substituted in
+// -- "NP"/"N′"/"N⁰" rather than a generic "XP" plus a separate caption
+// naming the category.
+function xbarLabel(shape, number) {
+  return XBAR_LEVELS[number].code.replace('X', shape);
+}
 
 // ---------------------------------------------------------------------------
 // The 19 buildable fragments (Level 1), in the same order/numbering as the
@@ -223,12 +229,124 @@ function isCorrectLevelAnswer(number, answer) {
   return LEVEL_ANSWERS[number].includes(normalizeAnswer(answer));
 }
 
+// ---------------------------------------------------------------------------
+// Level 2 sentences: pre-made, already-labeled X-bar trees (word matching --
+// the category system is no longer a secret by this point, so every piece
+// shows its full "DP / D′ / D⁰"-style label). Every head that gets a word
+// dragged onto it carries `word` (the correct answer); `pos` additionally
+// marks its place in the linear sentence, for the sentence-so-far readout --
+// a head that's just the moved-away copy of another word (`isTrace: true`)
+// still has to be matched like anything else, it just isn't part of the
+// pronounced sentence, so it has no `pos` and reveals itself struck through
+// once filled instead of taking on its category's color. A head with no
+// audible content at all (tense with no auxiliary to carry it) shows
+// `silent: true` (∅) and is never a match target.
+// ---------------------------------------------------------------------------
+
+// A DP "det + noun" (e.g. "the cat"), reused for every subject/object across
+// the Level 2 sentences. `opts.detTrace`/`opts.nounTrace` mark the det/noun
+// as a moved-away trace instead of a pronounced word, for the object DP left
+// behind by wh-movement.
+function wmDP(detWord, detPos, nounWord, nounPos, opts = {}) {
+  const det = opts.detTrace
+    ? { shape: 'D', number: 3, children: [], word: detWord, isTrace: true }
+    : { shape: 'D', number: 3, children: [], word: detWord, pos: detPos };
+  const noun = opts.nounTrace
+    ? { shape: 'N', number: 3, children: [], word: nounWord, isTrace: true }
+    : { shape: 'N', number: 3, children: [], word: nounWord, pos: nounPos };
+  return { shape: 'D', number: 1, children: [
+    { shape: 'D', number: 2, children: [
+      det,
+      { shape: 'N', number: 1, children: [ { shape: 'N', number: 2, children: [ noun ] } ] },
+    ] },
+  ] };
+}
+
+const LEVEL2_SUBLEVELS = [
+  {
+    id: 'the-cat',
+    name: 'The Cat',
+    sentence: 'the cat',
+    hint: 'Drag each word onto the piece it belongs to.',
+    root: wmDP('the', 1, 'cat', 2),
+  },
+  {
+    id: 'the-cat-chased-the-mouse',
+    name: 'The Cat Chased The Mouse',
+    sentence: 'the cat chased the mouse',
+    hint: "Same idea, just more pieces. There's no auxiliary in this sentence, so Tense has no word of its own (∅) -- its tense just rides along on the verb.",
+    root: {
+      shape: 'T', number: 1, children: [
+        wmDP('the', 1, 'cat', 2),
+        { shape: 'T', number: 2, children: [
+          { shape: 'T', number: 3, children: [], silent: true },
+          { shape: 'V', number: 1, children: [
+            { shape: 'V', number: 2, children: [
+              { shape: 'V', number: 3, children: [], word: 'chased', pos: 3 },
+              wmDP('the', 4, 'mouse', 5),
+            ] },
+          ] },
+        ] },
+      ],
+    },
+  },
+  {
+    id: 'did-the-cat-chase-the-mouse',
+    name: 'Did The Cat Chase The Mouse',
+    sentence: 'did the cat chase the mouse',
+    hint: 'For a yes/no question, Tense hops up into Complementizer -- "did" shows up in C, and leaves a crossed-out copy of itself behind in T.',
+    root: {
+      shape: 'C', number: 1, children: [
+        { shape: 'C', number: 2, children: [
+          { shape: 'C', number: 3, children: [], word: 'did', pos: 1 },
+          { shape: 'T', number: 1, children: [
+            wmDP('the', 2, 'cat', 3),
+            { shape: 'T', number: 2, children: [
+              { shape: 'T', number: 3, children: [], word: 'did', isTrace: true },
+              { shape: 'V', number: 1, children: [
+                { shape: 'V', number: 2, children: [
+                  { shape: 'V', number: 3, children: [], word: 'chase', pos: 4 },
+                  wmDP('the', 5, 'mouse', 6),
+                ] },
+              ] },
+            ] },
+          ] },
+        ] },
+      ],
+    },
+  },
+  {
+    id: 'which-mouse-did-the-cat-chase',
+    name: 'Which Mouse Did The Cat Chase',
+    sentence: 'which mouse did the cat chase',
+    hint: 'The question phrase "which mouse" fronts all the way to Spec-CP, leaving a crossed-out copy of itself right where the verb needed it, as its object.',
+    root: {
+      shape: 'C', number: 1, children: [
+        wmDP('which', 1, 'mouse', 2),
+        { shape: 'C', number: 2, children: [
+          { shape: 'C', number: 3, children: [], word: 'did', pos: 3 },
+          { shape: 'T', number: 1, children: [
+            wmDP('the', 4, 'cat', 5),
+            { shape: 'T', number: 2, children: [
+              { shape: 'T', number: 3, children: [], word: 'did', isTrace: true },
+              { shape: 'V', number: 1, children: [
+                { shape: 'V', number: 2, children: [
+                  { shape: 'V', number: 3, children: [], word: 'chase', pos: 6 },
+                  wmDP('which', null, 'mouse', null, { detTrace: true, nounTrace: true }),
+                ] },
+              ] },
+            ] },
+          ] },
+        ] },
+      ],
+    },
+  },
+];
+
 // Roadmap shown (greyed out) on the level-select screen so the growth path
 // toward the full Carnie syllabus is visible even though only 1-3 are live.
 const ROADMAP = [
   'Adjectives & Adverbs',
-  'Auxiliaries & do-support',
-  'Wh-movement & questions',
   'Embedded clauses (CP recursion)',
   'Raising',
   'Control',

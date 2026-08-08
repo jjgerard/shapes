@@ -25,43 +25,36 @@ function playTone(freq, startTime, duration, { type = 'sine', peakGain = 0.2 } =
   osc.stop(startTime + duration + 0.02);
 }
 
-// Two pieces snapping together -- a short noise "snap" transient layered
-// under a quick pitched-down "tock" body, more like a real plastic-piece
-// click than a bare tone.
-function playClickSound() {
-  const ctx = getAudioCtx();
-  const now = ctx.currentTime;
-
-  const bufferSize = Math.floor(ctx.sampleRate * 0.025);
+function playNoiseBurst(ctx, startTime, duration, { filterType = 'bandpass', freq = 1500, q = 2, peakGain = 0.4 } = {}) {
+  const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-  const noise = ctx.createBufferSource();
-  noise.buffer = buffer;
-  const noiseFilter = ctx.createBiquadFilter();
-  noiseFilter.type = 'bandpass';
-  noiseFilter.frequency.value = 2400;
-  noiseFilter.Q.value = 0.8;
-  const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(0.4, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.025);
-  noise.connect(noiseFilter);
-  noiseFilter.connect(noiseGain);
-  noiseGain.connect(ctx.destination);
-  noise.start(now);
-
-  const osc = ctx.createOscillator();
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(720, now);
-  osc.frequency.exponentialRampToValueAtTime(190, now + 0.08);
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = filterType;
+  filter.frequency.value = freq;
+  filter.Q.value = q;
   const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(0.25, now + 0.006);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
-  osc.connect(gain);
+  gain.gain.setValueAtTime(peakGain, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+  src.connect(filter);
+  filter.connect(gain);
   gain.connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + 0.1);
+  src.start(startTime);
+}
+
+// Two pieces snapping together -- two layered noise transients (no musical
+// tone at all) so it reads as a physical plastic snap-fit click rather than
+// an electronic beep: a very short, high, sharp "tick" of first contact,
+// immediately followed by a slightly longer, lower "clack" of the piece
+// settling in.
+function playClickSound() {
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+  playNoiseBurst(ctx, now, 0.014, { filterType: 'highpass', freq: 3800, q: 0.7, peakGain: 0.55 });
+  playNoiseBurst(ctx, now + 0.004, 0.032, { filterType: 'bandpass', freq: 1500, q: 2.5, peakGain: 0.4 });
 }
 
 // A sub-level (or the whole reveal) is fully complete -- a short ascending

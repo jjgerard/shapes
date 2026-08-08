@@ -67,3 +67,52 @@ function buildShapeGroup(categoryKey, number, r = 26) {
   g.appendChild(label);
   return g;
 }
+
+// ---------------------------------------------------------------------------
+// Shared static (read-only) tree layout + paint -- used by the Level 1
+// Mystery Level reveal and the Level 2 word-match trees. `nodeGap`/`levelGap`
+// default to the sizes the reveal tree has always used; word-match passes
+// its own (device-scaled) gaps so bigger mobile pieces don't overlap.
+// ---------------------------------------------------------------------------
+function layoutTree(root, nodeGap = 82, levelGap = 86) {
+  let leafX = 0;
+  (function assign(node, depth) {
+    node._depth = depth;
+    if (!node.children.length) {
+      node._x = leafX * nodeGap;
+      leafX++;
+    } else {
+      node.children.forEach(c => assign(c, depth + 1));
+      const xs = node.children.map(c => c._x);
+      node._x = (Math.min(...xs) + Math.max(...xs)) / 2;
+    }
+    node._y = depth * levelGap + 30;
+  })(root, 0);
+  return { width: Math.max(leafX * nodeGap, nodeGap), height: (maxDepth(root) + 1) * levelGap + 40 };
+}
+function maxDepth(node) {
+  return node.children.length ? 1 + Math.max(...node.children.map(maxDepth)) : 0;
+}
+function paintStaticTree(svg, root, { r = 26, reveal = false, xOffset = 0 } = {}) {
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const edgeLayer = svgEl('g');
+  const nodeLayer = svgEl('g');
+  svg.appendChild(edgeLayer);
+  svg.appendChild(nodeLayer);
+  (function walk(node) {
+    for (const c of node.children) {
+      const path = svgEl('path', {
+        class: 'tree-edge',
+        d: `M ${node._x + xOffset} ${node._y + r} C ${node._x + xOffset} ${(node._y + c._y) / 2}, ${c._x + xOffset} ${(node._y + c._y) / 2}, ${c._x + xOffset} ${c._y - r}`,
+      });
+      edgeLayer.appendChild(path);
+      walk(c);
+    }
+  })(root);
+  (function walk(node) {
+    const g = buildShapeGroup(node.shape, reveal ? xbarLabel(node.shape, node.number) : node.number, r);
+    g.setAttribute('transform', `translate(${node._x + xOffset},${node._y})`);
+    nodeLayer.appendChild(g);
+    node.children.forEach(walk);
+  })(root);
+}

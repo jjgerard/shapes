@@ -7,16 +7,17 @@
 const POINTS_TUTORIAL = 20;
 const POINTS_TREE = 40;
 const POINTS_REVEAL_SLOT = 10;
+const POINTS_SENTENCE = 30;
 
 let player = null;   // {name, code, key}
-let state = null;    // {points, trees:[ids], reveal:{shapes:{}, numbers:{}}}
+let state = null;    // {points, trees:[ids], sentences:[ids], reveal:{shapes:{}, numbers:{}}}
 
 // ---------------- storage ----------------
 function storageKey(name, code) {
   return `stb:${name.trim().toLowerCase()}|${code.trim().toLowerCase()}`;
 }
 function defaultState() {
-  return { points: 0, trees: [], reveal: { shapes: {}, numbers: {} } };
+  return { points: 0, trees: [], sentences: [], reveal: { shapes: {}, numbers: {} } };
 }
 function loadState(key) {
   try {
@@ -34,6 +35,7 @@ const SCREEN_SPEECH = {
   name: "Hi! What's your name?",
   levels: 'Pick a level to start!',
   level1: 'Choose a sub-level below!',
+  level2: 'Choose a sentence below!',
   reveal: 'Type what you think each shape and number means!',
 };
 function showScreen(id) {
@@ -62,6 +64,20 @@ function mascotPulse(className, duration) {
 }
 function celebrateCorrect() { mascotPulse('jumping', 650); }
 function celebrateComplete() { mascotPulse('dancing', 1350); playChimeSound(); }
+
+// A modal's close link turns into a big, hard-to-miss "Return to levels"
+// button the moment its puzzle/sentence is actually finished -- the small
+// "x close" is easy to miss (and fine while still working), but once
+// there's nothing left to do, the exit should be the obvious next tap.
+function setModalDoneState(btn, done) {
+  if (done) {
+    btn.textContent = 'Return to levels';
+    btn.className = 'btn-primary btn-return';
+  } else {
+    btn.textContent = '× close';
+    btn.className = 'link-btn';
+  }
+}
 
 function setMascotSpeech(text) {
   const bubble = document.getElementById('mascot-bubble');
@@ -96,9 +112,26 @@ function isSubComplete(sub) {
 }
 
 // ---------------- level select ----------------
+// Level 2 assumes the category system Level 1 teaches, so its card stays a
+// blank "🔒 Locked" tile (same as the greyed-out roadmap ahead of it) --
+// title and description included -- until every Level 1 sub-level is done.
 function renderLevelSelect() {
   const doneCount = LEVEL1_SUBLEVELS.filter(isSubComplete).length;
   document.getElementById('progress-1').textContent = `${doneCount} / ${LEVEL1_SUBLEVELS.length} sub-levels done`;
+
+  const level2Card = document.getElementById('level2-card');
+  const level2Unlocked = LEVEL1_SUBLEVELS.every(isSubComplete);
+  level2Card.classList.toggle('locked', !level2Unlocked);
+  if (level2Unlocked) {
+    const doneCount2 = LEVEL2_SUBLEVELS.filter(isL2SubComplete).length;
+    level2Card.innerHTML =
+      '<div class="level-num">Level 2</div>' +
+      '<div class="level-title">Words</div>' +
+      '<p>Drag real English words onto the pieces of an already-labeled sentence tree.</p>' +
+      `<div class="level-progress">${doneCount2} / ${LEVEL2_SUBLEVELS.length} sentences done</div>`;
+  } else {
+    level2Card.innerHTML = '<div class="level-num">Level 2</div><div class="lock-badge">🔒 Locked</div>';
+  }
 
   const roadmap = document.getElementById('roadmap');
   roadmap.innerHTML = '';
@@ -107,7 +140,7 @@ function renderLevelSelect() {
     card.className = 'level-card locked';
     const num = document.createElement('div');
     num.className = 'level-num';
-    num.textContent = `Level ${i + 2}`;
+    num.textContent = `Level ${i + 3}`;
     card.appendChild(num);
     const lock = document.createElement('div');
     lock.className = 'lock-badge';
@@ -115,56 +148,6 @@ function renderLevelSelect() {
     card.appendChild(lock);
     roadmap.appendChild(card);
   });
-}
-
-// ---------------- shared static (read-only) tree layout + paint ----------------
-function layoutTree(root) {
-  const NODE_GAP = 82, LEVEL_GAP = 86;
-  let leafX = 0;
-  (function assign(node, depth) {
-    node._depth = depth;
-    if (!node.children.length) {
-      node._x = leafX * NODE_GAP;
-      leafX++;
-    } else {
-      node.children.forEach(c => assign(c, depth + 1));
-      const xs = node.children.map(c => c._x);
-      node._x = (Math.min(...xs) + Math.max(...xs)) / 2;
-    }
-    node._y = depth * LEVEL_GAP + 30;
-  })(root, 0);
-  return { width: Math.max(leafX * NODE_GAP, NODE_GAP), height: (maxDepth(root) + 1) * LEVEL_GAP + 40 };
-}
-function maxDepth(node) {
-  return node.children.length ? 1 + Math.max(...node.children.map(maxDepth)) : 0;
-}
-function paintStaticTree(svg, root, { r = 26, reveal = false, xOffset = 0 } = {}) {
-  while (svg.firstChild) svg.removeChild(svg.firstChild);
-  const edgeLayer = svgEl('g');
-  const nodeLayer = svgEl('g');
-  svg.appendChild(edgeLayer);
-  svg.appendChild(nodeLayer);
-  (function walk(node) {
-    for (const c of node.children) {
-      const path = svgEl('path', {
-        class: 'tree-edge',
-        d: `M ${node._x + xOffset} ${node._y + r} C ${node._x + xOffset} ${(node._y + c._y) / 2}, ${c._x + xOffset} ${(node._y + c._y) / 2}, ${c._x + xOffset} ${c._y - r}`,
-      });
-      edgeLayer.appendChild(path);
-      walk(c);
-    }
-  })(root);
-  (function walk(node) {
-    const g = buildShapeGroup(node.shape, reveal ? XBAR_LEVELS[node.number].code : node.number, r);
-    g.setAttribute('transform', `translate(${node._x + xOffset},${node._y})`);
-    nodeLayer.appendChild(g);
-    if (reveal) {
-      const label = svgEl('text', { x: node._x + xOffset, y: node._y + r + 14, 'text-anchor': 'middle', fill: '#262220', 'font-size': 11, 'font-weight': 700 });
-      label.textContent = node.shape;
-      nodeLayer.appendChild(label);
-    }
-    node.children.forEach(walk);
-  })(root);
 }
 
 // ---------------- shared editor modal ----------------
@@ -220,6 +203,7 @@ function openEditor({ title, hint, items, viewW, viewH, onCheck }) {
   editor.open(fit.w, fit.h);
   editor.scatterAll(items);
   setSnipButtonActive(false);
+  setModalDoneState(document.getElementById('editor-close'), false);
   editor.onSnipModeChange = setSnipButtonActive;
   editor.onSnap = celebrateCorrect;
   // No Check button here -- a sub-level finishes itself the moment the last
@@ -327,6 +311,7 @@ function markSubDone(sub, points) {
   celebrateComplete();
   updateHeader();
   renderTargetGrid();
+  setModalDoneState(document.getElementById('editor-close'), true);
   // Stay open on the finished puzzle -- the mascot's dance is the "you're
   // done" signal, the student closes manually whenever they're ready.
 }
@@ -362,6 +347,116 @@ function openTargetEditor(sub) {
     },
   });
 }
+
+// ================= LEVEL 2: word matching =================
+function isL2SubComplete(sub) {
+  return state.sentences.includes(sub.id);
+}
+
+function renderLevel2Grid() {
+  const grid = document.getElementById('wordmatch-grid');
+  grid.innerHTML = '';
+  LEVEL2_SUBLEVELS.forEach((sub, i) => {
+    const done = isL2SubComplete(sub);
+    const locked = i > 0 && !isL2SubComplete(LEVEL2_SUBLEVELS[i - 1]);
+    const card = document.createElement('div');
+    card.className = 'target-card' + (done ? ' done' : '') + (locked ? ' locked' : '');
+
+    const h3 = document.createElement('h3');
+    h3.textContent = locked ? `${i + 1}. Locked` : `${i + 1}. ${done ? '✓ ' : ''}${sub.name}`;
+    card.appendChild(h3);
+
+    if (!locked) {
+      const p = document.createElement('p');
+      p.textContent = `"${sub.sentence}"`;
+      card.appendChild(p);
+    }
+
+    if (locked) {
+      const note = document.createElement('p');
+      note.className = 'lock-note';
+      note.textContent = 'Locked — finish the previous sentence first.';
+      card.appendChild(note);
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'btn-primary';
+      btn.textContent = done ? 'Rebuild' : 'Build this';
+      btn.addEventListener('click', () => openWordMatch(sub));
+      card.appendChild(btn);
+    }
+    grid.appendChild(card);
+  });
+}
+
+function markL2SubDone(sub, points) {
+  const already = state.sentences.includes(sub.id);
+  if (!already) {
+    state.sentences.push(sub.id);
+    state.points += points;
+    saveState();
+    toast(`✓ ${sub.name} complete — +${points} pts`);
+  } else {
+    toast(`✓ ${sub.name} — already completed, nice practice!`);
+  }
+  celebrateComplete();
+  updateHeader();
+  renderLevel2Grid();
+  setModalDoneState(document.getElementById('wordmatch-close'), true);
+}
+
+let wordMatch = null;
+let currentL2Sub = null;
+function ensureWordMatch() {
+  if (!wordMatch) wordMatch = new WordMatchEditor(document.getElementById('wordmatch-canvas'));
+  return wordMatch;
+}
+
+// Reads the sentence-so-far off the tree itself (each filled/blank word in
+// its `pos` order) rather than keeping a separate copy of it, so it can
+// never drift out of sync with what's actually been placed.
+function renderWmSentence(root) {
+  const el = document.getElementById('wordmatch-sentence');
+  el.innerHTML = '';
+  const tokens = [];
+  (function walk(n) {
+    if (n.word && n.pos) tokens.push(n);
+    n.children.forEach(walk);
+  })(root);
+  tokens.sort((a, b) => a.pos - b.pos).forEach(n => {
+    const span = document.createElement('span');
+    span.className = 'wm-word' + (n._filled ? ' filled' : '');
+    span.textContent = n._filled ? n.word : '_____';
+    el.appendChild(span);
+  });
+}
+
+function openWordMatch(sub) {
+  ensureWordMatch();
+  currentL2Sub = sub;
+  document.getElementById('wordmatch-title').textContent = sub.name;
+  setMascotSpeech(sub.hint);
+  const fit = fitCanvasSize(1100, 800);
+  wordMatch.open(sub.root, fit.w);
+  renderWmSentence(sub.root);
+  setModalDoneState(document.getElementById('wordmatch-close'), false);
+  wordMatch.onPlace = () => { celebrateCorrect(); renderWmSentence(sub.root); };
+  wordMatch.onComplete = () => { markL2SubDone(sub, POINTS_SENTENCE); };
+  document.getElementById('wordmatch-overlay').classList.remove('hidden');
+}
+
+function closeWordMatch() {
+  document.getElementById('wordmatch-overlay').classList.add('hidden');
+  currentL2Sub = null;
+  setMascotSpeech(SCREEN_SPEECH.level2);
+}
+
+document.getElementById('wordmatch-close').addEventListener('click', closeWordMatch);
+document.getElementById('wordmatch-clear').addEventListener('click', () => {
+  if (!wordMatch || !currentL2Sub) return;
+  wordMatch.open(currentL2Sub.root, wordMatch.viewW);
+  renderWmSentence(currentL2Sub.root);
+  setModalDoneState(document.getElementById('wordmatch-close'), false);
+});
 
 // ================= REVEAL: fill in what the shapes mean =================
 function renderReveal() {
@@ -510,8 +605,12 @@ document.getElementById('btn-switch-player').addEventListener('click', () => {
   showScreen('name');
 });
 
-document.querySelectorAll('.level-card').forEach(card => {
-  card.addEventListener('click', () => { renderTargetGrid(); showScreen('level1'); });
+document.querySelectorAll('.level-card[data-level]').forEach(card => {
+  card.addEventListener('click', () => {
+    if (card.classList.contains('locked')) return;
+    if (card.dataset.level === '2') { renderLevel2Grid(); showScreen('level2'); }
+    else { renderTargetGrid(); showScreen('level1'); }
+  });
 });
 document.querySelectorAll('[data-back]').forEach(btn => {
   btn.addEventListener('click', () => { renderLevelSelect(); showScreen('levels'); });

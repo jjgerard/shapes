@@ -217,6 +217,11 @@ button { font-family: inherit; cursor: pointer; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .editor-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+/* Small "x close" while a puzzle/sentence is still in progress; once it's
+   actually finished, setModalDoneState() (app.js) swaps this to a big,
+   hard-to-miss "Return to levels" button -- the small link is easy to miss,
+   which is fine mid-task but not once there's nothing left to do. */
+.btn-return { padding: 16px 30px; font-size: 1.15rem; }
 .editor-body { display: flex; flex: 1; min-height: 380px; }
 /* touch-action:none, always -- touch-action on an SVG child (.tree-node)
    isn't reliably honored on real mobile browsers, so relying on the browser
@@ -270,6 +275,26 @@ button { font-family: inherit; cursor: pointer; }
 }
 .tree-edge { stroke: #8a8375; stroke-width: 2; fill: none; }
 .tree-edge.seam { stroke: var(--danger); stroke-width: 3; stroke-dasharray: 6 4; }
+
+/* ---- level 2 word match ---- */
+.wm-body { flex-direction: column; }
+.wm-sentence {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;
+  flex-shrink: 0;
+}
+.wm-word { color: var(--muted); }
+.wm-word.filled { color: var(--ink); }
+#wordmatch-canvas {
+  width: 100%; height: 100%; display: block;
+  background: radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9;
+}
+.wm-chip { cursor: grab; touch-action: none; }
+.wm-chip.dragging { cursor: grabbing; }
 
 /* ---- level 3 ---- */
 #level3-body { margin-top: 18px; }
@@ -356,6 +381,8 @@ button { font-family: inherit; cursor: pointer; }
   .mascot { width: 60px; height: 60px; }
   .mascot-bubble { max-width: 62vw; font-size: 0.95rem; }
   .toast { top: 66px; font-size: 0.85rem; padding: 9px 16px; }
+  .btn-return { padding: 18px 26px; font-size: 1.1rem; min-height: 52px; }
+  .wm-sentence { font-size: 1.15rem; padding: 12px; gap: 8px; }
 }
 
 /* ---- mascot ---- */
