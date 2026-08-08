@@ -369,6 +369,92 @@ const LEVEL2_SUBLEVELS = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Levels 3 & 4 both quiz against the SURFACE (pronounced) string of a
+// sentence, reusing the exact same trees as Level 2. A node's "surface
+// yield" is the sorted list of sentence positions (`pos`) of its
+// pos-bearing descendants -- traces and silent heads contribute nothing,
+// since they're not pronounced. If that yield is contiguous (no gaps) and
+// covers 2+ words, that span of the sentence is a genuine constituent
+// (whichever node/category produced it); every other 2+-word contiguous
+// span in the sentence is NOT a constituent. Single words are always
+// trivially constituents (every word is its own X⁰), so they're excluded
+// from both pools -- testing them wouldn't be an interesting question.
+// ---------------------------------------------------------------------------
+function surfacePositions(node) {
+  if (node.pos) return [node.pos];
+  if (node.isTrace || node.silent) return [];
+  const out = [];
+  for (const c of node.children) out.push(...surfacePositions(c));
+  return out;
+}
+
+// [{start, end, shape}], one entry per unique contiguous 2+-word span that
+// some node's surface yield produces exactly (deduped by span; category is
+// consistent across every node that shares a span, since bar-level never
+// changes what category a node is).
+function computeConstituentSpans(root) {
+  const bySpan = new Map();
+  (function walk(node) {
+    const positions = surfacePositions(node).slice().sort((a, b) => a - b);
+    if (positions.length >= 2) {
+      const min = positions[0], max = positions[positions.length - 1];
+      if (max - min + 1 === positions.length) bySpan.set(`${min}-${max}`, { start: min, end: max, shape: node.shape });
+    }
+    node.children.forEach(walk);
+  })(root);
+  return [...bySpan.values()];
+}
+
+// The linear surface sentence itself -- [{word, pos}], sorted -- read
+// straight off the tree so it can never drift out of sync with it.
+function surfaceTokens(root) {
+  const out = [];
+  (function walk(node) {
+    if (node.pos) out.push({ word: node.word, pos: node.pos });
+    node.children.forEach(walk);
+  })(root);
+  return out.sort((a, b) => a.pos - b.pos);
+}
+
+// Every possible 2+-word contiguous span of a sentence of this length --
+// the constituent pool is a subset of this; non-constituents are the rest.
+function allSpans(sentenceLength) {
+  const out = [];
+  for (let start = 1; start <= sentenceLength; start++) {
+    for (let end = start + 1; end <= sentenceLength; end++) out.push({ start, end });
+  }
+  return out;
+}
+
+// Precomputed once per tree: the sentence, and the constituent /
+// non-constituent span pools to sample questions from.
+function buildQuizPools(root) {
+  const tokens = surfaceTokens(root);
+  const sentenceLength = tokens.length;
+  const constituents = computeConstituentSpans(root);
+  const constituentKeys = new Set(constituents.map(c => `${c.start}-${c.end}`));
+  const nonConstituents = allSpans(sentenceLength).filter(s => !constituentKeys.has(`${s.start}-${s.end}`));
+  return { tokens, sentenceLength, constituents, nonConstituents };
+}
+
+// Levels 3 & 4 both walk the same 3 Level 2 trees, in the same order,
+// skipping "the cat" (id 'the-cat') -- with only 2 words, every possible
+// span is trivially a constituent, so it can't support a real yes/no (or
+// "which category") question at all.
+const QUIZ_SUBLEVELS = LEVEL2_SUBLEVELS.filter(s => s.id !== 'the-cat').map(sub => {
+  const pools = buildQuizPools(sub.root);
+  return {
+    id: sub.id,
+    name: sub.name === '4 Pieces' ? 'The Cat Chased The Mouse'
+      : sub.name === 'More Pieces' ? 'Did The Cat Chase The Mouse'
+      : 'Which Mouse Did The Cat Chase',
+    sentence: pools.tokens.map(t => t.word).join(' '),
+    root: sub.root,
+    pools,
+  };
+});
+
 // Roadmap shown (greyed out) on the level-select screen so the growth path
 // toward the full Carnie syllabus is visible even though only 1-3 are live.
 const ROADMAP = [

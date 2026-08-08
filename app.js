@@ -8,9 +8,10 @@ const POINTS_TUTORIAL = 20;
 const POINTS_TREE = 40;
 const POINTS_REVEAL_SLOT = 10;
 const POINTS_SENTENCE = 30;
+const POINTS_STREAK_COMPLETE = 50;
 
 let player = null;   // {name, code, key}
-// {points, trees:[ids], sentences:[ids],
+// {points, trees:[ids], sentences:[ids], constituency:[ids],
 //  reveal:{shapes:{}, numbers:{}} -- current answers shown on screen, reset-able via Redo,
 //  revealSolved:{shapes:{}, numbers:{}} -- permanent "ever gotten this one right" record}
 let state = null;
@@ -21,7 +22,7 @@ function storageKey(name, code) {
 }
 function defaultState() {
   return {
-    points: 0, trees: [], sentences: [],
+    points: 0, trees: [], sentences: [], constituency: [],
     reveal: { shapes: {}, numbers: {} },
     revealSolved: { shapes: {}, numbers: {} },
   };
@@ -50,6 +51,7 @@ const SCREEN_SPEECH = {
   levels: 'Pick a level to start!',
   level1: 'Choose a sub-level below!',
   level2: 'Choose a sentence below!',
+  level3: 'Choose a sub-level below!',
   reveal: 'Type what you think each shape and number means!',
 };
 function showScreen(id) {
@@ -168,6 +170,20 @@ function renderLevelSelect() {
     level2Card.innerHTML = '<div class="level-num">Level 2</div><div class="lock-badge">🔒 Locked</div>';
   }
 
+  const level3Card = document.getElementById('level3-card');
+  const level3Unlocked = LEVEL2_SUBLEVELS.every(isL2SubComplete);
+  level3Card.classList.toggle('locked', !level3Unlocked);
+  if (level3Unlocked) {
+    const doneCount3 = QUIZ_SUBLEVELS.filter(isL3SubComplete).length;
+    level3Card.innerHTML =
+      '<div class="level-num">Level 3</div>' +
+      '<div class="level-title">Constituents</div>' +
+      '<p>Is this string of words a constituent? Get 10 in a row to prove it.</p>' +
+      `<div class="level-progress">${doneCount3} / ${QUIZ_SUBLEVELS.length} sub-levels done</div>`;
+  } else {
+    level3Card.innerHTML = '<div class="level-num">Level 3</div><div class="lock-badge">🔒 Locked</div>';
+  }
+
   const roadmap = document.getElementById('roadmap');
   roadmap.innerHTML = '';
   ROADMAP.forEach((topic, i) => {
@@ -175,7 +191,7 @@ function renderLevelSelect() {
     card.className = 'level-card locked';
     const num = document.createElement('div');
     num.className = 'level-num';
-    num.textContent = `Level ${i + 3}`;
+    num.textContent = `Level ${i + 4}`;
     card.appendChild(num);
     const lock = document.createElement('div');
     lock.className = 'lock-badge';
@@ -493,6 +509,159 @@ document.getElementById('wordmatch-clear').addEventListener('click', () => {
   setModalDoneState(document.getElementById('wordmatch-close'), false);
 });
 
+// ================= LEVEL 3: constituency yes/no =================
+function isL3SubComplete(sub) {
+  return state.constituency.includes(sub.id);
+}
+
+function renderConstituencyGrid() {
+  const grid = document.getElementById('constituency-grid');
+  grid.innerHTML = '';
+  QUIZ_SUBLEVELS.forEach((sub, i) => {
+    const done = isL3SubComplete(sub);
+    const locked = i > 0 && !isL3SubComplete(QUIZ_SUBLEVELS[i - 1]);
+    const card = document.createElement('div');
+    card.className = 'target-card' + (done ? ' done' : '') + (locked ? ' locked' : '');
+
+    const h3 = document.createElement('h3');
+    h3.textContent = locked ? `${i + 1}. Locked` : `${i + 1}. ${done ? '✓ ' : ''}${sub.name}`;
+    card.appendChild(h3);
+
+    if (!locked) {
+      const p = document.createElement('p');
+      p.textContent = `"${sub.sentence}"`;
+      card.appendChild(p);
+    }
+
+    if (locked) {
+      const note = document.createElement('p');
+      note.className = 'lock-note';
+      note.textContent = 'Locked — finish the previous sub-level first.';
+      card.appendChild(note);
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'btn-primary';
+      btn.textContent = done ? 'Practice again' : 'Start';
+      btn.addEventListener('click', () => openConstituencyQuiz(sub));
+      card.appendChild(btn);
+    }
+    grid.appendChild(card);
+  });
+}
+
+function markL3SubDone(sub) {
+  const already = state.constituency.includes(sub.id);
+  if (!already) {
+    state.constituency.push(sub.id);
+    state.points += POINTS_STREAK_COMPLETE;
+    saveState();
+    toast(`✓ ${sub.name} complete — +${POINTS_STREAK_COMPLETE} pts`);
+  } else {
+    toast(`✓ ${sub.name} — already completed, nice practice!`);
+  }
+  celebrateComplete();
+  updateHeader();
+  renderConstituencyGrid();
+  setModalDoneState(document.getElementById('constituency-close'), true);
+}
+
+let constituencyViewer = null;
+let currentL3Sub = null;
+let l3Game = null;
+let l3CurrentQuestion = null; // {span: {start,end}, isConstituent}
+
+function ensureConstituencyViewer() {
+  if (!constituencyViewer) constituencyViewer = new TreeViewer(document.getElementById('constituency-canvas'));
+  return constituencyViewer;
+}
+
+// Shared by Level 3 and Level 4 -- `prefix` is 'constituency' or (later) the
+// Level 4 modal's id prefix, each with its own -streak-fill/-streak-label.
+function renderStreakBar(prefix, game) {
+  const fill = document.getElementById(`${prefix}-streak-fill`);
+  const label = document.getElementById(`${prefix}-streak-label`);
+  fill.style.width = `${Math.round(game.streak / STREAK_TARGET * 100)}%`;
+  label.textContent = `${game.streak} / ${STREAK_TARGET} in a row — ${game.multiplier()}x bonus`;
+}
+
+function renderQuizSentence(elId, tokens, span) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  tokens.forEach(t => {
+    const word = document.createElement('span');
+    word.className = 'quiz-word' + (t.pos >= span.start && t.pos <= span.end ? ' highlighted' : '');
+    word.textContent = t.word;
+    el.appendChild(word);
+  });
+}
+
+function nextConstituencyQuestion() {
+  const pools = currentL3Sub.pools;
+  const wantConstituent = Math.random() < 0.5;
+  // Every QUIZ_SUBLEVELS tree has both pools non-empty -- the one sentence
+  // ("the cat") short enough to have no non-constituent spans at all was
+  // excluded from this level entirely.
+  const pool = wantConstituent ? pools.constituents : pools.nonConstituents;
+  const span = pool[Math.floor(Math.random() * pool.length)];
+  l3CurrentQuestion = { span, isConstituent: wantConstituent };
+  renderQuizSentence('constituency-sentence', pools.tokens, span);
+  const feedback = document.getElementById('constituency-feedback');
+  feedback.textContent = '';
+  feedback.className = 'quiz-feedback';
+}
+
+function answerConstituencyQuestion(saidYes) {
+  if (!l3CurrentQuestion) return;
+  const correct = saidYes === l3CurrentQuestion.isConstituent;
+  const result = l3Game.answer(correct);
+  state.points = Math.max(0, state.points + result.pointsDelta);
+  saveState(); updateHeader();
+  renderStreakBar('constituency', l3Game);
+
+  const feedback = document.getElementById('constituency-feedback');
+  if (correct) {
+    feedback.textContent = `Correct! ${result.pointsDelta >= 0 ? '+' : ''}${result.pointsDelta} pts`;
+    feedback.className = 'quiz-feedback ok';
+    playCorrectSound();
+    if (!result.complete) celebrateCorrect();
+  } else {
+    feedback.textContent = `Not quite — that ${l3CurrentQuestion.isConstituent ? 'IS' : "isn't"} a constituent. ${result.pointsDelta} pts`;
+    feedback.className = 'quiz-feedback err';
+  }
+
+  if (result.complete) {
+    l3CurrentQuestion = null;
+    markL3SubDone(currentL3Sub);
+    return;
+  }
+  nextConstituencyQuestion();
+}
+
+function openConstituencyQuiz(sub) {
+  ensureConstituencyViewer();
+  currentL3Sub = sub;
+  l3Game = new StreakGame();
+  document.getElementById('constituency-title').textContent = sub.name;
+  setMascotSpeech("Is the highlighted string of words a constituent -- the whole yield of some single piece? 10 in a row to finish.");
+  const fit = fitCanvasSize(1100, 800);
+  constituencyViewer.open(sub.root, fit.w, fit.h);
+  renderStreakBar('constituency', l3Game);
+  setModalDoneState(document.getElementById('constituency-close'), false);
+  nextConstituencyQuestion();
+  document.getElementById('constituency-overlay').classList.remove('hidden');
+}
+
+function closeConstituencyQuiz() {
+  document.getElementById('constituency-overlay').classList.add('hidden');
+  currentL3Sub = null;
+  l3CurrentQuestion = null;
+  setMascotSpeech(SCREEN_SPEECH.level3);
+}
+
+document.getElementById('constituency-close').addEventListener('click', closeConstituencyQuiz);
+document.getElementById('constituency-yes').addEventListener('click', () => answerConstituencyQuestion(true));
+document.getElementById('constituency-no').addEventListener('click', () => answerConstituencyQuestion(false));
+
 // ================= REVEAL: fill in what the shapes mean =================
 function renderReveal() {
   const body = document.getElementById('reveal-body');
@@ -689,6 +858,7 @@ document.querySelectorAll('.level-card[data-level]').forEach(card => {
   card.addEventListener('click', () => {
     if (card.classList.contains('locked')) return;
     if (card.dataset.level === '2') { renderLevel2Grid(); showScreen('level2'); }
+    else if (card.dataset.level === '3') { renderConstituencyGrid(); showScreen('level3'); }
     else { renderTargetGrid(); showScreen('level1'); }
   });
 });
