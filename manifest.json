@@ -1,6 +1,6 @@
 {
-  "name": "Shape Trees — Syntax Builder",
-  "short_name": "Shape Trees",
+  "name": "Shapes",
+  "short_name": "Shapes",
   "description": "Build X-bar syntax trees from colored shapes.",
   "start_url": "./index.html",
   "scope": "./",

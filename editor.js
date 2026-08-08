@@ -22,9 +22,11 @@
 // zoom that loosens as the puzzle grows so a big one can always be zoomed
 // out to fit.
 
-const SNAP_DISTANCE = 50;
-const SLOT_WIDTH = 150;
-const SLOT_HEIGHT = 150;
+const NODE_RADIUS = 32;
+const SNAP_DISTANCE = 60;
+const SLOT_WIDTH = 170;
+const SLOT_HEIGHT = 170;
+const EDGE_MARGIN = NODE_RADIUS;
 const SPRING_APART_OFFSET = 70;
 
 class TreeEditor {
@@ -102,11 +104,11 @@ class TreeEditor {
   // ---- dynamic sizing ----
   contentRight() {
     if (!this.nodes.length) return 0;
-    return Math.max(...this.nodes.map(n => n.x + 40));
+    return Math.max(...this.nodes.map(n => n.x + NODE_RADIUS + 8));
   }
   contentBottom() {
     if (!this.nodes.length) return 0;
-    return Math.max(...this.nodes.map(n => n.y + 40));
+    return Math.max(...this.nodes.map(n => n.y + NODE_RADIUS + 8));
   }
   canvasWidth() {
     return Math.max(this.minViewW || 0, this.contentRight() + SLOT_WIDTH / 2);
@@ -122,7 +124,7 @@ class TreeEditor {
   scatterAll(structureItems) {
     const cols = Math.max(2, Math.ceil(Math.sqrt(structureItems.length * 1.3)));
     const rows = Math.ceil(structureItems.length / cols);
-    const colGap = 140, rowGap = 140;
+    const colGap = 165, rowGap = 165;
     const offsetX = Math.max(colGap / 2 + 20, (this.viewW - cols * colGap) / 2 + colGap / 2);
     const offsetY = Math.max(rowGap / 2 + 20, (this.viewH - rows * rowGap) / 2 + rowGap / 2);
     structureItems.forEach((item, i) => {
@@ -144,8 +146,8 @@ class TreeEditor {
 
     const n = structureItem.children.length;
     structureItem.children.forEach((c, i) => {
-      const cx = baseX + (i - (n - 1) / 2) * 56;
-      const cy = baseY + 68;
+      const cx = baseX + (i - (n - 1) / 2) * 68;
+      const cy = baseY + 82;
       const child = {
         id: this.nextId++, catKey: c.shape, number: c.number,
         x: cx, y: cy, chunkRoot: rootId, structureId: structureItem.id,
@@ -289,13 +291,13 @@ class TreeEditor {
       if (!p || !c) continue;
       const path = svgEl('path', {
         class: 'tree-edge' + (this.snipMode && this.isSeam(e.parent, e.child) ? ' seam' : ''),
-        d: `M ${p.x} ${p.y + 26} C ${p.x} ${(p.y + c.y) / 2}, ${c.x} ${(p.y + c.y) / 2}, ${c.x} ${c.y - 26}`,
+        d: `M ${p.x} ${p.y + NODE_RADIUS} C ${p.x} ${(p.y + c.y) / 2}, ${c.x} ${(p.y + c.y) / 2}, ${c.x} ${c.y - NODE_RADIUS}`,
       });
       edgeLayer.appendChild(path);
     }
 
     for (const n of this.nodes) {
-      const g = buildShapeGroup(n.catKey, n.number, 26);
+      const g = buildShapeGroup(n.catKey, n.number, NODE_RADIUS);
       const isDragging = this.drag && this.drag.id === n.id;
       const isTarget = n.id === this.snapTargetId;
       const isSnippable = this.snipMode && this.hasSeam(n.id);
@@ -384,13 +386,13 @@ class TreeEditor {
       const p = this.toSvgPoint(ev.clientX, ev.clientY);
       const node = this.nodes.find(n => n.id === this.drag.id);
       if (!node) return;
-      const nx = Math.max(24, p.x - this.drag.offsetX);
-      const ny = Math.max(24, p.y - this.drag.offsetY);
+      const nx = Math.max(EDGE_MARGIN, p.x - this.drag.offsetX);
+      const ny = Math.max(EDGE_MARGIN, p.y - this.drag.offsetY);
       const dx = nx - node.x, dy = ny - node.y;
       for (const id of this.subtreeOf(node.id)) {
         const n = this.nodes.find(x => x.id === id);
-        n.x = Math.max(24, n.x + dx);
-        n.y = Math.max(24, n.y + dy);
+        n.x = Math.max(EDGE_MARGIN, n.x + dx);
+        n.y = Math.max(EDGE_MARGIN, n.y + dy);
       }
       this.snapTargetId = this.findSnapTarget(node.id);
       this.render();

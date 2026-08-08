@@ -1,6 +1,10 @@
 // Minimal offline cache so the app still opens (and keeps working) once
 // it's been installed to a phone's home screen without a network connection.
-const CACHE = 'shape-trees-v1';
+// Network-first: always try to get the latest deploy when online, and only
+// fall back to whatever's cached if the network fails. A cache-first
+// strategy here would mean every fix shipped keeps getting masked by a
+// stale cached copy on devices that already installed the app.
+const CACHE = 'shape-trees-v4';
 const ASSETS = [
   './', './index.html', './style.css',
   './data.js', './shapes.js', './editor.js', './app.js',
@@ -22,14 +26,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((res) => {
-          caches.open(CACHE).then((cache) => cache.put(event.request, res.clone()));
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((res) => {
+        caches.open(CACHE).then((cache) => cache.put(event.request, res.clone()));
+        return res;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

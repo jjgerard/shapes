@@ -119,7 +119,7 @@ function renderLevelSelect() {
 
 // ---------------- shared static (read-only) tree layout + paint ----------------
 function layoutTree(root) {
-  const NODE_GAP = 70, LEVEL_GAP = 74;
+  const NODE_GAP = 82, LEVEL_GAP = 86;
   let leafX = 0;
   (function assign(node, depth) {
     node._depth = depth;
@@ -138,7 +138,7 @@ function layoutTree(root) {
 function maxDepth(node) {
   return node.children.length ? 1 + Math.max(...node.children.map(maxDepth)) : 0;
 }
-function paintStaticTree(svg, root, { r = 22, reveal = false, xOffset = 0 } = {}) {
+function paintStaticTree(svg, root, { r = 26, reveal = false, xOffset = 0 } = {}) {
   while (svg.firstChild) svg.removeChild(svg.firstChild);
   const edgeLayer = svgEl('g');
   const nodeLayer = svgEl('g');
@@ -377,7 +377,7 @@ function renderReveal() {
 
   const dims = layoutTree(sub.root);
   svg.setAttribute('viewBox', `0 0 ${dims.width + 40} ${dims.height}`);
-  paintStaticTree(svg, sub.root, { r: 20, reveal: revealComplete(), xOffset: 20 });
+  paintStaticTree(svg, sub.root, { r: 26, reveal: revealComplete(), xOffset: 20 });
 
   const lists = document.createElement('div');
   lists.className = 'legend-lists';
@@ -388,8 +388,8 @@ function renderReveal() {
       key,
       render: (el) => {
         const mini = document.createElementNS(SVG_NS, 'svg');
-        mini.setAttribute('viewBox', '-24 -24 48 48');
-        mini.appendChild(buildShapeGroup(key, '', 20));
+        mini.setAttribute('viewBox', '-30 -30 60 60');
+        mini.appendChild(buildShapeGroup(key, '', 26));
         el.appendChild(mini);
       },
       isCorrect: (val) => isCorrectShapeAnswer(key, val),
