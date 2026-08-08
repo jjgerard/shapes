@@ -137,7 +137,7 @@ button { font-family: inherit; cursor: pointer; }
 .level-card.locked .level-num { color: var(--muted); }
 .level-card.locked .lock-badge { margin-top: 12px; font-size: 0.85rem; font-weight: 600; }
 
-.roadmap-heading { margin-top: 34px; color: var(--muted); font-size: 0.95rem; }
+.roadmap-grid { margin-top: 34px; }
 
 /* ---- level 1 grid ---- */
 .fragment-grid {
@@ -225,12 +225,12 @@ button { font-family: inherit; cursor: pointer; }
 .palette-btn .count { color: var(--muted); font-weight: 700; }
 .palette-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .palette-btn:disabled:hover { background: #fbfaf7; }
-/* touch-action must be none from page load, not toggled reactively --
-   mobile browsers decide whether a touch becomes a scroll or a custom
-   gesture at touchstart time, before any JS in a pointerdown handler runs.
-   The tradeoff is you can't finger-pan empty canvas area; dragging pieces
-   (the primary interaction here) is what actually needs to be reliable. */
-.canvas-wrap { position: relative; flex: 1; overflow: auto; touch-action: none; overscroll-behavior: none; }
+/* Background touches (empty canvas) get native one-finger pan + pinch-zoom.
+   Individual pieces (.tree-node below) override this to touch-action:none
+   so a touch that STARTS on a piece is captured for dragging instead --
+   touch-action is decided per-element at touchstart time, so this split
+   is what lets both gestures coexist reliably. */
+.canvas-wrap { position: relative; flex: 1; overflow: auto; touch-action: pan-x pan-y pinch-zoom; }
 #editor-canvas { display: block; background:
   radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9; }
 .editor-feedback {
@@ -330,9 +330,13 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 @media (max-width: 640px) {
-  #app-header { padding: 10px 14px; }
+  html { font-size: 18px; }
+  #app-header { padding: 12px 16px; }
   main { padding: 16px 12px 60px; }
-  .card.narrow { margin: 24px auto; padding: 18px; }
+  .card.narrow { margin: 24px auto; padding: 20px; }
+  .level-grid, .target-grid, .fragment-grid { grid-template-columns: 1fr; }
+  .level-card, .target-card { padding: 18px; }
+  .btn-primary, .btn-secondary { padding: 13px 22px; font-size: 1rem; min-height: 46px; }
   .overlay { padding: 0; }
   .editor { width: 100%; height: 100%; max-height: 100vh; border-radius: 0; }
   .editor-body { flex-direction: column; min-height: 0; }
@@ -340,28 +344,69 @@ button { font-family: inherit; cursor: pointer; }
     width: 100%; flex-direction: row; flex-wrap: nowrap;
     overflow-x: auto; -webkit-overflow-scrolling: touch;
     border-right: none; border-bottom: 1px solid var(--line);
-    padding: 10px; gap: 8px; max-height: 112px;
+    padding: 12px; gap: 10px; max-height: 156px;
   }
-  .palette-btn { min-width: 84px; flex: 0 0 auto; }
-  .canvas-wrap { min-height: 55vh; }
-  .editor-footer { flex-wrap: wrap; gap: 10px; }
+  .palette-btn { min-width: 118px; flex: 0 0 auto; padding: 10px 8px; }
+  .palette-btn svg { height: 78px; }
+  .canvas-wrap { min-height: 48vh; }
+  .editor-footer { flex-wrap: wrap; gap: 12px; padding: 14px 16px; }
+  #editor-hint { font-size: 0.95rem; }
+  .btn-icon { width: 50px; height: 50px; font-size: 1.35rem; }
   .legend-layout { flex-direction: column; }
-  .mascot-wrap { right: 6px; }
-  .mascot { width: 48px; height: 48px; }
+  .legend-slot { min-height: 48px; padding: 10px 12px; }
+  .legend-slot svg { width: 30px; height: 30px; }
+  .reveal-input { font-size: 1rem; padding: 10px; }
+  .legend-slot .btn-secondary { padding: 9px 16px; font-size: 0.95rem; min-height: 40px; }
+  .mascot-wrap { right: 10px; bottom: 10px; }
+  .mascot { width: 54px; height: 54px; }
+  .mascot-bubble { max-width: 60vw; font-size: 0.9rem; }
 }
 
 /* ---- mascot ---- */
 .mascot-wrap {
   position: fixed;
-  top: 50%;
+  bottom: 16px;
   right: 14px;
-  transform: translateY(-50%);
   z-index: 999;
   pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: calc(100vw - 30px);
 }
-.mascot { width: 64px; height: 64px; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.18)); }
+.mascot { width: 64px; height: 64px; flex-shrink: 0; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.18)); }
 .mascot svg { width: 100%; height: 100%; overflow: visible; }
 .mascot-body { fill: #20c4b0; stroke: rgba(0,0,0,0.15); stroke-width: 2; }
+
+.mascot-bubble {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  max-width: 230px;
+  opacity: 0;
+  transform: translateY(6px) scale(0.96);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.mascot-bubble:empty { opacity: 0 !important; }
+.mascot-bubble.visible { opacity: 1; transform: translateY(0) scale(1); }
+.mascot-bubble::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  bottom: 18px;
+  width: 12px; height: 12px;
+  background: #fff;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(-45deg);
+}
 
 @keyframes mascot-jump {
   0%   { transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 rgba(255,209,60,0)); }

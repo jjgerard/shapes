@@ -30,9 +30,16 @@ function saveState() {
 }
 
 // ---------------- navigation ----------------
+const SCREEN_SPEECH = {
+  name: "Hi! What's your name?",
+  levels: 'Pick a level to start!',
+  level1: 'Choose a sub-level below!',
+  reveal: 'Type what you think each shape and number means!',
+};
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById('screen-' + id).classList.remove('hidden');
+  if (SCREEN_SPEECH[id]) setMascotSpeech(SCREEN_SPEECH[id]);
 }
 
 function toast(msg) {
@@ -55,6 +62,13 @@ function mascotPulse(className, duration) {
 }
 function celebrateCorrect() { mascotPulse('jumping', 650); }
 function celebrateComplete() { mascotPulse('dancing', 1350); }
+
+function setMascotSpeech(text) {
+  const bubble = document.getElementById('mascot-bubble');
+  if (!bubble) return;
+  bubble.textContent = text || '';
+  bubble.classList.toggle('visible', !!text);
+}
 
 function updateHeader() {
   const info = document.getElementById('player-info');
@@ -95,10 +109,6 @@ function renderLevelSelect() {
     num.className = 'level-num';
     num.textContent = `Level ${i + 2}`;
     card.appendChild(num);
-    const title = document.createElement('div');
-    title.className = 'level-title';
-    title.textContent = topic;
-    card.appendChild(title);
     const lock = document.createElement('div');
     lock.className = 'lock-badge';
     lock.textContent = '🔒 Locked';
@@ -244,6 +254,7 @@ function openEditor({ title, hint, inventory, viewW, viewH, onCheck }) {
   document.getElementById('editor-title').textContent = title;
   document.getElementById('editor-hint').textContent = hint;
   document.getElementById('editor-subtitle').textContent = '';
+  setMascotSpeech(hint);
   currentInventory = inventory;
   renderPalette(inventory);
   const fit = fitCanvasSize(viewW, viewH);
@@ -255,6 +266,10 @@ function openEditor({ title, hint, inventory, viewW, viewH, onCheck }) {
     const tile = (paletteTilesByStructure[structureId] || []).find(t => t.used);
     if (tile) { tile.used = false; tile.refresh(); }
   };
+  // No Check button here -- a sub-level finishes itself the moment the last
+  // correct move is made. onChange fires after every snap/snip; check
+  // silently each time, and only act when it's actually complete.
+  editor.onChange = () => { if (activeCheck) activeCheck(true); };
   placeFirstPiece(inventory);
   activeCheck = onCheck;
   document.getElementById('editor-overlay').classList.remove('hidden');
@@ -263,6 +278,7 @@ function openEditor({ title, hint, inventory, viewW, viewH, onCheck }) {
 function closeEditor() {
   document.getElementById('editor-overlay').classList.add('hidden');
   activeCheck = null;
+  setMascotSpeech(SCREEN_SPEECH.level1);
 }
 
 document.getElementById('editor-close').addEventListener('click', closeEditor);
@@ -275,7 +291,6 @@ document.getElementById('editor-clear').addEventListener('click', () => {
     placeFirstPiece(currentInventory);
   }
 });
-document.getElementById('editor-check').addEventListener('click', () => activeCheck && activeCheck());
 document.getElementById('editor-snip').addEventListener('click', () => {
   if (!editor) return;
   editor.setSnipMode(!editor.snipMode);
@@ -308,25 +323,29 @@ function renderTargetGrid() {
     card.className = 'target-card' + (done ? ' done' : '') + (locked ? ' locked' : '');
 
     const h3 = document.createElement('h3');
-    h3.textContent = `${i + 1}. ${done ? '✓ ' : ''}${sub.name}`;
+    h3.textContent = locked ? `${i + 1}. Locked` : `${i + 1}. ${done ? '✓ ' : ''}${sub.name}`;
     card.appendChild(h3);
 
-    const p = document.createElement('p');
-    p.textContent = sub.description;
-    card.appendChild(p);
+    if (!locked) {
+      if (sub.description) {
+        const p = document.createElement('p');
+        p.textContent = sub.description;
+        card.appendChild(p);
+      }
 
-    if (sub.kind === 'build') {
-      const count = document.createElement('div');
-      count.className = 'frag-ids';
-      const pieceCount = sub.inventory.reduce((s, g) => s + g.count, 0);
-      count.textContent = `${pieceCount} pieces`;
-      card.appendChild(count);
+      if (sub.kind === 'build') {
+        const count = document.createElement('div');
+        count.className = 'frag-ids';
+        const pieceCount = sub.inventory.reduce((s, g) => s + g.count, 0);
+        count.textContent = `${pieceCount} pieces`;
+        card.appendChild(count);
+      }
     }
 
     if (locked) {
       const note = document.createElement('p');
       note.className = 'lock-note';
-      note.textContent = `Locked — finish "${LEVEL1_SUBLEVELS[i - 1].name}" first.`;
+      note.textContent = 'Locked — finish the previous sub-level first.';
       card.appendChild(note);
     } else {
       const btn = document.createElement('button');
@@ -366,9 +385,8 @@ function openTutorialEditor(sub) {
     hint: 'Drag the two pieces together until they snap. Then tap the scissors and click the joint to pull them apart again.',
     inventory,
     viewW: 480, viewH: 420,
-    onCheck: () => {
-      if (editor.snapCount < 1) { editor.setFeedback('Snap the two pieces together first.', 'err'); return; }
-      if (editor.snipCount < 1) { editor.setFeedback('Now tap the scissors and click the joint to snip it apart.', 'err'); return; }
+    onCheck: (silent) => {
+      if (editor.snapCount < 1 || editor.snipCount < 1) return;
       editor.setFeedback('Nice work!', 'ok');
       markSubDone(sub, POINTS_TUTORIAL);
     },
@@ -386,10 +404,7 @@ function openTargetEditor(sub) {
     onCheck: () => {
       const forest = editor.toForest();
       const ok = editor.nodes.length === total && forest.length === 1 && matchesPattern(forest[0], sub.root);
-      if (!ok) {
-        editor.setFeedback(`Not connected correctly yet — use all ${total} pieces, forming one single shape.`, 'err');
-        return;
-      }
+      if (!ok) return;
       editor.setFeedback('Complete!', 'ok');
       markSubDone(sub, POINTS_TREE);
     },

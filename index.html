@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shape Trees &mdash; Syntax Builder</title>
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -54,8 +54,7 @@
           <div class="level-progress" id="progress-1"></div>
         </button>
       </div>
-      <h2 class="roadmap-heading">Coming later this semester</h2>
-      <div class="level-grid" id="roadmap"></div>
+      <div class="level-grid roadmap-grid" id="roadmap"></div>
     </section>
 
     <!-- ============ LEVEL 1 (sub-levels) ============ -->
@@ -99,7 +98,6 @@
       <div class="editor-actions">
         <button id="editor-snip" class="btn-icon" title="Snip a joint apart">&#9986;&#65039;</button>
         <button id="editor-clear" class="btn-secondary">Clear</button>
-        <button id="editor-check" class="btn-primary">Check</button>
       </div>
     </div>
   </div>
@@ -108,6 +106,7 @@
 <div id="toast" class="toast hidden"></div>
 
 <div class="mascot-wrap" aria-hidden="true">
+  <div id="mascot-bubble" class="mascot-bubble"></div>
   <div id="mascot" class="mascot">
     <svg viewBox="0 0 100 100">
       <polygon class="mascot-body" points="50,8 86,29 86,71 50,92 14,71 14,29"/>
@@ -118,10 +117,10 @@
   </div>
 </div>
 
-<script src="data.js?v=14"></script>
-<script src="shapes.js?v=14"></script>
-<script src="editor.js?v=14"></script>
-<script src="app.js?v=14"></script>
+<script src="data.js?v=15"></script>
+<script src="shapes.js?v=15"></script>
+<script src="editor.js?v=15"></script>
+<script src="app.js?v=15"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

@@ -148,15 +148,15 @@ const LEVEL1_SUBLEVELS = [
     id: 'one-more-branch',
     kind: 'build',
     name: 'More Pieces',
-    description: 'Combine every piece into one connected shape, fully resolved, with one extra piece branching off.',
-    root: TP_(VP_adjoined()),
+    description: 'Combine every piece into one connected shape, fully resolved, with one extra piece branching off and one more layer on top.',
+    root: CP_(TP_(VP_adjoined())),
   },
   {
     id: 'name-them',
     kind: 'reveal',
     name: 'Mystery Level',
-    description: 'Type what you think each shape and number stands for.',
-    root: TP_(VP_adjoined()),
+    description: '',
+    root: CP_(TP_(VP_adjoined())),
   },
 ];
 
