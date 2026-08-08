@@ -359,6 +359,14 @@ button { font-family: inherit; cursor: pointer; }
 .quiz-feedback.err { color: var(--danger); }
 .quiz-answer-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
 .quiz-answer-btn { min-width: 200px; }
+/* Natural size, not stretched to fill -- same as #editor-canvas/#wordmatch-canvas
+   -- so TreeViewer's own zoom (width/height attributes) is what determines
+   the rendered size, not the flex container squeezing it back down. Missing
+   this made pinch/wheel-zoom silently no-op past the container's own size. */
+#constituency-canvas, #categoryid-canvas {
+  flex-shrink: 0; display: block;
+  background: radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9;
+}
 .quiz-category-matrix { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; }
 .quiz-sticker {
   width: 64px; height: 64px;

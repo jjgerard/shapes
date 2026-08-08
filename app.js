@@ -747,24 +747,26 @@ function ensureCategoryViewer() {
 
 // Always all 6 categories, every sub-level -- not scaffolded down to just
 // whatever's in the current sentence, since by Level 4 the whole system
-// has already been taught.
+// has already been taught. TWO stickers per category -- phrase-level
+// ("DP") and head-level ("D⁰") -- since questions are drawn from both
+// pools; offering only the phrase-level sticker would leave head-level
+// questions (like a single "the") with no correct option to actually pick.
 function buildCategoryMatrix() {
   const matrix = document.getElementById('categoryid-matrix');
   matrix.innerHTML = '';
   Object.keys(CATEGORIES).forEach(key => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'quiz-sticker';
-    btn.title = CATEGORIES[key].name;
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('viewBox', '-30 -30 60 60');
-    // Labeled with the phrase-level ("CP", "DP", ...) form, same convention
-    // as the tree itself, rather than left blank -- consistent, readable,
-    // and doesn't require picking an arbitrary bar-level to show.
-    svg.appendChild(buildShapeGroup(key, xbarLabel(key, 1), 26));
-    btn.appendChild(svg);
-    btn.addEventListener('click', () => answerCategoryQuestion(key));
-    matrix.appendChild(btn);
+    [{ isHead: false, level: 1 }, { isHead: true, level: 3 }].forEach(({ isHead, level }) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'quiz-sticker';
+      btn.title = `${CATEGORIES[key].name} (${isHead ? 'head' : 'phrase'})`;
+      const svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('viewBox', '-30 -30 60 60');
+      svg.appendChild(buildShapeGroup(key, xbarLabel(key, level), 26));
+      btn.appendChild(svg);
+      btn.addEventListener('click', () => answerCategoryQuestion(key, isHead));
+      matrix.appendChild(btn);
+    });
   });
 }
 
@@ -775,29 +777,30 @@ function nextCategoryQuestion() {
   // constituent, just at a different bar level.
   const pool = pools.constituents.concat(pools.headConstituents);
   const span = pool[Math.floor(Math.random() * pool.length)];
-  l4CurrentQuestion = { span, shape: span.shape };
+  l4CurrentQuestion = { span, shape: span.shape, isHead: span.start === span.end };
   renderQuizSentence('categoryid-sentence', pools.tokens, span);
   const feedback = document.getElementById('categoryid-feedback');
   feedback.textContent = '';
   feedback.className = 'quiz-feedback';
 }
 
-function answerCategoryQuestion(chosenShape) {
+function answerCategoryQuestion(chosenShape, chosenIsHead) {
   if (!l4CurrentQuestion) return;
-  const correct = chosenShape === l4CurrentQuestion.shape;
+  const correct = chosenShape === l4CurrentQuestion.shape && chosenIsHead === l4CurrentQuestion.isHead;
   const result = l4Game.answer(correct);
   state.points = Math.max(0, state.points + result.pointsDelta);
   saveState(); updateHeader();
   renderStreakBar('categoryid', l4Game);
 
   const feedback = document.getElementById('categoryid-feedback');
+  const answerLabel = xbarLabel(l4CurrentQuestion.shape, l4CurrentQuestion.isHead ? 3 : 1);
   if (correct) {
     feedback.textContent = `Correct! ${result.pointsDelta >= 0 ? '+' : ''}${result.pointsDelta} pts`;
     feedback.className = 'quiz-feedback ok';
     playCorrectSound();
     if (!result.complete) celebrateCorrect();
   } else {
-    feedback.textContent = `Not quite — that's ${CATEGORIES[l4CurrentQuestion.shape].name} (${l4CurrentQuestion.shape}). ${result.pointsDelta} pts`;
+    feedback.textContent = `Not quite — that's ${CATEGORIES[l4CurrentQuestion.shape].name} (${answerLabel}). ${result.pointsDelta} pts`;
     feedback.className = 'quiz-feedback err';
   }
 

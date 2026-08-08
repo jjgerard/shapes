@@ -53,26 +53,24 @@ class TreeViewer {
     paintStaticTree(contentLayer, this.root, { r: s.r, reveal: true, xOffset: this.xOffset, fontScale: 0.62 });
   }
 
-  // Same idea as TreeEditor/WordMatchEditor: zoom to fit and center when
-  // the whole tree fits at a still-readable zoom, otherwise anchor at its
-  // top-left corner and let panning/pinching reach the rest.
+  // Unlike TreeEditor/WordMatchEditor (where precise dragging onto small
+  // targets makes an overly-shrunk view a problem), this canvas is pure
+  // reference material -- there's nothing to click inside it -- so it
+  // always zooms to fit the WHOLE tree in view and centers it, regardless
+  // of how small that makes it. Pinch/wheel zoom is still there afterward
+  // for anyone who wants a closer look at part of it.
   _scrollToStart() {
     const wrap = this.svg.parentElement;
     if (!wrap) return;
     requestAnimationFrame(() => {
       const pad = 30;
       const rawW = this.treeWidth + pad * 2, rawH = this.treeHeight + pad * 2;
-      const fitZoom = Math.min(1, wrap.clientWidth / rawW, wrap.clientHeight / rawH);
-      this.zoom = fitZoom >= 0.5 ? fitZoom : 1;
+      const fitZoom = Math.min(wrap.clientWidth / rawW, wrap.clientHeight / rawH);
+      this.zoom = Math.max(this.minZoom(), Math.min(this.maxZoom(), fitZoom));
       this.render();
-      if (fitZoom >= 0.5) {
-        const contentW = rawW * this.zoom, contentH = rawH * this.zoom;
-        wrap.scrollLeft = Math.max(0, (this.xOffset - pad) * this.zoom - (wrap.clientWidth - contentW) / 2);
-        wrap.scrollTop = Math.max(0, (this.yOffset - pad) * this.zoom - (wrap.clientHeight - contentH) / 2);
-      } else {
-        wrap.scrollLeft = Math.max(0, (this.xOffset - pad) * this.zoom);
-        wrap.scrollTop = Math.max(0, (this.yOffset - pad) * this.zoom);
-      }
+      const contentW = rawW * this.zoom, contentH = rawH * this.zoom;
+      wrap.scrollLeft = Math.max(0, (this.xOffset - pad) * this.zoom - (wrap.clientWidth - contentW) / 2);
+      wrap.scrollTop = Math.max(0, (this.yOffset - pad) * this.zoom - (wrap.clientHeight - contentH) / 2);
     });
   }
 
