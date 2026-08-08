@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Shape Trees &mdash; Syntax Builder</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#2f6f5e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Shape Trees">
+</head>
+<body>
+<div id="app">
+
+  <header id="app-header">
+    <div class="brand">Shape Trees</div>
+    <div id="player-info" class="hidden">
+      <span id="player-name-display"></span>
+      <span id="player-points" class="points-pill">0 pts</span>
+      <button id="btn-switch-player" class="link-btn">switch player</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============ NAME GATE ============ -->
+    <section id="screen-name" class="screen">
+      <div class="card narrow">
+        <h1>Who's building?</h1>
+        <p class="muted">Enter your name and your class code. Points are saved on this device.</p>
+        <label>Name
+          <input id="input-name" type="text" maxlength="30" autocomplete="off" placeholder="e.g. Jordan">
+        </label>
+        <label>Class code
+          <input id="input-code" type="text" maxlength="20" autocomplete="off" placeholder="e.g. LING378">
+        </label>
+        <button id="btn-start" class="btn-primary">Start building</button>
+      </div>
+    </section>
+
+    <!-- ============ LEVEL SELECT ============ -->
+    <section id="screen-levels" class="screen hidden">
+      <h1>Choose a level</h1>
+      <div class="level-grid">
+        <button class="level-card" data-level="1">
+          <div class="level-num">Level 1</div>
+          <div class="level-title">Shapes</div>
+          <p>Combine a set inventory of pieces into a single connected shape. No shortcuts allowed.</p>
+          <div class="level-progress" id="progress-1"></div>
+        </button>
+      </div>
+      <h2 class="roadmap-heading">Coming later this semester</h2>
+      <div class="roadmap" id="roadmap"></div>
+    </section>
+
+    <!-- ============ LEVEL 1 (sub-levels) ============ -->
+    <section id="screen-level1" class="screen hidden">
+      <button class="link-btn back-btn" data-back>&larr; Levels</button>
+      <h1>Level 1 &mdash; Shapes</h1>
+      <p class="muted">Each sub-level gives you a fixed set of pieces &mdash; use every one of them, connected into a single shape, with no shortcuts. Finish one to unlock the next.</p>
+      <div class="target-grid" id="target-grid"></div>
+    </section>
+
+    <!-- ============ REVEAL (final sub-level: fill in the blanks) ============ -->
+    <section id="screen-reveal" class="screen hidden">
+      <button class="link-btn back-btn" data-back>&larr; Levels</button>
+      <h1>What Do They Mean?</h1>
+      <p class="muted">Here's a shape you built. Type what you think each shape and each number stands for &mdash; a short word or abbreviation is fine.</p>
+      <div id="reveal-body"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ SHARED EDITOR MODAL (used by Level 1 and Level 2) ============ -->
+<div id="editor-overlay" class="overlay hidden">
+  <div class="editor">
+    <div class="editor-header">
+      <div>
+        <div id="editor-title">Build it</div>
+        <div id="editor-subtitle" class="muted small"></div>
+      </div>
+      <button id="editor-close" class="link-btn">&times; close</button>
+    </div>
+    <div class="editor-body">
+      <div class="palette" id="editor-palette"></div>
+      <div class="canvas-wrap">
+        <svg id="editor-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="editor-feedback" class="editor-feedback"></div>
+      </div>
+    </div>
+    <div class="editor-footer">
+      <span id="editor-hint" class="muted small"></span>
+      <div class="editor-actions">
+        <button id="editor-snip" class="btn-icon" title="Snip a joint apart">&#9986;&#65039;</button>
+        <button id="editor-clear" class="btn-secondary">Clear</button>
+        <button id="editor-check" class="btn-primary">Check</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="data.js?v=10"></script>
+<script src="shapes.js?v=10"></script>
+<script src="editor.js?v=10"></script>
+<script src="app.js?v=10"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+</script>
+</body>
+</html>

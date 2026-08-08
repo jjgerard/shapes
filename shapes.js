@@ -1,0 +1,62 @@
+// SVG shape geometry for the 6 category shapes. Every function returns an
+// <svg> child element (unattached) sized around local origin (0,0), meant to
+// sit inside a <g transform="translate(x,y)">.
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs = {}) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function polygonPoints(cx, cy, r, sides, rotationDeg = -90) {
+  const pts = [];
+  for (let i = 0; i < sides; i++) {
+    const a = (rotationDeg + (360 / sides) * i) * (Math.PI / 180);
+    pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+  }
+  return pts.map(p => p.join(',')).join(' ');
+}
+
+function starPoints(cx, cy, rOuter, rInner, points = 5, rotationDeg = -90) {
+  const pts = [];
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 === 0 ? rOuter : rInner;
+    const a = (rotationDeg + (180 / points) * i) * (Math.PI / 180);
+    pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+  }
+  return pts.map(p => p.join(',')).join(' ');
+}
+
+const HEART_D = 'M16,29.3 C16,29.3 2,18 2,10.5 C2,5.8 5.6,2 10,2 C12.6,2 15,3.4 16,5.6 ' +
+  'C17,3.4 19.4,2 22,2 C26.4,2 30,5.8 30,10.5 C30,18 16,29.3 16,29.3 Z';
+
+// shape -> element factory. `r` is the nominal radius/half-size.
+const SHAPE_FACTORY = {
+  square: (r) => svgEl('rect', { x: -r, y: -r, width: 2 * r, height: 2 * r, rx: r * 0.12 }),
+  rectangle: (r) => svgEl('rect', { x: -r * 1.35, y: -r * 0.78, width: 2.7 * r, height: 1.56 * r, rx: r * 0.12 }),
+  circle: (r) => svgEl('circle', { cx: 0, cy: 0, r }),
+  triangle: (r) => svgEl('polygon', { points: polygonPoints(0, r * 0.08, r * 1.15, 3, -90) }),
+  star: (r) => svgEl('polygon', { points: starPoints(0, 0, r * 1.15, r * 0.5, 5, -90) }),
+  heart: (r) => {
+    const p = svgEl('path', { d: HEART_D });
+    const s = r / 15.3;
+    p.setAttribute('transform', `scale(${s}) translate(-16,-15)`);
+    return p;
+  },
+};
+
+// Build a full <g class="tree-node"> for a data node {shape, number}.
+// `shape` here is the CATEGORY KEY (C/T/V/D/N/P) -- callers pass CATEGORIES[key].
+function buildShapeGroup(categoryKey, number, r = 26) {
+  const cat = CATEGORIES[categoryKey];
+  const g = svgEl('g');
+  const shapeEl = SHAPE_FACTORY[cat.shape](r);
+  shapeEl.setAttribute('class', 'node-shape');
+  shapeEl.setAttribute('fill', cat.color);
+  g.appendChild(shapeEl);
+  const label = svgEl('text', { x: 0, y: 1 });
+  label.textContent = number;
+  g.appendChild(label);
+  return g;
+}
