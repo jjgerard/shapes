@@ -99,16 +99,14 @@ class TreeEditor {
     this.render();
   }
 
-  // Zoom can go as low as needed to fit the whole tree in the visible
-  // canvas area, so a big tree is never stuck too large to see.
-  minZoom() {
-    const wrap = this.svg.parentElement;
-    const availW = (wrap && wrap.clientWidth) || 300;
-    const availH = (wrap && wrap.clientHeight) || 300;
-    const fit = Math.min(availW / this.viewW, availH / this.viewH);
-    return Math.max(0.15, Math.min(1, fit) * 0.92);
-  }
-  maxZoom() { return 2.5; }
+  // Fixed range like Canva/Figma -- 5% to 500% -- rather than a bound
+  // derived from content size. A dynamic minimum meant a big tree could
+  // hit a floor well above 5% and still not fully fit; a fixed range
+  // means you can always zoom out (or in) exactly as far as you want,
+  // and pan to any edge of the canvas from there (see the "safe center"
+  // note on .canvas-wrap in style.css for why every edge is reachable).
+  minZoom() { return 0.05; }
+  maxZoom() { return 5; }
   setZoom(z) {
     this.zoom = Math.max(this.minZoom(), Math.min(this.maxZoom(), z));
     this.render();
