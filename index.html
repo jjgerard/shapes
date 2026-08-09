@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shapes</title>
-<link rel="stylesheet" href="style.css?v=42">
-<link rel="icon" href="icon.svg?v=42" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=43">
+<link rel="icon" href="icon.svg?v=43" type="image/svg+xml">
 <meta name="theme-color" content="#2f6f5e">
 </head>
 <body>
@@ -45,18 +45,15 @@
       </div>
     </section>
 
-    <!-- ============ MODE SELECT ============ -->
-    <section id="screen-modes" class="screen hidden">
-      <h1>Pick how deep to go</h1>
-      <p class="muted">Both versions have the same four levels and the same shapes. They differ in how many layers a phrase is built from. You can switch between them whenever you like &mdash; your progress in each is kept separately.</p>
-      <div class="level-grid" id="mode-grid"></div>
-    </section>
-
     <!-- ============ LEVEL SELECT ============ -->
+    <!-- Which version is running comes from the URL (?mode=xbar), not from
+         an in-app picker. A picker on the way in had to describe both
+         versions to be useful, and describing them gives away the answers
+         to the Mystery Level -- "phrase", "head", "bar" and the DP/D′/D⁰
+         labels are exactly what Level 1 spends its whole time withholding. -->
     <section id="screen-levels" class="screen hidden">
-      <button class="link-btn back-btn" data-back-to="modes">&larr; Change version</button>
       <h1>Choose a level</h1>
-      <p class="muted" id="levels-mode-note"></p>
+      <p class="muted hidden" id="levels-mode-note"></p>
       <div class="level-grid">
         <button class="level-card" data-level="1">
           <div class="level-num">Level 1</div>
@@ -78,6 +75,10 @@
         </button>
       </div>
       <div class="level-grid roadmap-grid" id="roadmap"></div>
+      <!-- Filled in (and unhidden) only once the Mystery Level has been
+           solved in this version, i.e. once the category system is no
+           longer a secret worth keeping. -->
+      <div id="levels-switch" class="mode-switch hidden"></div>
     </section>
 
     <!-- ============ LEVEL 1 (sub-levels) ============ -->
@@ -281,15 +282,15 @@
   </div>
 </div>
 
-<script src="sound.js?v=42"></script>
-<script src="data.js?v=42"></script>
-<script src="shapes.js?v=42"></script>
-<script src="canvas.js?v=42"></script>
-<script src="wordmatch.js?v=42"></script>
-<script src="editor.js?v=42"></script>
-<script src="streak.js?v=42"></script>
-<script src="treeviewer.js?v=42"></script>
-<script src="app.js?v=42"></script>
+<script src="sound.js?v=43"></script>
+<script src="data.js?v=43"></script>
+<script src="shapes.js?v=43"></script>
+<script src="canvas.js?v=43"></script>
+<script src="wordmatch.js?v=43"></script>
+<script src="editor.js?v=43"></script>
+<script src="streak.js?v=43"></script>
+<script src="treeviewer.js?v=43"></script>
+<script src="app.js?v=43"></script>
 <script>
   // Plain webpage, not an installable app -- clean up any service worker
   // and caches left over from when it registered one, so nobody's stuck

@@ -117,7 +117,6 @@ window.addEventListener('popstate', () => {
 // ---------------- screens ----------------
 const SCREEN_SPEECH = {
   name: "Hi! What's your name?",
-  modes: 'Pick a version to play!',
   levels: 'Pick a level to start!',
   level1: 'Choose a sub-level below!',
   level2: 'Choose a sentence below!',
@@ -132,8 +131,23 @@ function showScreen(id) {
   window.scrollTo(0, 0);
 }
 
-function gotoModes() { renderModeSelect(); showScreen('modes'); }
 function gotoLevels() { renderLevelSelect(); showScreen('levels'); }
+
+// Which version of the game this page is: read once, from the URL. Two
+// URLs rather than an in-app chooser, because a chooser has to describe
+// the versions to be useful and the descriptions ("phrase", "head",
+// "bar", DP/D′/D⁰) are precisely the Mystery Level's answers.
+//   index.html              -> Tree Basics
+//   index.html?mode=xbar    -> X-bar
+// Both live on the same origin, so a student's saved points and progress
+// follow them across both without anything extra.
+function modeIdFromUrl() {
+  const requested = new URLSearchParams(location.search).get('mode');
+  return MODE_IDS.includes(requested) ? requested : DEFAULT_MODE_ID;
+}
+function urlForMode(id) {
+  return location.pathname + (id === DEFAULT_MODE_ID ? '' : '?mode=' + id);
+}
 
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -203,7 +217,7 @@ function loginAs(name, code) {
   localStorage.setItem('stb:lastPlayer', JSON.stringify({ name, code }));
   updateHeader();
   resetNav();
-  gotoModes();
+  gotoLevels();
 }
 
 // ---------------- confirm dialog ----------------
@@ -361,78 +375,43 @@ function isSubComplete(sub) {
   return sub.kind === 'reveal' ? revealEverSolved() : prog().trees.includes(sub.id);
 }
 
-// ---------------- mode select ----------------
-// A small row of this mode's shapes at the levels each one projects
-// through, so the difference between the two versions is visible on the
-// card rather than only describable in words.
-function buildModePreview(mode) {
-  const row = document.createElement('div');
-  row.className = 'mode-shape-row';
-  const numbers = Object.keys(mode.levels).map(Number).sort((a, b) => a - b);
-  for (const n of numbers) {
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('viewBox', '-32 -32 64 64');
-    svg.appendChild(buildShapeGroup('D', mode.levels[n].code.replace('X', 'D'), 26, 0.55));
-    row.appendChild(svg);
-  }
-  return row;
-}
+// ---------------- the other version ----------------
+// Nothing about the other version is mentioned until the Mystery Level in
+// THIS one has been solved. Before that, saying "there's also a version
+// with a bar level in it" would hand over two of the answers; after it,
+// the category system is common knowledge and pointing at the next step
+// is just useful. Rendered as a real link so it can be bookmarked, copied
+// and handed out by a teacher.
+function renderModeSwitch() {
+  const wrap = document.getElementById('levels-switch');
+  wrap.innerHTML = '';
+  const otherId = MODE_IDS.find(id => id !== MODE.id);
+  if (!otherId || !revealEverSolved()) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
 
-function renderModeSelect() {
-  const grid = document.getElementById('mode-grid');
-  grid.innerHTML = '';
-  const activeId = MODE ? MODE.id : null;
-  for (const id of MODE_IDS) {
-    const mode = MODES[id];
-    const card = document.createElement('button');
-    card.className = 'level-card mode-card' + (id === activeId ? ' current' : '');
+  const other = MODES[otherId];
+  const p = state.modes[otherId] || defaultModeProgress();
+  const started = p.trees.length || p.sentences.length ||
+    Object.keys(p.revealSolved.shapes).length;
 
-    const num = document.createElement('div');
-    num.className = 'level-num';
-    num.textContent = mode.tagline;
-    card.appendChild(num);
+  const heading = document.createElement('h2');
+  heading.textContent = 'Another version to try';
+  wrap.appendChild(heading);
 
-    const title = document.createElement('div');
-    title.className = 'level-title';
-    title.textContent = mode.name;
-    card.appendChild(title);
+  const link = document.createElement('a');
+  link.className = 'mode-switch-card';
+  link.href = urlForMode(otherId);
+  link.innerHTML =
+    `<div class="level-num">${other.tagline}</div>` +
+    `<div class="level-title">${other.name}</div>` +
+    `<p>${other.blurb}</p>` +
+    `<div class="level-progress">${started ? 'In progress — your points come with you' : 'Not started yet'}</div>`;
+  wrap.appendChild(link);
 
-    const blurb = document.createElement('p');
-    blurb.textContent = mode.blurb;
-    card.appendChild(blurb);
-
-    card.appendChild(buildModePreview(mode));
-
-    const done = document.createElement('div');
-    done.className = 'level-progress';
-    const p = state.modes[id] || defaultModeProgress();
-    const levelsDone =
-      (mode.level1.every(s => s.kind === 'reveal'
-        ? Object.keys(CATEGORIES).every(k => p.revealSolved.shapes[k]) && mode.numbers.every(n => p.revealSolved.numbers[n])
-        : p.trees.includes(s.id)) ? 1 : 0) +
-      (mode.level2.every(s => p.sentences.includes(s.id)) ? 1 : 0) +
-      (mode.quiz.every(s => p.constituency.includes(s.id)) ? 1 : 0) +
-      (mode.quiz.every(s => p.categoryid.includes(s.id)) ? 1 : 0);
-    done.textContent = `${levelsDone} / 4 levels done`;
-    card.appendChild(done);
-
-    if (id === activeId) {
-      const badge = document.createElement('div');
-      badge.className = 'mode-current-badge';
-      badge.textContent = 'Currently playing';
-      card.appendChild(badge);
-    }
-
-    card.addEventListener('click', () => selectMode(id));
-    grid.appendChild(card);
-  }
-}
-
-function selectMode(id) {
-  setMode(id);
-  localStorage.setItem('stb:lastMode', id);
-  pushNav(gotoModes);
-  gotoLevels();
+  const note = document.createElement('p');
+  note.className = 'muted small';
+  note.textContent = `You're playing ${MODE.name}. Progress in each version is kept separately; your points are shared.`;
+  wrap.appendChild(note);
 }
 
 // ---------------- level select ----------------
@@ -440,9 +419,6 @@ function selectMode(id) {
 // blank "🔒 Locked" tile (same as the greyed-out roadmap ahead of it) --
 // title and description included -- until every Level 1 sub-level is done.
 function renderLevelSelect() {
-  document.getElementById('levels-mode-note').textContent =
-    `Playing ${MODE.name} — ${MODE.tagline.toLowerCase()}.`;
-
   const doneCount = LEVEL1_SUBLEVELS.filter(isSubComplete).length;
   document.getElementById('progress-1').textContent = `${doneCount} / ${LEVEL1_SUBLEVELS.length} sub-levels done`;
 
@@ -503,6 +479,8 @@ function renderLevelSelect() {
     card.appendChild(lock);
     roadmap.appendChild(card);
   });
+
+  renderModeSwitch();
 }
 
 // What a locked level is waiting for -- said out loud, because a tap that
@@ -1458,7 +1436,7 @@ document.querySelectorAll('.level-card[data-level]').forEach(card => {
     else { renderTargetGrid(); showScreen('level1'); }
   });
 });
-document.querySelectorAll('[data-back], [data-back-to]').forEach(btn => {
+document.querySelectorAll('[data-back]').forEach(btn => {
   btn.addEventListener('click', navBack);
 });
 
@@ -1466,9 +1444,7 @@ document.querySelectorAll('[data-back], [data-back-to]').forEach(btn => {
 (function boot() {
   history.replaceState({ depth: 0 }, '');
   renderSoundButton();
-
-  const savedMode = localStorage.getItem('stb:lastMode');
-  setMode(MODE_IDS.includes(savedMode) ? savedMode : DEFAULT_MODE_ID);
+  setMode(modeIdFromUrl());
 
   // Wire the on-canvas zoom/fit controls once. The getters are lazy, so
   // it's fine that none of the view objects exist yet.
