@@ -303,13 +303,6 @@ button { font-family: inherit; cursor: pointer; }
 #editor-canvas { flex-shrink: 0; }
 #editor-canvas { display: block; background:
   radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9; }
-/* Lives in the header (not floating over the canvas) so the mascot's
-   speech bubble, which sits fixed at the bottom of the screen, can never
-   cover it. */
-.editor-feedback { font-size: 0.85rem; font-weight: 600; min-height: 1.1em; }
-.editor-feedback.ok { color: var(--accent); }
-.editor-feedback.err { color: var(--danger); }
-.editor-feedback.hint { color: #a17a00; }
 
 /* svg node styling */
 .tree-node { cursor: grab; touch-action: none; }
@@ -357,17 +350,15 @@ button { font-family: inherit; cursor: pointer; }
 }
 .wm-word { color: var(--muted); }
 .wm-word.filled { color: var(--ink); }
-/* Feedback line plus the escape hatch for a word you can't place. The queue
-   only advances on a correct placement, so without "Skip this word" a stuck
-   student's only route forward was Start over -- throwing away every word
-   already placed. */
+/* The escape hatch for a word you can't place. The queue only advances on
+   a correct placement, so without "Skip this word" a stuck student's only
+   route forward was Start over -- throwing away every word already placed.
+   Feedback does not live here; it goes to the mascot bar like everything
+   else. */
 .wm-statusbar {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  display: flex; align-items: center; justify-content: flex-end;
   padding: 8px 16px; border-bottom: 1px solid var(--line); flex-shrink: 0;
 }
-.wm-feedback { font-size: 0.88rem; font-weight: 600; min-height: 1.2em; color: var(--danger); }
-.wm-feedback.ok { color: var(--accent); }
-.wm-feedback.hint { color: #a17a00; }
 /* Natural size, not stretched to fill -- same as #editor-canvas -- so a
    big tree scrolls/zooms in .canvas-wrap instead of auto-shrinking. */
 #wordmatch-canvas {
@@ -400,7 +391,7 @@ button { font-family: inherit; cursor: pointer; }
 .wm-chip-float.dragging { cursor: grabbing; }
 /* A wrong drop used to snap the chip silently back to its corner, which is
    indistinguishable from the drag never having registered. Now it shakes,
-   and .wm-feedback says why. */
+   and the mascot bar says why. */
 @keyframes chip-reject {
   0%, 100% { transform: translateX(0); }
   15% { transform: translateX(-8px); }
@@ -648,8 +639,7 @@ button { font-family: inherit; cursor: pointer; }
   #btn-switch-player { font-size: 0.82rem; }
   .canvas-controls { right: 10px; bottom: 10px; padding: 5px; gap: 5px; }
   .canvas-btn { min-width: 46px; height: 46px; }
-  .wm-statusbar { padding: 8px 12px; gap: 8px; }
-  .wm-feedback { font-size: 0.82rem; }
+  .wm-statusbar { padding: 8px 12px; }
   /* Sized to its content, not the whole screen -- a two-line "are you
      sure?" blown up to full-bleed reads as something far more serious than
      it is. .overlay's mobile rule drops padding to 0 for the puzzle modals,

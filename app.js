@@ -184,12 +184,66 @@ function setModalDoneState(btn, done) {
   }
 }
 
-function setMascotSpeech(text) {
+// The mascot bar is the ONLY place feedback is ever shown. It carries two
+// kinds of message at once, so they need to not clobber each other:
+//
+//   base  -- the standing instruction for wherever you are ("drag every
+//            piece together...", "you're in snip mode..."). Changes when
+//            the screen or mode does.
+//   flash -- a transient reaction to what you just did ("Snapped
+//            together", "those two don't fit"). Shows for a few seconds,
+//            then hands the bar back to whatever the base is by then.
+let mascotBase = '';
+let mascotFlashTimer = null;
+
+function renderMascotBubble(text) {
   const bubble = document.getElementById('mascot-bubble');
   if (!bubble) return;
   bubble.textContent = text || '';
   bubble.classList.toggle('visible', !!text);
   syncMascotBarHeight();
+}
+
+// Set the standing instruction. By default this does NOT interrupt a
+// flash -- a mode change in the same tick as a result message (a snip does
+// both) would otherwise wipe the result before it could be read; the new
+// base is simply what the flash reverts to when it expires.
+//
+// `interrupt` is for the opposite case: an instruction the student just
+// asked for by pressing something. Arming the scissors right after a snap
+// has to show you how to use them now, not once "Snapped together" has
+// finished its three seconds.
+function setMascotSpeech(text, { interrupt = false } = {}) {
+  mascotBase = text || '';
+  if (mascotFlashTimer && !interrupt) return;
+  clearTimeout(mascotFlashTimer);
+  mascotFlashTimer = null;
+  renderMascotBubble(mascotBase);
+}
+
+function flashMascotSpeech(text, ms = 3400) {
+  if (!text) return;
+  clearTimeout(mascotFlashTimer);
+  renderMascotBubble(text);
+  mascotFlashTimer = setTimeout(() => {
+    mascotFlashTimer = null;
+    renderMascotBubble(mascotBase);
+  }, ms);
+}
+
+// Drop any transient message immediately -- on closing a modal, so the
+// puzzle's last message doesn't linger over the level list behind it.
+function clearMascotFlash() {
+  clearTimeout(mascotFlashTimer);
+  mascotFlashTimer = null;
+  renderMascotBubble(mascotBase);
+}
+
+// Hints stay up longer than reactions: they're something to act on, not
+// just something to notice.
+function relayFeedback(msg, kind) {
+  if (!msg) { clearMascotFlash(); return; }
+  flashMascotSpeech(msg, kind === 'hint' ? 7000 : 3400);
 }
 
 // The mascot bar's actual rendered height (which varies with how long its
@@ -272,7 +326,7 @@ const HELP = {
       <li>Drag one piece onto another. If they belong together they <strong>snap</strong>,
           and you'll see the target piece glow green just before they do.</li>
       <li>Two pieces only join if their <strong>shape and number both match</strong>, and one of
-          them has an empty branch free. If a drop doesn't work, the message at the top says why.</li>
+          them has an empty branch free. If a drop doesn't work, the message at the bottom of the screen says why.</li>
       <li><strong>Stuck?</strong> After three tries that don't work, two pieces that do fit start
           glowing amber. Drag either one onto the other.</li>
       <li>The <strong>✂️ scissors</strong> button pulls a joint apart again: tap the scissors,
@@ -501,10 +555,13 @@ let editor = null;
 let activeCheck = null;  // function() -> void, checked automatically after every move
 let currentItems = null; // flat list of STRUCTURES items for the open sub-level, so Start over can re-scatter them
 
+// The standing instruction for the open sub-level, so snip mode has
+// something to hand the bar back to when it's switched off.
+let editorBaseHint = '';
+const SNIP_HINT = 'Snip mode: tap a piece outlined in red to pull it apart. Tap empty canvas to cancel.';
+
 function ensureEditor() {
-  if (!editor) {
-    editor = new TreeEditor(document.getElementById('editor-canvas'), document.getElementById('editor-feedback'));
-  }
+  if (!editor) editor = new TreeEditor(document.getElementById('editor-canvas'));
   return editor;
 }
 
@@ -540,6 +597,8 @@ function setSnipButtonActive(on) {
 function openEditor({ title, hint, items, viewW, viewH, onCheck }) {
   ensureEditor();
   document.getElementById('editor-title').textContent = title;
+  editorBaseHint = hint;
+  clearMascotFlash();
   setMascotSpeech(hint);
   currentItems = items;
   const fit = fitCanvasSize(viewW, viewH);
@@ -547,7 +606,14 @@ function openEditor({ title, hint, items, viewW, viewH, onCheck }) {
   editor.scatterAll(items);
   setSnipButtonActive(false);
   setModalDoneState(document.getElementById('editor-close'), false);
-  editor.onSnipModeChange = setSnipButtonActive;
+  editor.onSnipModeChange = (on) => {
+    setSnipButtonActive(on);
+    // Arming takes the bar immediately; disarming is usually the tail of a
+    // snip whose result is still worth reading, so it only sets the
+    // fallback and lets that result finish showing.
+    setMascotSpeech(on ? SNIP_HINT : editorBaseHint, { interrupt: on });
+  };
+  editor.onFeedback = relayFeedback;
   editor.onSnap = celebrateCorrect;
   // No Check button here -- a sub-level finishes itself the moment the last
   // correct move is made. onChange fires after every snap/snip; check
@@ -562,6 +628,7 @@ function closeEditor() {
   document.getElementById('editor-overlay').classList.add('hidden');
   activeCheck = null;
   setMascotSpeech(SCREEN_SPEECH.level1);
+  clearMascotFlash();
 }
 
 document.getElementById('editor-close').addEventListener('click', navBack);
@@ -765,10 +832,10 @@ function ensureWordMatch() {
   return wordMatch;
 }
 
+// Same single destination as the editor's: the mascot bar, never a line
+// wedged into the modal chrome.
 function setWmFeedback(msg, kind) {
-  const el = document.getElementById('wordmatch-feedback');
-  el.textContent = msg || '';
-  el.className = 'wm-feedback' + (kind ? ' ' + kind : '');
+  relayFeedback(msg, kind);
 }
 
 // Reads the sentence-so-far off the tree itself (each filled/blank word in
@@ -794,6 +861,7 @@ function openWordMatch(sub) {
   ensureWordMatch();
   currentL2Sub = sub;
   document.getElementById('wordmatch-title').textContent = sub.name;
+  clearMascotFlash();
   setMascotSpeech(sub.hint);
   const fit = fitCanvasSize(1100, 800);
   wordMatch.open(sub.root, fit.w, fit.h);
@@ -814,6 +882,7 @@ function closeWordMatch() {
   if (wordMatch) wordMatch.chipEl.classList.add('hidden');
   currentL2Sub = null;
   setMascotSpeech(SCREEN_SPEECH.level2);
+  clearMascotFlash();
 }
 
 document.getElementById('wordmatch-close').addEventListener('click', navBack);
