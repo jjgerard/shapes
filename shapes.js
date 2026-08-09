@@ -60,9 +60,26 @@ const SHAPE_FACTORY = {
 // scales along with the shape everywhere this is used -- the interactive
 // canvas (where r varies by device, see editor.js SIZING) as well as the
 // static reveal/legend trees.
+// How much room each silhouette actually has for text across its middle,
+// as a fraction of r. A rectangle is nearly twice as generous as a star,
+// whose points mean the usable area is only the little pentagon at its
+// centre, so one shared font size either overflows the tight shapes or
+// wastes most of the roomy ones. fitShapeLabels() below grows every label
+// to whatever its own shape allows.
+// Measured at the TOP of the text, not at the shape's midline: a triangle
+// or a star is narrowing as you move up from its centre, so a label sized
+// to the width available at its middle has its capitals poking out through
+// the slanted edges.
+const SHAPE_TEXT_ROOM = {
+  square: 0.86, rectangle: 1.15, circle: 0.80, triangle: 0.45,
+  star: 0.42, heart: 0.70, pentagon: 0.76, diamond: 0.68,
+};
+
 function buildShapeGroup(categoryKey, number, r = 26, fontScale = 0.5) {
   const cat = CATEGORIES[categoryKey];
   const g = svgEl('g');
+  g.dataset.shape = cat.shape;
+  g.dataset.r = r;
   const shapeEl = SHAPE_FACTORY[cat.shape](r);
   shapeEl.setAttribute('class', 'node-shape');
   shapeEl.setAttribute('fill', cat.color);
@@ -81,6 +98,28 @@ function buildShapeGroup(categoryKey, number, r = 26, fontScale = 0.5) {
     'text-anchor:middle; dominant-baseline:middle; pointer-events:none; user-select:none;';
   g.appendChild(label);
   return g;
+}
+
+// Grow every label already in `root` to the largest size its own shape can
+// hold. Measured after the fact rather than guessed from character count:
+// "NP" and "W" are both short and nothing like the same width, and the
+// answer differs per shape anyway. Requires the elements to be in the
+// document, so callers run it once painting is finished.
+function fitShapeLabels(root) {
+  for (const g of root.querySelectorAll('g[data-shape]')) {
+    const text = g.querySelector('text');
+    if (!text || !text.textContent) continue;
+    const r = Number(g.dataset.r) || 26;
+    const room = SHAPE_TEXT_ROOM[g.dataset.shape] ?? 0.7;
+    let width;
+    try { width = text.getComputedTextLength(); } catch { continue; }
+    if (!width) continue;
+    const current = parseFloat(text.style.fontSize) || r * 0.5;
+    // Scale to exactly fill the available width, then stop short of the
+    // shape's own height so nothing pokes out the top or bottom.
+    const size = Math.min(current * ((2 * r * room) / width), r * 0.95);
+    text.style.fontSize = `${size}px`;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -130,4 +169,5 @@ function paintStaticTree(svg, root, { r = 26, reveal = false, xOffset = 0, fontS
     nodeLayer.appendChild(g);
     node.children.forEach(walk);
   })(root);
+  fitShapeLabels(nodeLayer);
 }
