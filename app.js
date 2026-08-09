@@ -165,13 +165,13 @@ const GAME_LEVELS = [
     blurb: 'Click the category sticker that matches the highlighted constituent.' },
   // Deliberately says nothing about what is new. Any description of the
   // pieces hands over the answer to this level's own Mystery Level.
-  { n: 5, phase: 'xbar', kind: 'build', title: 'Back to Shapes and Numbers',
+  { n: 5, phase: 'xbar', kind: 'build', title: 'Back to Shapes',
     blurb: 'A new inventory, and a fresh Mystery Level.' },
-  { n: 6, phase: 'xbar', kind: 'words', title: 'Words Revisited',
+  { n: 6, phase: 'xbar', kind: 'words', title: 'Back to Words',
     blurb: 'Words onto trees, now with the middle layer — and sentences where a word moves and leaves a copy behind.' },
-  { n: 7, phase: 'xbar', kind: 'constituents', title: 'Constituents Revisited',
+  { n: 7, phase: 'xbar', kind: 'constituents', title: 'Back to Constituents',
     blurb: 'The same question, on the bigger trees.' },
-  { n: 8, phase: 'xbar', kind: 'categories', title: 'Categories Revisited',
+  { n: 8, phase: 'xbar', kind: 'categories', title: 'Back to Categories',
     blurb: 'The same stickers, on the bigger trees.' },
 ];
 
@@ -679,7 +679,12 @@ function openEditor({ title, hint, items, viewW, viewH, onCheck }) {
   // silently each time, and only act when it's actually complete.
   editor.onChange = () => { if (activeCheck) activeCheck(true); };
   activeCheck = onCheck;
-  document.getElementById('editor-overlay').classList.remove('hidden');
+  const editorOverlay = document.getElementById('editor-overlay');
+  editorOverlay.classList.remove('hidden');
+  // Labels can only be measured once they're actually displayed -- inside
+  // a display:none subtree getComputedTextLength() is 0 and the fit
+  // silently does nothing, leaving every label at its unfitted size.
+  fitShapeLabels(editorOverlay);
   pushNav(closeEditor);
 }
 
@@ -770,7 +775,12 @@ function renderTargetGrid() {
       btn.addEventListener('click', () => {
         if (sub.kind === 'tutorial') openTutorialEditor(sub);
         else if (sub.kind === 'build') openTargetEditor(sub);
-        else { renderReveal(); pushNav(() => { renderTargetGrid(); showScreen('level1'); }); showScreen('reveal'); }
+        else {
+          renderReveal();
+          pushNav(() => { renderTargetGrid(); showScreen('level1'); });
+          showScreen('reveal');
+          fitShapeLabels(document.getElementById('screen-reveal'));
+        }
       });
       card.appendChild(btn);
     }
@@ -930,7 +940,9 @@ function openWordMatch(sub) {
   wordMatch.onPlace = () => { celebrateCorrect(); setWmFeedback('Nice — that one fits.', 'ok'); renderWmSentence(sub.root); };
   wordMatch.onReject = (msg, kind) => setWmFeedback(msg, kind);
   wordMatch.onComplete = () => { markL2SubDone(sub, POINTS_SENTENCE); };
-  document.getElementById('wordmatch-overlay').classList.remove('hidden');
+  const wmOverlay = document.getElementById('wordmatch-overlay');
+  wmOverlay.classList.remove('hidden');
+  fitShapeLabels(wmOverlay);
   pushNav(closeWordMatch);
 }
 
@@ -1141,7 +1153,9 @@ function openConstituencyQuiz(sub) {
   renderStreakBar('constituency', l3Game);
   setModalDoneState(document.getElementById('constituency-close'), false);
   nextConstituencyQuestion();
-  document.getElementById('constituency-overlay').classList.remove('hidden');
+  const c3Overlay = document.getElementById('constituency-overlay');
+  c3Overlay.classList.remove('hidden');
+  fitShapeLabels(c3Overlay);
   pushNav(closeConstituencyQuiz);
 }
 
@@ -1257,6 +1271,7 @@ function buildCategoryMatrix() {
       matrix.appendChild(btn);
     });
   });
+  fitShapeLabels(matrix);
 }
 
 function nextCategoryQuestion() {
@@ -1329,7 +1344,9 @@ function openCategoryQuiz(sub) {
   renderStreakBar('categoryid', l4Game);
   setModalDoneState(document.getElementById('categoryid-close'), false);
   nextCategoryQuestion();
-  document.getElementById('categoryid-overlay').classList.remove('hidden');
+  const c4Overlay = document.getElementById('categoryid-overlay');
+  c4Overlay.classList.remove('hidden');
+  fitShapeLabels(c4Overlay);
   pushNav(closeCategoryQuiz);
 }
 
@@ -1364,6 +1381,9 @@ function renderReveal() {
 
   const layout = document.createElement('div');
   layout.className = 'legend-layout';
+  // Attached before anything is painted into it: label sizes are measured
+  // from the rendered text, which only works once it's in the document.
+  body.appendChild(layout);
 
   const treeWrap = document.createElement('div');
   treeWrap.className = 'legend-tree';
@@ -1436,7 +1456,6 @@ function renderReveal() {
   }));
 
   layout.appendChild(lists);
-  body.appendChild(layout);
 
   if (revealComplete()) {
     const win = document.createElement('p');

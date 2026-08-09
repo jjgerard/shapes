@@ -417,6 +417,8 @@ class TreeEditor {
 
       nodeLayer.appendChild(g);
     }
+
+    fitShapeLabels(nodeLayer);
   }
 
   toSvgPoint(clientX, clientY) {
