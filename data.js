@@ -9,11 +9,19 @@
 // The game ships in two MODES, which share every bit of engine code and
 // differ only in the data below:
 //
-//   'prex'  Tree Basics -- two levels only, phrase (1) and head (2). Trees
-//           are flat: a phrase sits directly on top of the words it
-//           contains. This is where the *idea* of a tree gets solid.
-//   'xbar'  X-bar -- the full three-level system, phrase (1), bar (2) and
-//           head (3), with an intermediate projection inside every phrase.
+//   'prex'  Tree Basics -- two levels only, phrase (1) and head (2). Flat
+//           trees in the style of Carnie's chapter 3, with the determiner
+//           inside NP rather than heading a DP of its own, and no movement.
+//           This is where the *idea* of a tree gets solid.
+//   'xbar'  X-bar -- phrase (1), bar (1.5) and head (2), with an
+//           intermediate projection inside every phrase, plus the movement
+//           sentences. Carnie reaches this at chapter 6 and doesn't reach
+//           movement until chapter 10.
+//
+// The bar level is 1.5 rather than 2 quite deliberately: a phrase is 1 and
+// a head is 2 for the entire game, so switching phases never takes back
+// something a student has already learned, and the number of the new layer
+// says where it sits.
 //
 // A mode is a self-contained bundle: its own fragment inventory, its own
 // legal-edge set, its own sub-levels, sentences and answer keys. setMode()
@@ -21,13 +29,22 @@
 // file needs to know modes exist at all.
 // ---------------------------------------------------------------------------
 
+// Every category the game knows about. Which of them a given phase
+// actually uses is a per-mode list (see `categories` in the specs below):
+// the basic phase has no Complementizer -- nothing in its sentences needs
+// one, and a shape with no example to attach it to is pure memorisation --
+// while the X-bar phase has no Adjective or Adverb, since none of its
+// sentences contain any. So the two new colours never have to sit next to
+// the gold star, and the palette stays as far apart as it was with six.
 const CATEGORIES = {
-  C: { shape: 'star',      color: '#e8b400', name: 'Complementizer' },
-  T: { shape: 'square',    color: '#3f9d5c', name: 'Tense' },
-  V: { shape: 'heart',     color: '#e2657c', name: 'Verb' },
-  D: { shape: 'circle',    color: '#d84a3b', name: 'Determiner' },
-  N: { shape: 'triangle',  color: '#3f8fd0', name: 'Noun' },
-  P: { shape: 'rectangle', color: '#9b59b6', name: 'Preposition' },
+  C:   { shape: 'star',      color: '#e8b400', name: 'Complementizer' },
+  T:   { shape: 'square',    color: '#3f9d5c', name: 'Tense' },
+  V:   { shape: 'heart',     color: '#e2657c', name: 'Verb' },
+  D:   { shape: 'circle',    color: '#d84a3b', name: 'Determiner' },
+  N:   { shape: 'triangle',  color: '#3f8fd0', name: 'Noun' },
+  P:   { shape: 'rectangle', color: '#9b59b6', name: 'Preposition' },
+  Adj: { shape: 'pentagon',  color: '#e07b39', name: 'Adjective' },
+  Adv: { shape: 'diamond',   color: '#14a0a0', name: 'Adverb' },
 };
 
 // Accepted free-text answers for the Mystery Level's shape slots
@@ -41,6 +58,8 @@ const SHAPE_ANSWERS = {
   D: ['d', 'det', 'determiner'],
   N: ['n', 'noun'],
   P: ['p', 'prep', 'preposition'],
+  Adj: ['adj', 'adjective'],
+  Adv: ['adv', 'adverb'],
 };
 const SHAPE_HINTS = {
   C: 'Introduces a subordinate clause, like "that" or "if."',
@@ -49,6 +68,8 @@ const SHAPE_HINTS = {
   D: 'Picks out a specific referent -- "the," "a," "this," "my."',
   N: 'The thing being talked about.',
   P: 'Relates a phrase to something else in space, time, etc. -- "in," "on," "with."',
+  Adj: 'Describes a thing -- "fluffy," "red," "enormous."',
+  Adv: 'Describes how, when or where something happens -- "quickly," "yesterday."',
 };
 
 // Roadmap shown (greyed out) on the level-select screen so the growth path
@@ -63,6 +84,24 @@ const ROADMAP = [
 function normalizeAnswer(s) {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
 }
+
+// ---------------------------------------------------------------------------
+// Movement is marked by tagging BOTH ends with the same id: `traceOf` on
+// the position it moved out of, `moved` on the position it ended up in.
+// Once every word inside both ends has been placed, Level 2 draws the
+// movement -- an arrow from the gap to the landing site, plus an outline
+// around each end when what moved was a whole phrase.
+//
+// Tagging the ends explicitly (rather than working them out from the shape
+// of the tree) is what keeps this identical however the trees are drawn:
+// the things that move are the same nodes either way, and a bar level
+// merely inserts nodes in between, which movement doesn't touch.
+//
+// Nothing in the basic phase uses these -- it has no movement at all,
+// following Carnie, where movement doesn't arrive until well after X-bar.
+// ---------------------------------------------------------------------------
+function movedTo(node, id) { node.moved = id; return node; }
+function traceFor(node, id) { node.traceOf = id; return node; }
 
 // How many wrong attempts in a row before Levels 1 and 2 stop letting you
 // flounder and just show you one that works. Counted per "thing you're
@@ -166,13 +205,34 @@ function allSpans(sentenceLength) {
 
 // Precomputed once per tree: the sentence, and the constituent /
 // non-constituent span pools to sample questions from.
+// Positions where a PHRASE covers exactly one word -- "jump" in "the
+// fluffy cat will jump" is both a VP and a V⁰. Level 4 accepts either
+// sticker for these, because both are genuinely right; Level 3 still
+// leaves single words alone, since every one of them is a constituent
+// (at minimum its own head) and so "one word, say yes" would be a
+// winning shortcut rather than a question.
+function computeOneWordPhrases(root) {
+  const out = new Set();
+  (function walk(node) {
+    if (node.number === 1) {
+      const positions = surfacePositions(node);
+      if (positions.length === 1) out.add(positions[0]);
+    }
+    node.children.forEach(walk);
+  })(root);
+  return out;
+}
+
 function buildQuizPools(root) {
   const tokens = surfaceTokens(root);
   const sentenceLength = tokens.length;
   const constituents = computeConstituentSpans(root);
   const constituentKeys = new Set(constituents.map(c => `${c.start}-${c.end}`));
   const nonConstituents = allSpans(sentenceLength).filter(s => !constituentKeys.has(`${s.start}-${s.end}`));
-  const headConstituents = tokens.map(t => ({ start: t.pos, end: t.pos, shape: t.shape }));
+  const oneWordPhrases = computeOneWordPhrases(root);
+  const headConstituents = tokens.map(t => ({
+    start: t.pos, end: t.pos, shape: t.shape, alsoPhrase: oneWordPhrases.has(t.pos),
+  }));
   return { tokens, sentenceLength, constituents, nonConstituents, headConstituents };
 }
 
@@ -210,6 +270,10 @@ function buildMode(spec) {
   // any sentence short enough that EVERY possible span is trivially a
   // constituent -- with no non-constituent pool there's no real yes/no
   // question to ask.
+  // `skipConstituency` keeps a sentence out of Level 3 while leaving it in
+  // Level 4 -- for a sentence whose only multi-word constituents are the
+  // subject and the whole clause, Level 3 would ask the same two questions
+  // over and over, but Level 4 still has every word to ask about.
   mode.quiz = mode.level2
     .filter(sub => buildQuizPools(sub.root).nonConstituents.length > 0)
     .map(sub => {
@@ -221,6 +285,7 @@ function buildMode(spec) {
         sentence,
         root: sub.root,
         pools,
+        skipConstituency: !!sub.skipConstituency,
         // How many in a row finish the sub-level. Level 4 additionally caps
         // this at the size of its own question pool when the quiz opens, so
         // a short sentence can never demand more distinct questions than it
@@ -229,6 +294,21 @@ function buildMode(spec) {
       };
     });
 
+  // Level 3 draws from a subset of Level 4's sentences (see
+  // `skipConstituency`), so the two levels have their own lists.
+  mode.quizConstituency = mode.quiz.filter(q => !q.skipConstituency);
+
+  // Which categories actually head a phrase in this phase. In the basic
+  // phase the determiner never does -- Carnie's chapter 3 rule is
+  // NP → D N, and the DP hypothesis doesn't arrive until chapter 7, after
+  // X-bar -- so Level 4 must not offer a "DP" sticker there. Offering an
+  // option that can never be right would teach the thing this phase is
+  // specifically not teaching yet.
+  mode.phraseCategories = new Set();
+  for (const s of mode.structures) {
+    if (s.number === 1) mode.phraseCategories.add(s.shape);
+    for (const c of s.children) if (c.number === 1) mode.phraseCategories.add(c.shape);
+  }
   mode.numbers = Object.keys(mode.levels).map(Number).sort((a, b) => a - b);
   mode.phraseNumber = mode.numbers[0];
   mode.headNumber = mode.numbers[mode.numbers.length - 1];
@@ -248,59 +328,55 @@ const PREX_LEVELS = {
   2: { code: 'X⁰', name: 'Head (the word itself)' },
 };
 
+// Carnie's chapter 3 rules, as far as these sentences need them. Note NP
+// with the determiner INSIDE it, not DP: the DP hypothesis is chapter 7,
+// i.e. after X-bar, so a student meeting flat trees for the first time
+// shouldn't be seeing it yet. No complementizer either -- nothing here
+// needs one.
 const PREX_STRUCTURES = [
-  { id: 1,  shape: 'D', number: 1, children: [ { shape: 'D', number: 2 }, { shape: 'N', number: 1 } ], rule: 'DP → D + NP' },
-  { id: 2,  shape: 'N', number: 1, children: [ { shape: 'N', number: 2 } ], rule: 'NP → N' },
-  { id: 3,  shape: 'V', number: 1, children: [ { shape: 'V', number: 2 } ], rule: 'VP → V (intransitive)' },
-  { id: 4,  shape: 'V', number: 1, children: [ { shape: 'V', number: 2 }, { shape: 'D', number: 1 } ], rule: 'VP → V + DP' },
-  { id: 5,  shape: 'V', number: 1, children: [ { shape: 'V', number: 1 }, { shape: 'P', number: 1 } ], rule: 'VP → VP + PP (adjunct)' },
-  { id: 6,  shape: 'P', number: 1, children: [ { shape: 'P', number: 2 }, { shape: 'D', number: 1 } ], rule: 'PP → P + DP' },
-  { id: 7,  shape: 'T', number: 1, children: [ { shape: 'D', number: 1 }, { shape: 'T', number: 2 }, { shape: 'V', number: 1 } ], rule: 'TP → DP + T + VP' },
-  { id: 8,  shape: 'C', number: 1, children: [ { shape: 'C', number: 2 }, { shape: 'T', number: 1 } ], rule: 'CP → C + TP' },
-  { id: 9,  shape: 'C', number: 1, children: [ { shape: 'D', number: 1 }, { shape: 'C', number: 2 }, { shape: 'T', number: 1 } ], rule: 'CP → DP + C + TP' },
-  { id: 10, shape: 'C', number: 2, children: [], rule: 'C (bare head)' },
-  { id: 11, shape: 'T', number: 2, children: [], rule: 'T (bare head)' },
-  { id: 12, shape: 'V', number: 2, children: [], rule: 'V (bare head)' },
-  { id: 13, shape: 'D', number: 2, children: [], rule: 'D (bare head)' },
-  { id: 14, shape: 'N', number: 2, children: [], rule: 'N (bare head)' },
-  { id: 15, shape: 'P', number: 2, children: [], rule: 'P (bare head)' },
+  { id: 1,  shape: 'N', number: 1, children: [ { shape: 'D', number: 2 }, { shape: 'N', number: 2 } ], rule: 'NP → D + N' },
+  { id: 2,  shape: 'N', number: 1, children: [ { shape: 'D', number: 2 }, { shape: 'Adj', number: 1 }, { shape: 'N', number: 2 } ], rule: 'NP → D + AdjP + N' },
+  { id: 3,  shape: 'Adj', number: 1, children: [ { shape: 'Adj', number: 2 } ], rule: 'AdjP → Adj' },
+  { id: 4,  shape: 'Adv', number: 1, children: [ { shape: 'Adv', number: 2 } ], rule: 'AdvP → Adv' },
+  { id: 5,  shape: 'V', number: 1, children: [ { shape: 'V', number: 2 } ], rule: 'VP → V' },
+  { id: 6,  shape: 'V', number: 1, children: [ { shape: 'V', number: 2 }, { shape: 'N', number: 1 } ], rule: 'VP → V + NP' },
+  { id: 7,  shape: 'V', number: 1, children: [ { shape: 'Adv', number: 1 }, { shape: 'V', number: 2 }, { shape: 'P', number: 1 } ], rule: 'VP → AdvP + V + PP' },
+  { id: 8,  shape: 'P', number: 1, children: [ { shape: 'P', number: 2 }, { shape: 'N', number: 1 } ], rule: 'PP → P + NP' },
+  { id: 9,  shape: 'T', number: 1, children: [ { shape: 'N', number: 1 }, { shape: 'T', number: 2 }, { shape: 'V', number: 1 } ], rule: 'TP → NP + T + VP' },
+  { id: 10, shape: 'T', number: 2, children: [], rule: 'T (bare head)' },
+  { id: 11, shape: 'V', number: 2, children: [], rule: 'V (bare head)' },
+  { id: 12, shape: 'D', number: 2, children: [], rule: 'D (bare head)' },
+  { id: 13, shape: 'N', number: 2, children: [], rule: 'N (bare head)' },
+  { id: 14, shape: 'P', number: 2, children: [], rule: 'P (bare head)' },
+  { id: 15, shape: 'Adj', number: 2, children: [], rule: 'Adj (bare head)' },
+  { id: 16, shape: 'Adv', number: 2, children: [], rule: 'Adv (bare head)' },
 ];
 
-function pxNP() {
-  return { shape: 'N', number: 1, children: [ { shape: 'N', number: 2, children: [] } ] };
+const pxHead = (shape, extra = {}) => ({ shape, number: 2, children: [], ...extra });
+function pxNP(det, noun) {
+  return { shape: 'N', number: 1, children: [ det, noun ] };
 }
-function pxDP() {
-  return { shape: 'D', number: 1, children: [ { shape: 'D', number: 2, children: [] }, pxNP() ] };
+function pxNPAdj(det, adj, noun) {
+  return { shape: 'N', number: 1, children: [ det, { shape: 'Adj', number: 1, children: [ adj ] }, noun ] };
 }
-function pxPP() {
-  return { shape: 'P', number: 1, children: [ { shape: 'P', number: 2, children: [] }, pxDP() ] };
-}
-function pxVP() {
-  return { shape: 'V', number: 1, children: [ { shape: 'V', number: 2, children: [] }, pxDP() ] };
-}
-function pxVPadjoined() {
-  return { shape: 'V', number: 1, children: [ pxVP(), pxPP() ] };
-}
-function pxTP(vp) {
-  return { shape: 'T', number: 1, children: [ pxDP(), { shape: 'T', number: 2, children: [] }, vp ] };
-}
-function pxCP(tp) {
-  return { shape: 'C', number: 1, children: [ { shape: 'C', number: 2, children: [] }, tp ] };
-}
+function pxAdvP(adv) { return { shape: 'Adv', number: 1, children: [ adv ] }; }
+function pxPP(prep, np) { return { shape: 'P', number: 1, children: [ prep, np ] }; }
+function pxTP(np, t, vp) { return { shape: 'T', number: 1, children: [ np, t, vp ] }; }
 
-// The "four pieces" checkpoint: a whole clause skeleton, with both noun
-// phrases deliberately left as open branches -- that's the point of the
-// checkpoint, you're not resolving all the way down yet.
-function pxPartialClause() {
-  const openDP = () => ({ shape: 'D', number: 1, children: [
-    { shape: 'D', number: 2, children: [] },
-    { shape: 'N', number: 1, children: [] },
-  ] });
-  return { shape: 'T', number: 1, children: [
-    openDP(),
-    { shape: 'T', number: 2, children: [] },
-    { shape: 'V', number: 1, children: [ { shape: 'V', number: 2, children: [] }, openDP() ] },
-  ] };
+// Level 1 is abstract shapes only -- no words -- but its targets are the
+// shapes of the sentences Level 2 goes on to use, so nothing is ever built
+// that never turns up again.
+function pxBareNP() { return pxNP(pxHead('D'), pxHead('N')); }
+function pxBareNPAdj() { return pxNPAdj(pxHead('D'), pxHead('Adj'), pxHead('N')); }
+function pxSimpleClause() {
+  return pxTP(pxBareNP(), pxHead('T'), { shape: 'V', number: 1, children: [ pxHead('V'), pxBareNP() ] });
+}
+function pxFullClause() {
+  return pxTP(
+    pxBareNPAdj(),
+    pxHead('T'),
+    { shape: 'V', number: 1, children: [ pxAdvP(pxHead('Adv')), pxHead('V'), pxPP(pxHead('P'), pxBareNP()) ] },
+  );
 }
 
 const PREX_LEVEL1 = [
@@ -309,123 +385,85 @@ const PREX_LEVEL1 = [
     kind: 'tutorial',
     name: 'First Join',
     description: 'Snap two pieces together, then use the scissors to pull them apart again.',
-    pieceIds: [1, 2],
+    pieceIds: [6, 1],
   },
   {
     id: 'four-pieces',
     kind: 'build',
     name: 'Four Pieces',
     description: 'Combine four pieces into one connected shape.',
-    root: pxPartialClause(),
+    root: pxSimpleClause(),
   },
   {
     id: 'one-more-branch',
     kind: 'build',
     name: 'More Pieces',
-    description: 'Combine every piece into one connected shape, fully resolved, with one extra piece branching off and one more layer on top.',
-    root: pxCP(pxTP(pxVPadjoined())),
+    description: 'Combine every piece into one connected shape, with two extra pieces branching off.',
+    root: pxFullClause(),
   },
   {
     id: 'name-them',
     kind: 'reveal',
     name: 'Mystery Level',
     description: '',
-    root: pxCP(pxTP(pxVPadjoined())),
+    root: pxFullClause(),
   },
 ];
-
-// ---------------------------------------------------------------------------
-// Movement is marked by tagging BOTH ends with the same id: `traceOf` on
-// the position it moved out of, `moved` on the position it ended up in.
-// Once every word inside both ends has been placed, Level 2 draws the
-// movement -- an arrow from the gap to the landing site, plus an outline
-// around each end when what moved was a whole phrase.
-//
-// Tagging the ends explicitly (rather than working them out from the shape
-// of the tree) is what makes this identical in both formats: the things
-// that move are the same nodes either way -- the C and T heads, the two
-// DPs -- and X-bar merely inserts intermediate C′/T′/D′ nodes in between,
-// which movement doesn't touch.
-// ---------------------------------------------------------------------------
-function movedTo(node, id) { node.moved = id; return node; }
-function traceFor(node, id) { node.traceOf = id; return node; }
-
-// A flat DP ("the cat"): the determiner head and a noun phrase, side by
-// side under the phrase itself. `opts.detTrace`/`opts.nounTrace` mark a
-// word as a moved-away trace rather than something pronounced here.
-function pxWmDP(detWord, detPos, nounWord, nounPos, opts = {}) {
-  const det = opts.detTrace
-    ? { shape: 'D', number: 2, children: [], word: detWord, isTrace: true }
-    : { shape: 'D', number: 2, children: [], word: detWord, pos: detPos };
-  const noun = opts.nounTrace
-    ? { shape: 'N', number: 2, children: [], word: nounWord, isTrace: true }
-    : { shape: 'N', number: 2, children: [], word: nounWord, pos: nounPos };
-  return { shape: 'D', number: 1, children: [ det, { shape: 'N', number: 1, children: [ noun ] } ] };
-}
 
 const PREX_LEVEL2 = [
   {
     id: 'the-cat',
     name: 'First Phrase',
-    description: "Two pieces, matched by category alone -- you won't see the sentence until you've placed them.",
+    description: "Two pieces, matched by category alone -- you won't see the phrase until you've placed them.",
     hint: 'Drag each word onto the piece it belongs to.',
-    root: pxWmDP('the', 1, 'cat', 2),
+    root: pxNP(pxHead('D', { word: 'the', pos: 1 }), pxHead('N', { word: 'cat', pos: 2 })),
   },
   {
     id: 'the-cat-chased-the-mouse',
     name: '4 Pieces',
     description: 'The same idea, just with more pieces to match.',
     hint: "There's no auxiliary in this sentence, so Tense has no word of its own (∅) -- its tense just rides along on the verb.",
-    root: {
-      shape: 'T', number: 1, children: [
-        pxWmDP('the', 1, 'cat', 2),
-        { shape: 'T', number: 2, children: [], silent: true },
-        { shape: 'V', number: 1, children: [
-          { shape: 'V', number: 2, children: [], word: 'chased', pos: 3 },
-          pxWmDP('the', 4, 'mouse', 5),
-        ] },
-      ],
-    },
+    root: pxTP(
+      pxNP(pxHead('D', { word: 'the', pos: 1 }), pxHead('N', { word: 'cat', pos: 2 })),
+      pxHead('T', { silent: true }),
+      { shape: 'V', number: 1, children: [
+        pxHead('V', { word: 'chased', pos: 3 }),
+        pxNP(pxHead('D', { word: 'the', pos: 4 }), pxHead('N', { word: 'mouse', pos: 5 })),
+      ] },
+    ),
   },
   {
-    id: 'did-the-cat-chase-the-mouse',
-    name: 'More Pieces',
-    description: 'A question this time -- one piece moves, and leaves a crossed-out trace behind where it started.',
-    hint: 'For a yes/no question, Tense hops up into Complementizer, and leaves a crossed-out copy of itself behind in T.',
-    root: {
-      shape: 'C', number: 1, children: [
-        movedTo({ shape: 'C', number: 2, children: [], word: 'did', pos: 1 }, 'aux'),
-        { shape: 'T', number: 1, children: [
-          pxWmDP('the', 2, 'cat', 3),
-          traceFor({ shape: 'T', number: 2, children: [], word: 'did', isTrace: true }, 'aux'),
-          { shape: 'V', number: 1, children: [
-            { shape: 'V', number: 2, children: [], word: 'chase', pos: 4 },
-            pxWmDP('the', 5, 'mouse', 6),
-          ] },
-        ] },
-      ],
-    },
-  },
-  {
-    id: 'which-mouse-did-the-cat-chase',
-    name: 'Even More Pieces',
-    description: 'A bigger question -- more than one piece moves this time, each leaving its own trace behind.',
-    hint: 'The question phrase in the object position fronts all the way to the front of the clause, leaving a crossed-out copy of itself right where the verb needed it.',
+    // Kept out of Level 3: its only multi-word constituents are the subject
+    // and the whole clause, so a yes/no quiz would ask the same two
+    // questions forever. Level 4 still uses it -- "will" against "jump" is
+    // exactly the Tense/Verb contrast it exists to show.
+    id: 'the-fluffy-cat-will-jump',
+    name: 'Tense and Verb',
+    description: 'This one has a word sitting in Tense of its own, right next to the verb.',
+    hint: '"Will" isn\'t the action -- it carries the tense. The action is "jump". They are two different pieces.',
+    skipConstituency: true,
     streakTarget: 5,
-    root: {
-      shape: 'C', number: 1, children: [
-        movedTo(pxWmDP('which', 1, 'mouse', 2), 'wh'),
-        movedTo({ shape: 'C', number: 2, children: [], word: 'did', pos: 3 }, 'aux'),
-        { shape: 'T', number: 1, children: [
-          pxWmDP('the', 4, 'cat', 5),
-          traceFor({ shape: 'T', number: 2, children: [], word: 'did', isTrace: true }, 'aux'),
-          { shape: 'V', number: 1, children: [
-            { shape: 'V', number: 2, children: [], word: 'chase', pos: 6 },
-            traceFor(pxWmDP('which', null, 'mouse', null, { detTrace: true, nounTrace: true }), 'wh'),
-          ] },
-        ] },
-      ],
-    },
+    root: pxTP(
+      pxNPAdj(pxHead('D', { word: 'the', pos: 1 }), pxHead('Adj', { word: 'fluffy', pos: 2 }), pxHead('N', { word: 'cat', pos: 3 })),
+      pxHead('T', { word: 'will', pos: 4 }),
+      { shape: 'V', number: 1, children: [ pxHead('V', { word: 'jump', pos: 5 }) ] },
+    ),
+  },
+  {
+    id: 'the-fluffy-cat-quickly-jumped-on-the-table',
+    name: 'Describing Words',
+    description: 'Two describing words in one sentence -- one describes the cat, the other describes the jumping.',
+    hint: '"Fluffy" describes the cat, so it sits inside the noun phrase. "Quickly" describes the jumping, so it sits inside the verb phrase.',
+    root: pxTP(
+      pxNPAdj(pxHead('D', { word: 'the', pos: 1 }), pxHead('Adj', { word: 'fluffy', pos: 2 }), pxHead('N', { word: 'cat', pos: 3 })),
+      pxHead('T', { silent: true }),
+      { shape: 'V', number: 1, children: [
+        pxAdvP(pxHead('Adv', { word: 'quickly', pos: 4 })),
+        pxHead('V', { word: 'jumped', pos: 5 }),
+        pxPP(pxHead('P', { word: 'on', pos: 6 }),
+             pxNP(pxHead('D', { word: 'the', pos: 7 }), pxHead('N', { word: 'table', pos: 8 }))),
+      ] },
+    ),
   },
 ];
 
@@ -434,10 +472,15 @@ const PREX_LEVEL2 = [
 // Week 10 seminar handout has it.
 // ===========================================================================
 
+// The bar level is numbered 1.5, not 2, so nothing a student learned in
+// the basic phase is taken back: a phrase is 1 and a head is 2 for the
+// whole game, and the new layer slots in between with a number that says
+// exactly that. Renumbering the head from 2 to 3 partway through would
+// mean telling someone the one thing they had finally got is now wrong.
 const XBAR_LEVELS = {
   1: { code: 'XP', name: 'Phrase (maximal projection)' },
-  2: { code: "X′", name: 'Bar level (intermediate projection)' },
-  3: { code: 'X⁰', name: 'Head (terminal / lexical item)' },
+  1.5: { code: "X′", name: 'Bar level (intermediate projection)' },
+  2: { code: 'X⁰', name: 'Head (terminal / lexical item)' },
 };
 
 // The 19 buildable fragments, in the same order/numbering as the physical
@@ -445,46 +488,46 @@ const XBAR_LEVELS = {
 // direct daughters (already-resolved heads are listed inline with no
 // further children of their own).
 const XBAR_STRUCTURES = [
-  { id: 1,  shape: 'T', number: 1, children: [ { shape: 'D', number: 1 }, { shape: 'T', number: 2 } ], rule: "XP → Spec + X′" },
-  { id: 2,  shape: 'T', number: 2, children: [ { shape: 'T', number: 3 }, { shape: 'V', number: 1 } ], rule: "X′ → X⁰ + Complement" },
-  { id: 3,  shape: 'V', number: 1, children: [ { shape: 'V', number: 2 } ], rule: "XP → X′ (no specifier)" },
-  { id: 4,  shape: 'V', number: 2, children: [ { shape: 'V', number: 2 }, { shape: 'P', number: 1 } ], rule: "X′ → X′ + Adjunct" },
-  { id: 5,  shape: 'V', number: 2, children: [ { shape: 'V', number: 3 } ], rule: "X′ → X⁰ (intransitive)" },
-  { id: 6,  shape: 'V', number: 2, children: [ { shape: 'V', number: 3 }, { shape: 'D', number: 1 } ], rule: "X′ → X⁰ + Complement" },
-  { id: 7,  shape: 'D', number: 1, children: [ { shape: 'D', number: 2 } ], rule: "XP → X′ (no specifier)" },
-  { id: 8,  shape: 'D', number: 2, children: [ { shape: 'D', number: 3 }, { shape: 'N', number: 1 } ], rule: "X′ → X⁰ + Complement" },
-  { id: 9,  shape: 'N', number: 1, children: [ { shape: 'N', number: 2 } ], rule: "XP → X′ (no specifier)" },
-  { id: 10, shape: 'N', number: 2, children: [ { shape: 'N', number: 3 } ], rule: "X′ → X⁰" },
-  { id: 11, shape: 'C', number: 1, children: [ { shape: 'D', number: 1 }, { shape: 'C', number: 2 } ], rule: "XP → Spec + X′" },
-  { id: 12, shape: 'C', number: 2, children: [ { shape: 'C', number: 3 }, { shape: 'T', number: 1 } ], rule: "X′ → X⁰ + Complement" },
-  { id: 13, shape: 'P', number: 1, children: [ { shape: 'P', number: 2 } ], rule: "XP → X′ (no specifier)" },
-  { id: 14, shape: 'P', number: 2, children: [ { shape: 'P', number: 3 }, { shape: 'D', number: 1 } ], rule: "X′ → X⁰ + Complement" },
-  { id: 15, shape: 'C', number: 3, children: [], rule: "X⁰ (bare head)" },
-  { id: 16, shape: 'T', number: 3, children: [], rule: "X⁰ (bare head)" },
-  { id: 17, shape: 'D', number: 3, children: [], rule: "X⁰ (bare head)" },
-  { id: 18, shape: 'N', number: 3, children: [], rule: "X⁰ (bare head)" },
-  { id: 19, shape: 'P', number: 3, children: [], rule: "X⁰ (bare head)" },
+  { id: 1,  shape: 'T', number: 1, children: [ { shape: 'D', number: 1 }, { shape: 'T', number: 1.5 } ], rule: "XP → Spec + X′" },
+  { id: 2,  shape: 'T', number: 1.5, children: [ { shape: 'T', number: 2 }, { shape: 'V', number: 1 } ], rule: "X′ → X⁰ + Complement" },
+  { id: 3,  shape: 'V', number: 1, children: [ { shape: 'V', number: 1.5 } ], rule: "XP → X′ (no specifier)" },
+  { id: 4,  shape: 'V', number: 1.5, children: [ { shape: 'V', number: 1.5 }, { shape: 'P', number: 1 } ], rule: "X′ → X′ + Adjunct" },
+  { id: 5,  shape: 'V', number: 1.5, children: [ { shape: 'V', number: 2 } ], rule: "X′ → X⁰ (intransitive)" },
+  { id: 6,  shape: 'V', number: 1.5, children: [ { shape: 'V', number: 2 }, { shape: 'D', number: 1 } ], rule: "X′ → X⁰ + Complement" },
+  { id: 7,  shape: 'D', number: 1, children: [ { shape: 'D', number: 1.5 } ], rule: "XP → X′ (no specifier)" },
+  { id: 8,  shape: 'D', number: 1.5, children: [ { shape: 'D', number: 2 }, { shape: 'N', number: 1 } ], rule: "X′ → X⁰ + Complement" },
+  { id: 9,  shape: 'N', number: 1, children: [ { shape: 'N', number: 1.5 } ], rule: "XP → X′ (no specifier)" },
+  { id: 10, shape: 'N', number: 1.5, children: [ { shape: 'N', number: 2 } ], rule: "X′ → X⁰" },
+  { id: 11, shape: 'C', number: 1, children: [ { shape: 'D', number: 1 }, { shape: 'C', number: 1.5 } ], rule: "XP → Spec + X′" },
+  { id: 12, shape: 'C', number: 1.5, children: [ { shape: 'C', number: 2 }, { shape: 'T', number: 1 } ], rule: "X′ → X⁰ + Complement" },
+  { id: 13, shape: 'P', number: 1, children: [ { shape: 'P', number: 1.5 } ], rule: "XP → X′ (no specifier)" },
+  { id: 14, shape: 'P', number: 1.5, children: [ { shape: 'P', number: 2 }, { shape: 'D', number: 1 } ], rule: "X′ → X⁰ + Complement" },
+  { id: 15, shape: 'C', number: 2, children: [], rule: "X⁰ (bare head)" },
+  { id: 16, shape: 'T', number: 2, children: [], rule: "X⁰ (bare head)" },
+  { id: 17, shape: 'D', number: 2, children: [], rule: "X⁰ (bare head)" },
+  { id: 18, shape: 'N', number: 2, children: [], rule: "X⁰ (bare head)" },
+  { id: 19, shape: 'P', number: 2, children: [], rule: "X⁰ (bare head)" },
 ];
 
 function NP_() {
   return { shape: 'N', number: 1, children: [
-    { shape: 'N', number: 2, children: [ { shape: 'N', number: 3, children: [] } ] },
+    { shape: 'N', number: 1.5, children: [ { shape: 'N', number: 2, children: [] } ] },
   ] };
 }
 function DP_() {
   return { shape: 'D', number: 1, children: [
-    { shape: 'D', number: 2, children: [ { shape: 'D', number: 3, children: [] }, NP_() ] },
+    { shape: 'D', number: 1.5, children: [ { shape: 'D', number: 2, children: [] }, NP_() ] },
   ] };
 }
 function PP_() {
   return { shape: 'P', number: 1, children: [
-    { shape: 'P', number: 2, children: [ { shape: 'P', number: 3, children: [] }, DP_() ] },
+    { shape: 'P', number: 1.5, children: [ { shape: 'P', number: 2, children: [] }, DP_() ] },
   ] };
 }
 function VP_adjoined() {
   return { shape: 'V', number: 1, children: [
-    { shape: 'V', number: 2, children: [
-      { shape: 'V', number: 2, children: [ { shape: 'V', number: 3, children: [] }, DP_() ] },
+    { shape: 'V', number: 1.5, children: [
+      { shape: 'V', number: 1.5, children: [ { shape: 'V', number: 2, children: [] }, DP_() ] },
       PP_(),
     ] },
   ] };
@@ -492,13 +535,13 @@ function VP_adjoined() {
 function TP_(vp) {
   return { shape: 'T', number: 1, children: [
     DP_(),
-    { shape: 'T', number: 2, children: [ { shape: 'T', number: 3, children: [] }, vp ] },
+    { shape: 'T', number: 1.5, children: [ { shape: 'T', number: 2, children: [] }, vp ] },
   ] };
 }
 function CP_(tp) {
   return { shape: 'C', number: 1, children: [
     DP_(),
-    { shape: 'C', number: 2, children: [ { shape: 'C', number: 3, children: [] }, tp ] },
+    { shape: 'C', number: 1.5, children: [ { shape: 'C', number: 2, children: [] }, tp ] },
   ] };
 }
 
@@ -508,10 +551,10 @@ function CP_(tp) {
 // open -- that's the point of this checkpoint).
 function partialTDV() {
   return { shape: 'T', number: 1, children: [
-    { shape: 'D', number: 1, children: [ { shape: 'D', number: 2, children: [] } ] },
-    { shape: 'T', number: 2, children: [
-      { shape: 'T', number: 3, children: [] },
-      { shape: 'V', number: 1, children: [ { shape: 'V', number: 2, children: [] } ] },
+    { shape: 'D', number: 1, children: [ { shape: 'D', number: 1.5, children: [] } ] },
+    { shape: 'T', number: 1.5, children: [
+      { shape: 'T', number: 2, children: [] },
+      { shape: 'V', number: 1, children: [ { shape: 'V', number: 1.5, children: [] } ] },
     ] },
   ] };
 }
@@ -551,15 +594,15 @@ const XBAR_LEVEL1 = [
 // the X-bar Level 2 sentences.
 function wmDP(detWord, detPos, nounWord, nounPos, opts = {}) {
   const det = opts.detTrace
-    ? { shape: 'D', number: 3, children: [], word: detWord, isTrace: true }
-    : { shape: 'D', number: 3, children: [], word: detWord, pos: detPos };
+    ? { shape: 'D', number: 2, children: [], word: detWord, isTrace: true }
+    : { shape: 'D', number: 2, children: [], word: detWord, pos: detPos };
   const noun = opts.nounTrace
-    ? { shape: 'N', number: 3, children: [], word: nounWord, isTrace: true }
-    : { shape: 'N', number: 3, children: [], word: nounWord, pos: nounPos };
+    ? { shape: 'N', number: 2, children: [], word: nounWord, isTrace: true }
+    : { shape: 'N', number: 2, children: [], word: nounWord, pos: nounPos };
   return { shape: 'D', number: 1, children: [
-    { shape: 'D', number: 2, children: [
+    { shape: 'D', number: 1.5, children: [
       det,
-      { shape: 'N', number: 1, children: [ { shape: 'N', number: 2, children: [ noun ] } ] },
+      { shape: 'N', number: 1, children: [ { shape: 'N', number: 1.5, children: [ noun ] } ] },
     ] },
   ] };
 }
@@ -580,11 +623,11 @@ const XBAR_LEVEL2 = [
     root: {
       shape: 'T', number: 1, children: [
         wmDP('the', 1, 'cat', 2),
-        { shape: 'T', number: 2, children: [
-          { shape: 'T', number: 3, children: [], silent: true },
+        { shape: 'T', number: 1.5, children: [
+          { shape: 'T', number: 2, children: [], silent: true },
           { shape: 'V', number: 1, children: [
-            { shape: 'V', number: 2, children: [
-              { shape: 'V', number: 3, children: [], word: 'chased', pos: 3 },
+            { shape: 'V', number: 1.5, children: [
+              { shape: 'V', number: 2, children: [], word: 'chased', pos: 3 },
               wmDP('the', 4, 'mouse', 5),
             ] },
           ] },
@@ -599,15 +642,15 @@ const XBAR_LEVEL2 = [
     hint: 'For a yes/no question, Tense hops up into Complementizer, and leaves a crossed-out copy of itself behind in T.',
     root: {
       shape: 'C', number: 1, children: [
-        { shape: 'C', number: 2, children: [
-          movedTo({ shape: 'C', number: 3, children: [], word: 'did', pos: 1 }, 'aux'),
+        { shape: 'C', number: 1.5, children: [
+          movedTo({ shape: 'C', number: 2, children: [], word: 'did', pos: 1 }, 'aux'),
           { shape: 'T', number: 1, children: [
             wmDP('the', 2, 'cat', 3),
-            { shape: 'T', number: 2, children: [
-              traceFor({ shape: 'T', number: 3, children: [], word: 'did', isTrace: true }, 'aux'),
+            { shape: 'T', number: 1.5, children: [
+              traceFor({ shape: 'T', number: 2, children: [], word: 'did', isTrace: true }, 'aux'),
               { shape: 'V', number: 1, children: [
-                { shape: 'V', number: 2, children: [
-                  { shape: 'V', number: 3, children: [], word: 'chase', pos: 4 },
+                { shape: 'V', number: 1.5, children: [
+                  { shape: 'V', number: 2, children: [], word: 'chase', pos: 4 },
                   wmDP('the', 5, 'mouse', 6),
                 ] },
               ] },
@@ -626,15 +669,15 @@ const XBAR_LEVEL2 = [
     root: {
       shape: 'C', number: 1, children: [
         movedTo(wmDP('which', 1, 'mouse', 2), 'wh'),
-        { shape: 'C', number: 2, children: [
-          movedTo({ shape: 'C', number: 3, children: [], word: 'did', pos: 3 }, 'aux'),
+        { shape: 'C', number: 1.5, children: [
+          movedTo({ shape: 'C', number: 2, children: [], word: 'did', pos: 3 }, 'aux'),
           { shape: 'T', number: 1, children: [
             wmDP('the', 4, 'cat', 5),
-            { shape: 'T', number: 2, children: [
-              traceFor({ shape: 'T', number: 3, children: [], word: 'did', isTrace: true }, 'aux'),
+            { shape: 'T', number: 1.5, children: [
+              traceFor({ shape: 'T', number: 2, children: [], word: 'did', isTrace: true }, 'aux'),
               { shape: 'V', number: 1, children: [
-                { shape: 'V', number: 2, children: [
-                  { shape: 'V', number: 3, children: [], word: 'chase', pos: 6 },
+                { shape: 'V', number: 1.5, children: [
+                  { shape: 'V', number: 2, children: [], word: 'chase', pos: 6 },
                   traceFor(wmDP('which', null, 'mouse', null, { detTrace: true, nounTrace: true }), 'wh'),
                 ] },
               ] },
@@ -657,6 +700,7 @@ const MODES = {
     tagline: 'Phrases and words',
     blurb: 'Two levels only: a phrase, and the word at the bottom of it. Start here to get the idea of a tree solid.',
     levels: PREX_LEVELS,
+    categories: ['T', 'V', 'D', 'N', 'P', 'Adj', 'Adv'],
     structures: PREX_STRUCTURES,
     level1: PREX_LEVEL1,
     level2: PREX_LEVEL2,
@@ -685,23 +729,28 @@ const MODES = {
     tagline: 'Phrase, bar and head',
     blurb: 'The full three-level system, with an intermediate bar level inside every phrase.',
     levels: XBAR_LEVELS,
+    categories: ['C', 'T', 'V', 'D', 'N', 'P'],
     structures: XBAR_STRUCTURES,
     level1: XBAR_LEVEL1,
     level2: XBAR_LEVEL2,
     levelAnswers: {
       1: ['xp', 'x-bar phrase', 'phrase', 'phrase level', 'maximal projection', 'maximal phrase'],
-      2: ["x'", 'x bar', 'x-bar', 'xbar', 'bar level', 'bar'],
-      3: ['x0', 'xzero', 'x-zero', 'head', 'word'],
+      1.5: ["x'", 'x bar', 'x-bar', 'xbar', 'bar level', 'bar', 'in between', 'middle'],
+      2: ['x0', 'xzero', 'x-zero', 'head', 'word'],
     },
     levelAnswerNotes: {
-      3: { word: 'Good instinct -- the precise term for this is "head."' },
+      1.5: {
+        'in between': 'That\'s exactly it -- the name for this layer is "bar."',
+        middle: 'That\'s exactly it -- the name for this layer is "bar."',
+      },
+      2: { word: 'Good instinct -- the precise term for this is "head."' },
     },
     levelHints: {
       1: 'The biggest, outermost layer of a piece -- everything else it needs is inside it.',
-      2: 'A layer in between -- bigger than a bare word, smaller than the whole phrase.',
-      3: 'The smallest layer -- an actual word, not built out of anything smaller.',
+      1.5: 'A layer in between -- bigger than a bare word, smaller than the whole phrase. Its number says so.',
+      2: 'The smallest layer -- an actual word, not built out of anything smaller.',
     },
-    levelCanonical: { 1: 'Phrase', 2: 'Bar level', 3: 'Head' },
+    levelCanonical: { 1: 'Phrase', 1.5: 'Bar level', 2: 'Head' },
   }),
 };
 const MODE_IDS = ['prex', 'xbar'];
@@ -716,6 +765,9 @@ let STRUCTURES = [];
 let LEVEL1_SUBLEVELS = [];
 let LEVEL2_SUBLEVELS = [];
 let QUIZ_SUBLEVELS = [];
+let QUIZ_CONSTITUENCY_SUBLEVELS = [];   // Level 3's subset (see skipConstituency)
+let MODE_CATEGORIES = [];               // which categories this phase actually uses
+let MODE_PHRASE_CATEGORIES = new Set(); // ...and which of them head a phrase in it
 let PROJECTION_LEVELS = {};   // number -> {code, name}
 let LEVEL_NUMBERS = [];       // e.g. [1,2] (pre-X) or [1,2,3] (X-bar)
 let PHRASE_NUMBER = 1;
@@ -727,6 +779,9 @@ function setMode(id) {
   LEVEL1_SUBLEVELS = MODE.level1;
   LEVEL2_SUBLEVELS = MODE.level2;
   QUIZ_SUBLEVELS = MODE.quiz;
+  QUIZ_CONSTITUENCY_SUBLEVELS = MODE.quizConstituency;
+  MODE_CATEGORIES = MODE.categories;
+  MODE_PHRASE_CATEGORIES = MODE.phraseCategories;
   PROJECTION_LEVELS = MODE.levels;
   LEVEL_NUMBERS = MODE.numbers;
   PHRASE_NUMBER = MODE.phraseNumber;
