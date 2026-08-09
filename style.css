@@ -393,6 +393,18 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: 0 4px 14px rgba(0,0,0,0.18);
 }
 .wm-chip-float.dragging { cursor: grabbing; }
+/* The crossed-out copy, shown on the chip exactly as it will look once
+   placed, so you can tell before dragging which of the two "did"s you're
+   holding. Same size and weight as any other chip -- it is a word you have
+   to identify and place like the rest. */
+.wm-chip-float.trace { color: #6d665c; text-decoration: line-through; }
+
+/* ---- movement (Level 2) ---- */
+/* Drawn only once both ends are filled in. A slate colour distinct from
+   all six category colours, so an arrow is never mistaken for a piece. */
+.wm-move-arrow { stroke: #3b3a55; stroke-width: 2.5; stroke-linecap: round; }
+.wm-move-head { fill: #3b3a55; }
+.wm-move-ring { stroke: #3b3a55; stroke-width: 2.5; stroke-dasharray: 9 6; opacity: 0.85; }
 /* A wrong drop used to snap the chip silently back to its corner, which is
    indistinguishable from the drag never having registered. Now it shakes,
    and the mascot bar says why. */
