@@ -388,15 +388,16 @@ const CANVAS_HELP = `
       Use <strong>−</strong> and <strong>+</strong> to zoom.</li>`;
 const HELP = {
   general: {
-    title: 'How Shapes works',
+    title: 'How Shape Snap works',
     html: `<ul>
       <li>Work through the levels in order. Each one unlocks when you finish the one before it.</li>
       <li>Your points are saved automatically on this device, under your name and class code.
           You can close the page at any time and pick up where you left off.</li>
       <li><strong>Nothing you do here can break anything.</strong> If something goes wrong,
           close the puzzle and open it again — you'll never lose points you've already earned.</li>
-      <li>Tap <strong>🔊</strong> at the top of the screen to turn the sounds off.</li>
-      <li>Tap <strong>?</strong> on any screen for help with that screen.</li>
+      <li>Tap <strong>☰ Menu</strong> at the top right to turn the sounds off, get help,
+          or switch to a different player.</li>
+      <li>Tap <strong>?</strong> inside any puzzle for help with that puzzle.</li>
     </ul>`,
   },
   editor: {
