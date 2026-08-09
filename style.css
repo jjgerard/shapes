@@ -249,7 +249,11 @@ button { font-family: inherit; cursor: pointer; }
    actually finished, setModalDoneState() (app.js) swaps this to a big,
    hard-to-miss "Return to levels" button -- the small link is easy to miss,
    which is fine mid-task but not once there's nothing left to do. */
-.btn-return { padding: 16px 30px; font-size: 1.15rem; }
+.btn-return { padding: 16px 30px; font-size: 1.15rem; min-width: 0; }
+/* Finished state: nothing left to do in the puzzle, so the controls for
+   doing it get out of the way and the exit takes the room. */
+.editor-actions.done #editor-snip,
+.editor-actions.done .btn-secondary { display: none; }
 .editor-body { display: flex; flex: 1; min-height: 380px; }
 /* touch-action:none, always -- touch-action on an SVG child (.tree-node)
    isn't reliably honored on real mobile browsers, so relying on the browser
@@ -493,6 +497,8 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 0.85rem; font-weight: 600; color: #6b5200;
 }
 .redo-btn { display: block; margin: 14px 0 0; }
+.reveal-footer { margin-top: 28px; display: flex; justify-content: center; }
+.reveal-footer button { width: 100%; max-width: 420px; }
 /* flex-wrap matters on a narrow phone: shape swatch + text input + Check +
    Hint in one un-wrapping row squeezed the input down to a few characters
    wide, which is unusable for the one screen in the game that asks you to
@@ -581,16 +587,6 @@ button { font-family: inherit; cursor: pointer; }
 .mode-switch-card .level-progress { margin-top: 12px; font-size: 0.85rem; font-weight: 600; }
 .mode-switch > .small { margin: 12px 0 0; }
 
-/* Fixed near the TOP of the screen, well clear of the header below it --
-   this used to sit bottom-center, which put it right behind the mascot's
-   speech bubble (fixed bottom-right, much higher z-index) and made the
-   completion message unreadable. */
-.toast {
-  position: fixed; top: 74px; left: 50%; transform: translateX(-50%);
-  background: var(--ink); color: #fff; padding: 10px 20px; border-radius: 999px;
-  font-size: 0.9rem; font-weight: 600; z-index: 1000;
-  max-width: calc(100vw - 32px); text-align: center;
-}
 
 @media (max-width: 640px) {
   html { font-size: 20px; }
@@ -618,7 +614,13 @@ button { font-family: inherit; cursor: pointer; }
   .mascot-wrap { padding: 8px 12px; gap: 8px; }
   .mascot { width: 48px; height: 48px; }
   .mascot-bubble { font-size: 0.9rem; }
-  .toast { top: 66px; font-size: 0.85rem; padding: 9px 16px; }
+  /* On a phone the finished-state exit gets its own full-width row rather
+     than competing with the title for one line -- .editor-actions is
+     flex-shrink:0, so without the wrap it simply overflowed the header
+     and the button was cut in half. */
+  .editor-header { flex-wrap: wrap; }
+  .editor-actions.done { width: 100%; }
+  .editor-actions.done .btn-return { flex: 1 1 auto; }
   .btn-return { padding: 18px 26px; font-size: 1.1rem; min-height: 52px; }
   .wm-sentence { font-size: 1.15rem; padding: 12px; gap: 8px; }
   .hint-btn { font-size: 0.95rem; }
