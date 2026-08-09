@@ -519,8 +519,27 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---- legend/reveal tree (Level 1 Mystery Level) ---- */
 .legend-layout { display: flex; gap: 28px; flex-wrap: wrap; }
-.legend-tree { flex: 1 1 420px; min-width: 320px; }
-.legend-tree svg { width: 100%; height: 520px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+/* A fixed-height frame holding a full pan/zoom canvas, rather than an SVG
+   stretched to fit. Squeezing a whole tree into one screen-width box left
+   the shapes too small to read on a phone -- and this is the one level
+   where reading the tree IS the puzzle -- so it gets the same oversized
+   scrollable canvas as every other tree in the game.
+
+   max-width/overflow are not belt-and-braces: this is the only canvas that
+   lives in the normal page flow rather than inside a position:fixed modal,
+   so an un-clipped SVG here widens the whole document -- and on a phone
+   that makes the browser zoom the entire page out to fit, which knocks the
+   mobile layout out of its own media query. */
+.legend-tree { flex: 1 1 420px; min-width: 0; max-width: 100%; display: flex; overflow: hidden; }
+.legend-tree .canvas-stage {
+  height: 520px; max-width: 100%;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); overflow: hidden;
+}
+#reveal-canvas {
+  flex-shrink: 0; display: block;
+  background: radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9;
+}
 .legend-lists { flex: 1 1 300px; display: flex; flex-direction: column; gap: 18px; }
 .legend-group h3 { margin: 0 0 8px; font-size: 0.95rem; }
 .legend-slots { display: flex; flex-direction: column; gap: 6px; }
@@ -535,6 +554,7 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 0.85rem; font-weight: 600; color: #6b5200;
 }
 .redo-btn { display: block; margin: 14px 0 0; }
+.reveal-win { margin: 0 0 14px; }
 .reveal-footer { margin-top: 28px; display: flex; justify-content: center; }
 .reveal-footer button { width: 100%; max-width: 420px; }
 /* flex-wrap matters on a narrow phone: shape swatch + text input + Check +
@@ -611,7 +631,7 @@ button { font-family: inherit; cursor: pointer; }
   #app-header { padding: 12px 14px; }
   .brand { gap: 7px; font-size: 1.05rem; }
   .brand-logo { width: 26px; height: 26px; }
-  main { padding: 16px 12px 60px; }
+  main { padding: 16px 12px calc(var(--mascot-bar-h) + 20px); }
   .card.narrow { margin: 24px auto; padding: 20px; }
   .level-grid, .target-grid, .fragment-grid { grid-template-columns: 1fr; }
   .level-card.level-done p { display: none; }
@@ -629,6 +649,9 @@ button { font-family: inherit; cursor: pointer; }
   .canvas-wrap { min-height: 0; }
   .btn-icon { width: 52px; height: 52px; font-size: 1.4rem; }
   .legend-layout { flex-direction: column; }
+  /* Tall enough to be worth panning around in, short enough that the
+     answer slots underneath are still reachable without a long scroll. */
+  .legend-tree .canvas-stage { height: 62vh; max-height: 420px; min-height: 260px; }
   .legend-slot { min-height: 50px; padding: 10px 12px; }
   .legend-slot svg { width: 32px; height: 32px; }
   .reveal-input { font-size: 1.05rem; padding: 11px; }

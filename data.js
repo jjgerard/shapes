@@ -421,7 +421,7 @@ const PREX_LEVEL2 = [
   },
   {
     id: 'the-cat-chased-the-mouse',
-    name: '4 Pieces',
+    name: 'Full Sentence',
     description: 'The same idea, just with more pieces to match.',
     hint: "There's no auxiliary in this sentence, so Tense has no word of its own (∅) -- its tense just rides along on the verb.",
     root: pxTP(
@@ -439,8 +439,12 @@ const PREX_LEVEL2 = [
     // questions forever. Level 4 still uses it -- "will" against "jump" is
     // exactly the Tense/Verb contrast it exists to show.
     id: 'the-fluffy-cat-will-jump',
-    name: 'Tense and Verb',
-    description: 'This one has a word sitting in Tense of its own, right next to the verb.',
+    // Named for its position in the level, not its contents. The card sits
+    // in a list you read before you open it, so anything it says about the
+    // words is a spoiler for the puzzle underneath -- the same reason the
+    // X-bar level's cards only ever count pieces.
+    name: 'Another Sentence',
+    description: 'A different handful of pieces, doing the same job.',
     hint: '"Will" isn\'t the action -- it carries the tense. The action is "jump". They are two different pieces.',
     skipConstituency: true,
     streakTarget: 5,
@@ -452,8 +456,8 @@ const PREX_LEVEL2 = [
   },
   {
     id: 'the-fluffy-cat-quickly-jumped-on-the-table',
-    name: 'Describing Words',
-    description: 'Two describing words in one sentence -- one describes the cat, the other describes the jumping.',
+    name: 'Last Sentence',
+    description: 'The most pieces in this level. Take your time with it.',
     hint: '"Fluffy" describes the cat, so it sits inside the noun phrase. "Quickly" describes the jumping, so it sits inside the verb phrase.',
     root: pxTP(
       pxNPAdj(pxHead('D', { word: 'the', pos: 1 }), pxHead('Adj', { word: 'fluffy', pos: 2 }), pxHead('N', { word: 'cat', pos: 3 })),

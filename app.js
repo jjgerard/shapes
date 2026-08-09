@@ -388,15 +388,16 @@ const CANVAS_HELP = `
       Use <strong>−</strong> and <strong>+</strong> to zoom.</li>`;
 const HELP = {
   general: {
-    title: 'How Shapes works',
+    title: 'How Shape Snap works',
     html: `<ul>
       <li>Work through the levels in order. Each one unlocks when you finish the one before it.</li>
       <li>Your points are saved automatically on this device, under your name and class code.
           You can close the page at any time and pick up where you left off.</li>
       <li><strong>Nothing you do here can break anything.</strong> If something goes wrong,
           close the puzzle and open it again — you'll never lose points you've already earned.</li>
-      <li>Tap <strong>🔊</strong> at the top of the screen to turn the sounds off.</li>
-      <li>Tap <strong>?</strong> on any screen for help with that screen.</li>
+      <li>Tap <strong>☰ Menu</strong> at the top right to turn the sounds off, get help,
+          or switch to a different player.</li>
+      <li>Tap <strong>?</strong> inside any puzzle for help with that puzzle.</li>
     </ul>`,
   },
   editor: {
@@ -1374,29 +1375,28 @@ document.getElementById('categoryid-next').addEventListener('click', nextCategor
 // teach the vocabulary rather than test it once.
 const revealAttempts = { shapes: {}, numbers: {} };
 
+let revealViewer = null;
+function ensureRevealViewer() {
+  if (!revealViewer) revealViewer = new TreeViewer(document.getElementById('reveal-canvas'), { reveal: false });
+  return revealViewer;
+}
+
 function renderReveal() {
-  const body = document.getElementById('reveal-body');
-  body.innerHTML = '';
   const sub = LEVEL1_SUBLEVELS.find(s => s.kind === 'reveal');
 
-  const layout = document.createElement('div');
-  layout.className = 'legend-layout';
-  // Attached before anything is painted into it: label sizes are measured
-  // from the rendered text, which only works once it's in the document.
-  body.appendChild(layout);
+  // The tree canvas outlives each render: every correct answer re-renders
+  // the lists, and re-opening the viewer each time would throw away
+  // whatever the student had zoomed in on. Only a genuinely different tree
+  // (a mode switch) re-frames the view.
+  const viewer = ensureRevealViewer();
+  viewer.reveal = revealComplete();
+  if (viewer.root !== sub.root) viewer.open(sub.root);
+  else viewer.render();
 
-  const treeWrap = document.createElement('div');
-  treeWrap.className = 'legend-tree';
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  treeWrap.appendChild(svg);
-  layout.appendChild(treeWrap);
+  document.getElementById('reveal-win').classList.toggle('hidden', !revealComplete());
 
-  const dims = layoutTree(sub.root);
-  svg.setAttribute('viewBox', `0 0 ${dims.width + 40} ${dims.height}`);
-  paintStaticTree(svg, sub.root, { r: 26, reveal: revealComplete(), xOffset: 20 });
-
-  const lists = document.createElement('div');
-  lists.className = 'legend-lists';
+  const lists = document.getElementById('reveal-lists');
+  lists.innerHTML = '';
 
   lists.appendChild(buildRevealGroup({
     heading: 'What is each shape?',
@@ -1455,21 +1455,13 @@ function renderReveal() {
     },
   }));
 
-  layout.appendChild(lists);
-
-  if (revealComplete()) {
-    const win = document.createElement('p');
-    win.innerHTML = '<strong>You\'ve cracked the code!</strong> The shape on the left now shows the real labels.';
-    body.insertBefore(win, layout);
-  }
-
   // The Mystery Level is a screen rather than a modal, so it never got the
   // finished-state "Done" button the puzzle modals have -- the only way
   // back was the small "← Levels" link at the very top, which on a phone
   // is a full tree's worth of scrolling above where you finish. Put an
   // exit at the bottom, where the last answer is actually typed.
-  const footer = document.createElement('div');
-  footer.className = 'reveal-footer';
+  const footer = document.getElementById('reveal-footer');
+  footer.innerHTML = '';
   const back = document.createElement('button');
   back.type = 'button';
   if (revealComplete()) {
@@ -1481,7 +1473,6 @@ function renderReveal() {
   }
   back.addEventListener('click', navBack);
   footer.appendChild(back);
-  body.appendChild(footer);
 }
 
 function buildRevealGroup({ heading, items, onCorrect }) {
@@ -1678,6 +1669,7 @@ document.querySelectorAll('[data-back]').forEach(btn => {
   attachCanvasControls(document.querySelector('#wordmatch-overlay .canvas-stage'), () => wordMatch);
   attachCanvasControls(document.querySelector('#constituency-overlay .canvas-stage'), () => constituencyViewer);
   attachCanvasControls(document.querySelector('#categoryid-overlay .canvas-stage'), () => categoryViewer);
+  attachCanvasControls(document.querySelector('#screen-reveal .canvas-stage'), () => revealViewer);
 
   const last = JSON.parse(localStorage.getItem('stb:lastPlayer') || 'null');
   if (last && last.name && last.code) {
