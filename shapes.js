@@ -34,6 +34,14 @@ const HEART_D = 'M16,29.3 C16,29.3 2,18 2,10.5 C2,5.8 5.6,2 10,2 C12.6,2 15,3.4 
 // shape -> element factory. `r` is the nominal radius/half-size.
 const SHAPE_FACTORY = {
   square: (r) => svgEl('rect', { x: -r, y: -r, width: 2 * r, height: 2 * r, rx: r * 0.12 }),
+  // Adjective and adverb. Both silhouettes had to stay legible at a
+  // phone-sized r and distinct from the six already in use -- which rules
+  // out an octagon or a hexagon, since at this size either is a circle,
+  // and D is already the circle. A pentagon reads as pointed-top-flat-
+  // bottom and a diamond as a square stood on its corner; neither can be
+  // confused with anything else in the set at a glance.
+  pentagon: (r) => svgEl('polygon', { points: polygonPoints(0, r * 0.06, r * 1.12, 5, -90) }),
+  diamond: (r) => svgEl('polygon', { points: polygonPoints(0, 0, r * 1.2, 4, -90) }),
   rectangle: (r) => svgEl('rect', { x: -r * 1.35, y: -r * 0.78, width: 2.7 * r, height: 1.56 * r, rx: r * 0.12 }),
   circle: (r) => svgEl('circle', { cx: 0, cy: 0, r }),
   triangle: (r) => svgEl('polygon', { points: polygonPoints(0, r * 0.08, r * 1.15, 3, -90) }),
@@ -61,8 +69,15 @@ function buildShapeGroup(categoryKey, number, r = 26, fontScale = 0.5) {
   g.appendChild(shapeEl);
   const label = svgEl('text', { x: 0, y: 1 });
   label.textContent = number;
+  // Labels vary in length far more than they used to: a bare "1" in Level
+  // 1, "1.5" once the bar level exists, and "AdjP"/"Adv⁰" for the two
+  // three-letter categories. A single font size tuned for two characters
+  // overflows the narrower shapes (the diamond especially) at four, so
+  // step it down as the label grows.
+  const len = String(number).length;
+  const fitted = len <= 2 ? fontScale : len === 3 ? fontScale * 0.78 : fontScale * 0.62;
   label.style.cssText =
-    `font-size:${Math.round(r * fontScale)}px; font-weight:700; fill:#fff; ` +
+    `font-size:${Math.round(r * fitted)}px; font-weight:700; fill:#fff; ` +
     'text-anchor:middle; dominant-baseline:middle; pointer-events:none; user-select:none;';
   g.appendChild(label);
   return g;

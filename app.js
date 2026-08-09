@@ -431,14 +431,14 @@ document.getElementById('btn-sound').addEventListener('click', () => {
 // (goes back to false) whenever Redo clears reveal.
 function revealComplete() {
   const p = prog();
-  return Object.keys(CATEGORIES).every(k => p.reveal.shapes[k]) && LEVEL_NUMBERS.every(n => p.reveal.numbers[n]);
+  return MODE_CATEGORIES.every(k => p.reveal.shapes[k]) && LEVEL_NUMBERS.every(n => p.reveal.numbers[n]);
 }
 // Whether it's EVER been fully solved -- permanent, drives Level 2's lock
 // and the sub-level's own done/locked state, so a Redo (for practice) can
 // never re-lock Level 2 or take back an already-earned sub-level.
 function revealEverSolved() {
   const p = prog();
-  return Object.keys(CATEGORIES).every(k => p.revealSolved.shapes[k]) && LEVEL_NUMBERS.every(n => p.revealSolved.numbers[n]);
+  return MODE_CATEGORIES.every(k => p.revealSolved.shapes[k]) && LEVEL_NUMBERS.every(n => p.revealSolved.numbers[n]);
 }
 function isSubComplete(sub) {
   return sub.kind === 'reveal' ? revealEverSolved() : prog().trees.includes(sub.id);
@@ -509,18 +509,18 @@ function renderLevelSelect() {
   const level3Unlocked = level2Unlocked && LEVEL2_SUBLEVELS.every(isL2SubComplete);
   level3Card.classList.toggle('locked', !level3Unlocked);
   if (level3Unlocked) {
-    const doneCount3 = QUIZ_SUBLEVELS.filter(isL3SubComplete).length;
+    const doneCount3 = QUIZ_CONSTITUENCY_SUBLEVELS.filter(isL3SubComplete).length;
     level3Card.innerHTML =
       '<div class="level-num">Level 3</div>' +
       '<div class="level-title">Constituents</div>' +
       '<p>Is this string of words a constituent? Prove it with a run of correct answers.</p>' +
-      `<div class="level-progress">${doneCount3} / ${QUIZ_SUBLEVELS.length} sub-levels done</div>`;
+      `<div class="level-progress">${doneCount3} / ${QUIZ_CONSTITUENCY_SUBLEVELS.length} sub-levels done</div>`;
   } else {
     level3Card.innerHTML = '<div class="level-num">Level 3</div><div class="lock-badge">🔒 Locked</div>';
   }
 
   const level4Card = document.getElementById('level4-card');
-  const level4Unlocked = level3Unlocked && QUIZ_SUBLEVELS.every(isL3SubComplete);
+  const level4Unlocked = level3Unlocked && QUIZ_CONSTITUENCY_SUBLEVELS.every(isL3SubComplete);
   level4Card.classList.toggle('locked', !level4Unlocked);
   if (level4Unlocked) {
     const doneCount4 = QUIZ_SUBLEVELS.filter(isL4SubComplete).length;
@@ -927,9 +927,9 @@ function isL3SubComplete(sub) {
 function renderConstituencyGrid() {
   const grid = document.getElementById('constituency-grid');
   grid.innerHTML = '';
-  QUIZ_SUBLEVELS.forEach((sub, i) => {
+  QUIZ_CONSTITUENCY_SUBLEVELS.forEach((sub, i) => {
     const done = isL3SubComplete(sub);
-    const locked = i > 0 && !isL3SubComplete(QUIZ_SUBLEVELS[i - 1]);
+    const locked = i > 0 && !isL3SubComplete(QUIZ_CONSTITUENCY_SUBLEVELS[i - 1]);
     const card = document.createElement('div');
     card.className = 'target-card' + (done ? ' done' : '') + (locked ? ' locked' : '');
 
@@ -980,6 +980,7 @@ let currentL3Sub = null;
 let l3Game = null;
 let l3CurrentQuestion = null; // {span: {start,end}, isConstituent}
 let l3AdvanceTimer = null;    // pending "load next question" timeout
+let l3LastKey = null;         // previous span, so the same string is never asked twice running
 
 function ensureConstituencyViewer() {
   if (!constituencyViewer) constituencyViewer = new TreeViewer(document.getElementById('constituency-canvas'));
@@ -995,6 +996,16 @@ function renderStreakBar(prefix, game) {
   const label = document.getElementById(`${prefix}-streak-label`);
   fill.style.width = `${Math.round(game.streak / game.target * 100)}%`;
   label.textContent = `${game.streak} / ${game.target} in a row — ${game.multiplier()}x bonus`;
+}
+
+// Pick from `pool`, avoiding whatever was just asked. Being asked the
+// identical string twice running reads as the quiz being broken -- but a
+// pool with only one entry has nothing else to offer, so it falls through
+// rather than looping.
+function sampleAvoidingRepeat(pool, lastKey) {
+  const fresh = pool.filter(s => `${s.start}-${s.end}` !== lastKey);
+  const from = fresh.length ? fresh : pool;
+  return from[Math.floor(Math.random() * from.length)];
 }
 
 function renderQuizSentence(elId, tokens, span) {
@@ -1027,7 +1038,8 @@ function nextConstituencyQuestion() {
   // short enough to have no non-constituent spans at all was excluded from
   // this level entirely.
   const pool = wantConstituent ? pools.constituents : pools.nonConstituents;
-  const span = pool[Math.floor(Math.random() * pool.length)];
+  const span = sampleAvoidingRepeat(pool, l3LastKey);
+  l3LastKey = `${span.start}-${span.end}`;
   l3CurrentQuestion = { span, isConstituent: wantConstituent };
   renderQuizSentence('constituency-sentence', pools.tokens, span);
   const feedback = document.getElementById('constituency-feedback');
@@ -1073,6 +1085,7 @@ function openConstituencyQuiz(sub) {
   ensureConstituencyViewer();
   currentL3Sub = sub;
   l3Game = new StreakGame(sub.streakTarget);
+  l3LastKey = null;
   document.getElementById('constituency-title').textContent = sub.name;
   setMascotSpeech(`Is the highlighted string of words a constituent -- the whole yield of some single piece? ${sub.streakTarget} in a row to finish.`);
   const fit = fitCanvasSize(1100, 800);
@@ -1159,6 +1172,7 @@ let l4Game = null;
 let l4Pool = null;            // the concatenated question pool for the open sub-level
 let l4CurrentQuestion = null; // {span: {start,end,shape}, shape, isHead}
 let l4AdvanceTimer = null;    // pending "load next question" timeout
+let l4LastKey = null;         // previous span, so the same string is never asked twice running
 
 function ensureCategoryViewer() {
   if (!categoryViewer) categoryViewer = new TreeViewer(document.getElementById('categoryid-canvas'));
@@ -1175,8 +1189,14 @@ function ensureCategoryViewer() {
 function buildCategoryMatrix() {
   const matrix = document.getElementById('categoryid-matrix');
   matrix.innerHTML = '';
-  Object.keys(CATEGORIES).forEach(key => {
+  MODE_CATEGORIES.forEach(key => {
     [{ isHead: false, level: PHRASE_NUMBER }, { isHead: true, level: HEAD_NUMBER }].forEach(({ isHead, level }) => {
+      // A category that never heads a phrase in this phase gets a blank
+      // cell rather than a sticker, so the column grid stays aligned.
+      if (!isHead && !MODE_PHRASE_CATEGORIES.has(key)) {
+        matrix.appendChild(document.createElement('span'));
+        return;
+      }
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'quiz-sticker';
@@ -1194,8 +1214,11 @@ function buildCategoryMatrix() {
 function nextCategoryQuestion() {
   setQuizAwaitingNext('categoryid', false);
   const pools = currentL4Sub.pools;
-  const span = l4Pool[Math.floor(Math.random() * l4Pool.length)];
-  l4CurrentQuestion = { span, shape: span.shape, isHead: span.start === span.end };
+  const span = sampleAvoidingRepeat(l4Pool, l4LastKey);
+  l4LastKey = `${span.start}-${span.end}`;
+  // `alsoPhrase` marks a single word that is a whole phrase in its own
+  // right -- "jump" is both a VP and a V⁰ -- so either sticker is right.
+  l4CurrentQuestion = { span, shape: span.shape, isHead: span.start === span.end, alsoPhrase: !!span.alsoPhrase };
   renderQuizSentence('categoryid-sentence', pools.tokens, span);
   const feedback = document.getElementById('categoryid-feedback');
   feedback.textContent = '';
@@ -1207,7 +1230,8 @@ function answerCategoryQuestion(chosenShape, chosenIsHead) {
   clearTimeout(l4AdvanceTimer);
   const question = l4CurrentQuestion;
   l4CurrentQuestion = null; // blocks re-answering the same question during the feedback delay
-  const correct = chosenShape === question.shape && chosenIsHead === question.isHead;
+  const correct = chosenShape === question.shape
+    && (chosenIsHead === question.isHead || (question.alsoPhrase && !chosenIsHead));
   const result = l4Game.answer(correct);
   state.points = Math.max(0, state.points + result.pointsDelta);
   saveState(); updateHeader();
@@ -1221,7 +1245,9 @@ function answerCategoryQuestion(chosenShape, chosenIsHead) {
     playCorrectSound();
     if (!result.complete) celebrateCorrect();
   } else {
-    feedback.textContent = `Not quite — that's ${CATEGORIES[question.shape].name} (${answerLabel}). ${result.pointsDelta} pts`;
+    feedback.textContent = question.alsoPhrase
+      ? `Not quite — that's ${CATEGORIES[question.shape].name}. It's one word, so either ${nodeLabel(question.shape, PHRASE_NUMBER)} or ${answerLabel} counts. ${result.pointsDelta} pts`
+      : `Not quite — that's ${CATEGORIES[question.shape].name} (${answerLabel}). ${result.pointsDelta} pts`;
     feedback.className = 'quiz-feedback err';
     playWrongSound();
   }
@@ -1246,6 +1272,7 @@ function openCategoryQuiz(sub) {
   // itself before the streak could ever be finished.
   const target = Math.min(sub.streakTarget, l4Pool.length);
   l4Game = new StreakGame(target);
+  l4LastKey = null;
   document.getElementById('categoryid-title').textContent = sub.name;
   setMascotSpeech(`Click the category sticker that matches the highlighted constituent. ${target} in a row to finish.`);
   buildCategoryMatrix();
@@ -1305,7 +1332,7 @@ function renderReveal() {
 
   lists.appendChild(buildRevealGroup({
     heading: 'What is each shape?',
-    items: Object.keys(CATEGORIES).map(key => ({
+    items: MODE_CATEGORIES.map(key => ({
       key,
       render: (el) => {
         const mini = document.createElementNS(SVG_NS, 'svg');
