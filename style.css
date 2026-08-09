@@ -41,7 +41,9 @@ body {
   z-index: 5;
 }
 .brand { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; }
-#player-info { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
+.header-right { display: flex; align-items: center; gap: 10px; min-width: 0; }
+#player-info { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; min-width: 0; }
+#player-name-display { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .points-pill {
   background: var(--accent);
   color: var(--accent-ink);
@@ -102,7 +104,24 @@ button { font-family: inherit; cursor: pointer; }
 }
 .btn-icon:hover { background: #e2dccc; }
 .btn-icon.active { background: var(--danger); color: #fff; }
+/* Header/modal-corner variant -- still a comfortable tap target, just not
+   as visually loud as the primary scissors button. */
+.btn-icon-sm { width: 44px; height: 44px; font-size: 1.05rem; font-weight: 700; }
+.btn-icon-off { background: transparent; border: 1px solid var(--line); opacity: 0.7; }
 #btn-start { margin-top: 20px; width: 100%; }
+.btn-small { padding: 8px 14px; font-size: 0.85rem; border-radius: 8px; }
+
+.field-help { font-size: 0.82rem; color: var(--muted); margin: 10px 0 0; line-height: 1.4; }
+/* Errors go inline, right under the fields they're about. A toast at the
+   top of the screen is easy to miss and gone in two seconds -- which meant
+   the very first thing a hesitant user did (press the button with a field
+   empty) could look like nothing happening at all. */
+.field-error {
+  margin: 12px 0 0; padding: 10px 12px;
+  background: #fbeceb; border: 1px solid var(--danger); border-radius: 8px;
+  color: var(--danger); font-size: 0.88rem; font-weight: 600;
+}
+.card input.invalid { border-color: var(--danger); background: #fdf6f5; }
 
 .link-btn {
   background: none;
@@ -246,11 +265,41 @@ button { font-family: inherit; cursor: pointer; }
    "safe center" falls back to start-alignment once it overflows, so the
    whole thing stays reachable; unsupported browsers just keep plain
    center from the line above. */
+/* A non-scrolling frame around .canvas-wrap, purely so the zoom/fit
+   controls have something to anchor to. Absolutely positioning them inside
+   .canvas-wrap itself would make them scroll away with the content -- which
+   is exactly the situation they exist to rescue you from. */
+.canvas-stage { position: relative; flex: 1; display: flex; min-width: 0; min-height: 0; }
 .canvas-wrap {
   position: relative; flex: 1; overflow: auto; touch-action: none; overscroll-behavior: none;
   display: flex; align-items: center; justify-content: center;
   align-items: safe center; justify-content: safe center;
 }
+/* Always-visible zoom out / zoom in / fit, bottom-right of every canvas.
+   Pinch and ctrl+wheel still work, but neither is discoverable, and both
+   can strand you: the canvas is far bigger than its contents, so one stray
+   background drag scrolls every piece off screen with no way back. "Fit"
+   is that way back, and it always works regardless of how lost the view
+   got. */
+.canvas-controls {
+  position: absolute; right: 12px; bottom: 12px;
+  display: flex; gap: 6px;
+  background: rgba(255, 253, 249, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+  z-index: 4;
+}
+.canvas-btn {
+  min-width: 44px; height: 44px;
+  border: none; border-radius: 8px;
+  background: #eee9df; color: var(--ink);
+  font-family: inherit; font-size: 1.15rem; font-weight: 700; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.canvas-btn:hover { background: #e2dccc; }
+.canvas-btn-wide { font-size: 0.95rem; padding: 0 14px; }
 #editor-canvas { flex-shrink: 0; }
 #editor-canvas { display: block; background:
   radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9; }
@@ -298,6 +347,16 @@ button { font-family: inherit; cursor: pointer; }
 }
 .wm-word { color: var(--muted); }
 .wm-word.filled { color: var(--ink); }
+/* Feedback line plus the escape hatch for a word you can't place. The queue
+   only advances on a correct placement, so without "Skip this word" a stuck
+   student's only route forward was Start over -- throwing away every word
+   already placed. */
+.wm-statusbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 16px; border-bottom: 1px solid var(--line); flex-shrink: 0;
+}
+.wm-feedback { font-size: 0.88rem; font-weight: 600; min-height: 1.2em; color: var(--danger); }
+.wm-feedback.ok { color: var(--accent); }
 /* Natural size, not stretched to fill -- same as #editor-canvas -- so a
    big tree scrolls/zooms in .canvas-wrap instead of auto-shrinking. */
 #wordmatch-canvas {
@@ -328,6 +387,22 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: 0 4px 14px rgba(0,0,0,0.18);
 }
 .wm-chip-float.dragging { cursor: grabbing; }
+/* A wrong drop used to snap the chip silently back to its corner, which is
+   indistinguishable from the drag never having registered. Now it shakes,
+   and .wm-feedback says why. */
+@keyframes chip-reject {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-8px); }
+  30% { transform: translateX(7px); }
+  45% { transform: translateX(-5px); }
+  60% { transform: translateX(4px); }
+  80% { transform: translateX(-2px); }
+}
+.wm-chip-float.rejected {
+  animation: chip-reject 0.45s ease-in-out;
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(193, 68, 58, 0.25), 0 4px 14px rgba(0,0,0,0.18);
+}
 
 /* ---- level 3 & 4 quiz (constituency yes/no, category ID) ---- */
 .quiz-body { flex-direction: column; }
@@ -359,6 +434,11 @@ button { font-family: inherit; cursor: pointer; }
 .quiz-feedback.err { color: var(--danger); }
 .quiz-answer-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
 .quiz-answer-btn { min-width: 200px; }
+/* Shown instead of the answer buttons after a WRONG answer, so the
+   explanation stays on screen until it's actually been read. Correct
+   answers still auto-advance -- there's nothing to read there, and needing
+   a tap between every right answer would make a 10-streak a chore. */
+.quiz-next { align-self: center; min-width: 220px; }
 /* Natural size, not stretched to fill -- same as #editor-canvas/#wordmatch-canvas
    -- so TreeViewer's own zoom (width/height attributes) is what determines
    the rendered size, not the flex container squeezing it back down. Missing
@@ -404,8 +484,12 @@ button { font-family: inherit; cursor: pointer; }
 .hint-btn { font-size: 0.78rem; flex-shrink: 0; }
 .hint-text { margin: 0; padding-left: 2px; font-size: 0.82rem; font-style: italic; color: var(--muted); }
 .redo-btn { display: block; margin: 14px 0 0; }
+/* flex-wrap matters on a narrow phone: shape swatch + text input + Check +
+   Hint in one un-wrapping row squeezed the input down to a few characters
+   wide, which is unusable for the one screen in the game that asks you to
+   type. */
 .legend-slot {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   border: 1px dashed var(--line);
   border-radius: 8px;
   padding: 6px 10px;
@@ -442,6 +526,38 @@ button { font-family: inherit; cursor: pointer; }
 .legend-slot.incorrect .reveal-input { border-color: var(--danger); }
 .legend-slot .btn-secondary { padding: 4px 10px; font-size: 0.8rem; flex-shrink: 0; }
 .legend-slot .slot-remove { color: var(--muted); font-size: 0.8rem; cursor: pointer; }
+
+/* ---- how-to-play + confirm dialogs ---- */
+/* Plain centered boxes rather than the full-bleed .editor layout the
+   puzzle modals use. The confirm dialog exists because Start over and
+   switch player were both one mis-tap away from destroying work with no
+   warning at all; a native confirm() would do the job but reads as a
+   browser security prompt ("this site says..."), which is exactly the kind
+   of thing that makes a nervous user back out of the whole page. */
+.overlay-dialog { z-index: 60; }
+.dialog {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: min(520px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.28);
+}
+.dialog h2 { margin: 0 0 12px; font-size: 1.3rem; }
+.dialog-body { margin: 0; color: var(--ink); font-size: 0.95rem; line-height: 1.5; }
+.dialog-body ul { margin: 0; padding-left: 20px; }
+.dialog-body li { margin-bottom: 10px; }
+.dialog-body li:last-child { margin-bottom: 0; }
+.dialog-body .dialog-note { color: var(--muted); font-size: 0.88rem; margin-top: 14px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+
+/* ---- mode select ---- */
+.mode-card .level-title { margin-top: 6px; }
+.mode-card .mode-shape-row { display: flex; align-items: flex-end; gap: 6px; margin: 12px 0 4px; height: 46px; }
+.mode-card .mode-shape-row svg { width: 40px; height: 40px; }
+.mode-card.current { border-color: var(--accent); background: #eef6f2; }
+.mode-current-badge { font-size: 0.78rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* Fixed near the TOP of the screen, well clear of the header below it --
    this used to sit bottom-center, which put it right behind the mascot's
@@ -495,6 +611,23 @@ button { font-family: inherit; cursor: pointer; }
      -- the visible link was previously only ~23px tall, well under the
      ~44px touch-target guideline, and mid-quiz it's the only way out. */
   .editor-actions .link-btn { padding: 13px 6px; min-height: 44px; display: inline-flex; align-items: center; }
+  .btn-icon-sm { width: 44px; height: 44px; }
+  .header-right { gap: 6px; }
+  #player-info { gap: 6px; font-size: 0.82rem; }
+  #btn-switch-player { font-size: 0.82rem; }
+  .canvas-controls { right: 10px; bottom: 10px; padding: 5px; gap: 5px; }
+  .canvas-btn { min-width: 46px; height: 46px; }
+  .wm-statusbar { padding: 8px 12px; gap: 8px; }
+  .wm-feedback { font-size: 0.82rem; }
+  /* Sized to its content, not the whole screen -- a two-line "are you
+     sure?" blown up to full-bleed reads as something far more serious than
+     it is. .overlay's mobile rule drops padding to 0 for the puzzle modals,
+     so put it back here. */
+  .overlay-dialog { padding: 16px; }
+  .dialog { padding: 20px; max-height: 100%; }
+  .dialog-actions .btn-primary, .dialog-actions .btn-secondary { flex: 1 1 140px; }
+  .quiz-next { min-width: 0; width: 100%; }
+  .reveal-input { flex: 1 1 100%; }
 }
 
 /* ---- mascot ---- */

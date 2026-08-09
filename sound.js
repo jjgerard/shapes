@@ -10,6 +10,18 @@ function getAudioCtx() {
   return audioCtx;
 }
 
+// Sound is on by default but genuinely switchable, and the choice sticks
+// across sessions. This is a classroom app: someone working through it on a
+// shared desk, in a quiet room, or with sound sensitivity needs a mute they
+// can find immediately, not a reason to close the tab. Every play* function
+// below no-ops while muted, so nothing else has to check.
+let soundMuted = localStorage.getItem('stb:muted') === '1';
+function isSoundMuted() { return soundMuted; }
+function setSoundMuted(muted) {
+  soundMuted = !!muted;
+  localStorage.setItem('stb:muted', soundMuted ? '1' : '0');
+}
+
 function playTone(freq, startTime, duration, { type = 'sine', peakGain = 0.2 } = {}) {
   const ctx = getAudioCtx();
   const osc = ctx.createOscillator();
@@ -51,6 +63,7 @@ function playNoiseBurst(ctx, startTime, duration, { filterType = 'bandpass', fre
 // immediately followed by a slightly longer, lower "clack" of the piece
 // settling in.
 function playClickSound() {
+  if (soundMuted) return;
   const ctx = getAudioCtx();
   const now = ctx.currentTime;
   playNoiseBurst(ctx, now, 0.014, { filterType: 'highpass', freq: 3800, q: 0.7, peakGain: 0.55 });
@@ -60,6 +73,7 @@ function playClickSound() {
 // A sub-level (or the whole reveal) is fully complete -- a short ascending
 // bell-like sparkle.
 function playChimeSound() {
+  if (soundMuted) return;
   const now = getAudioCtx().currentTime;
   const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
   notes.forEach((freq, i) => playTone(freq, now + i * 0.09, 0.5, { type: 'sine', peakGain: 0.18 }));
@@ -67,6 +81,7 @@ function playChimeSound() {
 
 // A correct guess on the final reveal level -- a bright two-note "ding".
 function playCorrectSound() {
+  if (soundMuted) return;
   const now = getAudioCtx().currentTime;
   playTone(784, now, 0.12, { type: 'triangle', peakGain: 0.2 });
   playTone(1046.5, now + 0.1, 0.22, { type: 'triangle', peakGain: 0.2 });
@@ -76,6 +91,7 @@ function playCorrectSound() {
 // low and dull, so it reads as clearly distinct from playCorrectSound's
 // bright ascending ding rather than just a quieter version of it.
 function playWrongSound() {
+  if (soundMuted) return;
   const now = getAudioCtx().currentTime;
   playTone(220, now, 0.16, { type: 'sawtooth', peakGain: 0.15 });
   playTone(174.6, now + 0.09, 0.22, { type: 'sawtooth', peakGain: 0.15 });

@@ -117,9 +117,16 @@ class TreeEditor {
     this.feedbackEl.className = 'editor-feedback' + (kind ? ' ' + kind : '');
   }
 
-  setSnipMode(on) {
+  // `keepFeedback` preserves whatever message is already showing instead of
+  // blanking it. Turning snip mode off used to unconditionally clear the
+  // feedback line, which meant the result of the snip that just turned it
+  // off -- "Snipped apart", or the "nothing joined there" miss -- was wiped
+  // in the same tick it was set, so a mis-tap in snip mode looked exactly
+  // like the app ignoring you.
+  setSnipMode(on, { keepFeedback = false } = {}) {
     this.snipMode = on;
-    this.setFeedback(on ? 'Snip mode: click a joint to pull it apart.' : '');
+    if (on) this.setFeedback('Snip mode: tap a joint outlined in red to pull it apart. Tap the empty canvas to cancel.');
+    else if (!keepFeedback) this.setFeedback('');
     if (this.onSnipModeChange) this.onSnipModeChange(on);
     this.render();
   }
@@ -296,12 +303,15 @@ class TreeEditor {
   // Undo the snap recorded at `nodeId`: recreate the piece that was
   // consumed into it (same shape, same children) as a new freestanding
   // piece placed just next to it.
+  // Returns true if something was actually snipped, so the caller can leave
+  // snip mode on after a miss -- dropping out of the mode on every tap made
+  // a near-miss feel like the scissors button had broken.
   snipAt(nodeId) {
     const seam = this.seams.get(nodeId);
     const leaf = this.nodes.find(n => n.id === nodeId);
     if (!seam || !leaf) {
-      this.setFeedback('Nothing joined there.', 'err');
-      return;
+      this.setFeedback('Nothing was joined there — tap a piece outlined in red.', 'err');
+      return false;
     }
     const newRootId = this.nextId++;
     this.nodes.push({
@@ -325,6 +335,20 @@ class TreeEditor {
     this.snipCount++;
     this.setFeedback('Snipped apart.', 'ok');
     if (this.onChange) this.onChange();
+    return true;
+  }
+
+  // The bounding box of every piece currently on the canvas, in content
+  // coordinates -- what the "Fit" button re-frames to (see canvas.js).
+  contentBounds() {
+    if (!this.nodes.length) return null;
+    const r = this.nodeRadius;
+    return {
+      minX: Math.min(...this.nodes.map(n => n.x - r)),
+      minY: Math.min(...this.nodes.map(n => n.y - r)),
+      maxX: Math.max(...this.nodes.map(n => n.x + r)),
+      maxY: Math.max(...this.nodes.map(n => n.y + r)),
+    };
   }
 
   // ---- rendering ----
@@ -391,7 +415,11 @@ class TreeEditor {
   // a pinch smoothly continues as a single-finger pan instead of jumping.
   _bindBackgroundPointerEvents() {
     this.svg.addEventListener('pointerdown', (ev) => {
-      if (this.snipMode) return;
+      // Tapping empty canvas while the scissors are armed cancels snip mode
+      // rather than doing nothing at all -- without this, someone who armed
+      // the scissors by accident had no obvious way back out except finding
+      // the (now red) scissors button again.
+      if (this.snipMode) { this.setSnipMode(false); return; }
       ev.preventDefault();
       this.bgPointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
       this._restartBgGesture();
@@ -492,6 +520,8 @@ class TreeEditor {
       if (targetId) {
         const pair = this.resolveSnapPair(id, targetId);
         if (pair) this.snap(pair[0], pair[1]);
+      } else {
+        this._reportFailedSnap(id);
       }
       this.snapTargetId = null;
       this.render();
@@ -504,12 +534,42 @@ class TreeEditor {
     window.addEventListener('pointercancel', (ev) => { releaseBg(ev); endDrag(); });
   }
 
+  // Dropping a piece next to one it can't join used to do nothing whatsoever
+  // -- no sound, no message, no movement -- which reads as "this app is
+  // broken" rather than "those two don't go together". Say why, without
+  // naming any category: which shape is which is still the secret Level 1
+  // is built around, so the wording stays at the level of "shape" and
+  // "number", exactly what's visible on the piece.
+  _reportFailedSnap(id) {
+    const node = this.nodes.find(n => n.id === id);
+    if (!node) return;
+    const carried = new Set(this.subtreeOf(id));
+    const reach = this.snapDistance * 1.9;
+    let near = null, bestDist = Infinity;
+    for (const other of this.nodes) {
+      if (carried.has(other.id)) continue;
+      const d = Math.hypot(node.x - other.x, node.y - other.y);
+      if (d < reach && d < bestDist) { bestDist = d; near = other; }
+    }
+    // Dropped in open space -- that's just moving a piece around, not a
+    // failed attempt at anything, so it deserves no complaint.
+    if (!near) { this.setFeedback(''); return; }
+
+    if (near.catKey !== node.catKey) {
+      this.setFeedback("Those two don't fit — pieces only join another piece of the same shape.", 'err');
+    } else if (near.number !== node.number) {
+      this.setFeedback('Same shape, but different numbers — the number has to match too.', 'err');
+    } else {
+      this.setFeedback('Right shape and number, but neither one has a free branch to plug into.', 'err');
+    }
+  }
+
   _onNodePointerDown(ev, id) {
     ev.preventDefault();
     ev.stopPropagation();
     if (this.snipMode) {
-      this.snipAt(id);
-      this.setSnipMode(false);
+      // Stay in snip mode on a miss so the next tap can try again.
+      if (this.snipAt(id)) this.setSnipMode(false, { keepFeedback: true });
       return;
     }
     const node = this.nodes.find(n => n.id === id);

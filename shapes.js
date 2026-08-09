@@ -110,7 +110,7 @@ function paintStaticTree(svg, root, { r = 26, reveal = false, xOffset = 0, fontS
     }
   })(root);
   (function walk(node) {
-    const g = buildShapeGroup(node.shape, reveal ? xbarLabel(node.shape, node.number) : node.number, r, fontScale);
+    const g = buildShapeGroup(node.shape, reveal ? nodeLabel(node.shape, node.number) : node.number, r, fontScale);
     g.setAttribute('transform', `translate(${node._x + xOffset},${node._y})`);
     nodeLayer.appendChild(g);
     node.children.forEach(walk);

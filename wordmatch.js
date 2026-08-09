@@ -28,6 +28,7 @@ class WordMatchEditor {
     this.bgAnchor = null;
     this.onPlace = null;    // callback() after any correct placement
     this.onComplete = null; // callback() once every slot is filled
+    this.onReject = null;   // callback(message) when a drop doesn't land
 
     // The word-to-place lives OUTSIDE the (scrollable/scalable) SVG canvas
     // entirely -- a plain fixed-position element pinned near the bottom of
@@ -325,12 +326,14 @@ class WordMatchEditor {
 
   // Hit-tests in plain screen space against each slot's actual rendered
   // position -- no SVG coordinate conversion needed, since both the chip
-  // and the slots can just answer getBoundingClientRect().
+  // and the slots can just answer getBoundingClientRect(). Filled slots are
+  // included so a drop onto one can be told apart from a drop into empty
+  // space: they're different mistakes and deserve different messages.
   _findNearestSlot(clientX, clientY) {
     const s = this.sizing;
     let best = null, bestDist = Infinity;
     for (const node of this.slotNodes) {
-      if (node._filled || !node._slotEl) continue;
+      if (!node._slotEl) continue;
       const r = node._slotEl.getBoundingClientRect();
       const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
       const d = Math.hypot(clientX - cx, clientY - cy);
@@ -339,7 +342,47 @@ class WordMatchEditor {
     return best;
   }
 
+  // The tree's bounding box in content coordinates, for the "Fit" button.
+  // layoutTree() already pads treeHeight past the deepest node by more than
+  // a word slot's height, so the slots hanging below each head are covered.
+  contentBounds() {
+    if (!this.root) return null;
+    return {
+      minX: this.xOffset,
+      minY: this.yOffset,
+      maxX: this.xOffset + this.treeWidth,
+      maxY: this.yOffset + this.treeHeight,
+    };
+  }
+
+  // Send the current word to the back of the queue. Without this a student
+  // who can't place the word they've been handed is stuck for good: the
+  // queue only advances on a correct placement, so the only way forward was
+  // Clear, which throws away everything already placed.
+  skipCurrentWord() {
+    if (!this.currentChip || !this.queue.length) return false;
+    this.queue.push(this.currentChip.word);
+    this._nextChip();
+    return true;
+  }
+
+  // Bounce the chip home with a visible shake, so a wrong drop reads as
+  // "not that one" rather than as the drag having failed to register.
+  _rejectChip() {
+    this._resetChipPosition();
+    this.chipEl.classList.remove('rejected');
+    void this.chipEl.offsetWidth; // restart the animation on repeat misses
+    this.chipEl.classList.add('rejected');
+    clearTimeout(this._rejectTimer);
+    this._rejectTimer = setTimeout(() => this.chipEl.classList.remove('rejected'), 500);
+  }
+
   _attemptPlace(node) {
+    if (node._filled) {
+      this._rejectChip();
+      if (this.onReject) this.onReject('That piece already has its word.');
+      return;
+    }
     if (normalizeAnswer(this.currentChip.word) === normalizeAnswer(node.word)) {
       node._filled = true;
       playClickSound();
@@ -348,7 +391,8 @@ class WordMatchEditor {
       if (this.onPlace) this.onPlace();
       if (this.slotNodes.every(n => n._filled) && this.onComplete) this.onComplete();
     } else {
-      this._resetChipPosition();
+      this._rejectChip();
+      if (this.onReject) this.onReject(`"${this.currentChip.word}" doesn't belong on that piece — try another one.`);
     }
   }
 }
