@@ -388,7 +388,7 @@ const CANVAS_HELP = `
       Use <strong>−</strong> and <strong>+</strong> to zoom.</li>`;
 const HELP = {
   general: {
-    title: 'How Shape Snap works',
+    title: 'How Shapes and Language works',
     html: `<ul>
       <li>Work through the levels in order. Each one unlocks when you finish the one before it.</li>
       <li>Your points are saved automatically on this device, under your name and class code.
