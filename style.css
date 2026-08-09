@@ -629,7 +629,13 @@ button { font-family: inherit; cursor: pointer; }
 @media (max-width: 640px) {
   html { font-size: 20px; }
   #app-header { padding: 12px 14px; }
-  .brand { gap: 7px; font-size: 1.05rem; }
+  /* Three words don't fit one phone-width line beside the logo, the points
+     pill and the menu button -- at 360px the name needs 204px and has 161.
+     Ellipsising it ("Shapes and Lang…") is worse than wrapping, and two
+     tight lines are still shorter than the 26px logo they sit next to, so
+     the header doesn't actually get any taller. */
+  .brand { gap: 7px; font-size: 0.95rem; }
+  .brand-name { white-space: normal; text-overflow: clip; line-height: 1.15; }
   .brand-logo { width: 26px; height: 26px; }
   main { padding: 16px 12px calc(var(--mascot-bar-h) + 20px); }
   .card.narrow { margin: 24px auto; padding: 20px; }
@@ -681,7 +687,11 @@ button { font-family: inherit; cursor: pointer; }
      ~44px touch-target guideline, and mid-quiz it's the only way out. */
   .editor-actions .link-btn { padding: 13px 6px; min-height: 44px; display: inline-flex; align-items: center; }
   .btn-icon-sm { width: 44px; height: 44px; }
-  .header-right { gap: 8px; }
+  /* The points and the menu button are fixed-size things -- squeezing them
+     clips the pill and the word "Menu". The name is the one item that can
+     give ground gracefully, by wrapping, so it absorbs the whole shortfall
+     on a narrow phone. */
+  .header-right { gap: 8px; flex-shrink: 0; }
   .btn-menu { padding: 10px 12px; font-size: 0.9rem; }
   .canvas-controls { right: 10px; bottom: 10px; padding: 5px; gap: 5px; }
   .canvas-btn { min-width: 46px; height: 46px; }
@@ -753,3 +763,12 @@ button { font-family: inherit; cursor: pointer; }
   100% { transform: translateY(0) rotate(0deg); }
 }
 .mascot.dancing { animation: mascot-dance 1.3s ease-in-out; }
+
+/* Two of the three words in the name are long ones. On the narrowest
+   phones still in use (320px) trimming the header's own padding and gaps
+   is what keeps the name to two lines instead of three -- without it the
+   header grows by a whole line on every screen. */
+@media (max-width: 360px) {
+  #app-header { padding: 12px 10px; gap: 8px; }
+  .header-right { gap: 6px; }
+}
