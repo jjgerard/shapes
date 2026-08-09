@@ -494,6 +494,13 @@ button { font-family: inherit; cursor: pointer; }
 .legend-item { display: flex; flex-direction: column; gap: 4px; }
 .hint-btn { font-size: 0.78rem; flex-shrink: 0; }
 .hint-text { margin: 0; padding-left: 2px; font-size: 0.82rem; font-style: italic; color: var(--muted); }
+/* The Mystery Level giving up and telling you, after enough wrong guesses.
+   Amber, matching the "here's one that works" hints in Levels 1 and 2. */
+.answer-text {
+  margin: 0; padding: 8px 10px;
+  background: #fdf3d4; border: 1px solid #e8b400; border-radius: 8px;
+  font-size: 0.85rem; font-weight: 600; color: #6b5200;
+}
 .redo-btn { display: block; margin: 14px 0 0; }
 /* flex-wrap matters on a narrow phone: shape swatch + text input + Check +
    Hint in one un-wrapping row squeezed the input down to a few characters

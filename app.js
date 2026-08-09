@@ -1190,6 +1190,18 @@ document.getElementById('categoryid-close').addEventListener('click', navBack);
 document.getElementById('categoryid-next').addEventListener('click', nextCategoryQuestion);
 
 // ================= REVEAL: fill in what the shapes mean =================
+// Wrong guesses per slot, for this session only. The Mystery Level is the
+// one gate in the game with no way around it -- Level 2 stays locked until
+// every slot is right -- so a student who simply cannot land on the word
+// "complementizer" was stuck for good, with a conceptual Hint button that
+// deliberately never says the answer. After HINT_AFTER_ATTEMPTS wrong
+// guesses on a slot, it just tells them.
+//
+// Deliberately not persisted: coming back to it another day starts you
+// fresh, which is the kinder default for something that is trying to
+// teach the vocabulary rather than test it once.
+const revealAttempts = { shapes: {}, numbers: {} };
+
 function renderReveal() {
   const body = document.getElementById('reveal-body');
   body.innerHTML = '';
@@ -1224,6 +1236,8 @@ function renderReveal() {
       isCorrect: (val) => isCorrectShapeAnswer(key, val),
       correctMap: prog().reveal.shapes,
       hint: SHAPE_HINTS[key],
+      attempts: revealAttempts.shapes,
+      answer: shapeCanonicalAnswer(key),
     })),
     onCorrect: (key, val) => {
       prog().reveal.shapes[key] = val;
@@ -1251,6 +1265,8 @@ function renderReveal() {
       correctMap: prog().reveal.numbers,
       hint: levelHint(n),
       looseNote: (val) => looseAnswerNote(n, val),
+      attempts: revealAttempts.numbers,
+      answer: levelCanonicalAnswer(n),
     })),
     onCorrect: (key, val) => {
       prog().reveal.numbers[key] = val;
@@ -1316,6 +1332,21 @@ function buildRevealGroup({ heading, items, onCorrect }) {
       // into a wrong one between the keystroke and the tap on Check.
       input.setAttribute('autocapitalize', 'none');
       input.setAttribute('autocorrect', 'off');
+
+      // Shown once this slot has been missed enough times. Fills the answer
+      // in as well as naming it, so the way forward is a single tap on
+      // Check rather than copying a word like "complementizer" by eye.
+      let hintBtn = null;
+      const answerText = document.createElement('p');
+      answerText.className = 'answer-text hidden';
+      const revealTheAnswer = (prefill) => {
+        if (!item.answer) return;
+        answerText.textContent = `The answer is "${item.answer}". Press Check to carry on.`;
+        answerText.classList.remove('hidden');
+        if (prefill) input.value = item.answer;
+        if (hintBtn) hintBtn.classList.add('hidden'); // a nudge is redundant next to the answer
+      };
+
       const attempt = () => {
         const val = input.value.trim();
         if (!val) return;
@@ -1324,10 +1355,13 @@ function buildRevealGroup({ heading, items, onCorrect }) {
           const note = item.looseNote && item.looseNote(val);
           onCorrect(item.key, val);
           if (note) toast(note);
-        } else {
-          row.classList.add('incorrect');
-          setTimeout(() => row.classList.remove('incorrect'), 700);
+          return;
         }
+        row.classList.add('incorrect');
+        setTimeout(() => row.classList.remove('incorrect'), 700);
+        if (!item.attempts) return;
+        item.attempts[item.key] = (item.attempts[item.key] || 0) + 1;
+        if (item.attempts[item.key] >= HINT_AFTER_ATTEMPTS) revealTheAnswer(true);
       };
       input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') attempt(); });
       const btn = document.createElement('button');
@@ -1343,7 +1377,7 @@ function buildRevealGroup({ heading, items, onCorrect }) {
         hintText.className = 'hint-text hidden';
         hintText.textContent = item.hint;
 
-        const hintBtn = document.createElement('button');
+        hintBtn = document.createElement('button');
         hintBtn.type = 'button';
         hintBtn.className = 'link-btn hint-btn';
         hintBtn.textContent = 'Hint';
@@ -1354,6 +1388,12 @@ function buildRevealGroup({ heading, items, onCorrect }) {
         row.appendChild(hintBtn);
         wrap.appendChild(hintText);
       }
+
+      wrap.appendChild(answerText);
+      // Every correct answer re-renders the whole list, so a slot that had
+      // already given up its answer has to say so again rather than
+      // silently reverting to "type your answer".
+      if (item.attempts && (item.attempts[item.key] || 0) >= HINT_AFTER_ATTEMPTS) revealTheAnswer(false);
     }
     slotsWrap.appendChild(wrap);
   }
