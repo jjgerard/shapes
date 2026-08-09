@@ -74,8 +74,9 @@ const SHAPE_HINTS = {
 
 // Roadmap shown (greyed out) on the level-select screen so the growth path
 // toward the full syllabus is visible even though only 1-4 are live.
+// Adjectives and adverbs have moved into the basic phase, so what's left
+// ahead is everything Carnie reaches after wh-movement.
 const ROADMAP = [
-  'Adjectives & Adverbs',
   'Embedded clauses (CP recursion)',
   'Raising',
   'Control',
