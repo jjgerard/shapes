@@ -149,12 +149,16 @@ function urlForMode(id) {
   return location.pathname + (id === DEFAULT_MODE_ID ? '' : '?mode=' + id);
 }
 
+// Completions, locked-level explanations and the like. These used to be a
+// separate pill pinned near the top of the screen; now that the finished
+// state gives the Done button its own row in the modal header, that pill
+// landed squarely on top of it — covering the one control that has to be
+// reachable, at exactly the moment it appears. Everything the game says
+// goes to the mascot bar, which reserves its own strip and so can never
+// cover anything. Held a little longer than an ordinary reaction, since
+// these carry points.
 function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.remove('hidden');
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => el.classList.add('hidden'), 2600);
+  flashMascotSpeech(msg, 3800);
 }
 
 // ---------------- mascot ----------------
@@ -175,6 +179,13 @@ function celebrateComplete() { mascotPulse('dancing', 1350); playChimeSound(); }
 // miss (and fine while still working), but once there's nothing left to do,
 // the exit should be the obvious next tap.
 function setModalDoneState(btn, done) {
+  // Mark the whole row, not just the button: once the puzzle is finished
+  // the working controls (scissors, Start over) stand down so the way out
+  // can have the space. All four buttons plus a long "Done" label made the
+  // row 518px wide inside a 360px phone, so the Done button was running
+  // ~180px off the right edge -- the one control that has to be reachable.
+  const actions = btn.closest('.editor-actions');
+  if (actions) actions.classList.toggle('done', done);
   if (done) {
     btn.textContent = 'Done — back to the list';
     btn.className = 'btn-primary btn-return';
@@ -1357,6 +1368,26 @@ function renderReveal() {
     win.innerHTML = '<strong>You\'ve cracked the code!</strong> The shape on the left now shows the real labels.';
     body.insertBefore(win, layout);
   }
+
+  // The Mystery Level is a screen rather than a modal, so it never got the
+  // finished-state "Done" button the puzzle modals have -- the only way
+  // back was the small "← Levels" link at the very top, which on a phone
+  // is a full tree's worth of scrolling above where you finish. Put an
+  // exit at the bottom, where the last answer is actually typed.
+  const footer = document.createElement('div');
+  footer.className = 'reveal-footer';
+  const back = document.createElement('button');
+  back.type = 'button';
+  if (revealComplete()) {
+    back.className = 'btn-primary btn-return';
+    back.textContent = 'Done — back to the levels';
+  } else {
+    back.className = 'btn-secondary';
+    back.textContent = '← Back to the levels';
+  }
+  back.addEventListener('click', navBack);
+  footer.appendChild(back);
+  body.appendChild(footer);
 }
 
 function buildRevealGroup({ heading, items, onCorrect }) {
