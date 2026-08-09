@@ -35,9 +35,8 @@ const SIZING = {
 };
 
 class TreeEditor {
-  constructor(svg, feedbackEl) {
+  constructor(svg) {
     this.svg = svg;
-    this.feedbackEl = feedbackEl;
     this.nodes = [];   // {id, catKey, number, x, y, chunkRoot, structureId}
     this.edges = [];   // {parent: id, child: id}
     this.seams = new Map(); // leafId -> {catKey, number, chunkRoot, structureId, childIds} -- what snap() consumed, so snip can rebuild it
@@ -50,6 +49,7 @@ class TreeEditor {
     this.failedAttempts = 0;   // failed snaps since the last successful one, for the hint
     this.hintIds = null;       // [leafId, rootId] currently being pointed at, or null
     this.onChange = null;      // callback() invoked after any state change (for UI to refresh counters etc.)
+    this.onFeedback = null;    // callback(msg, kind) for anything worth telling the student
     this.onSnipModeChange = null; // callback(bool) invoked whenever snip mode toggles
     this.onSnap = null;        // callback() invoked whenever two pieces snap together
     this.zoom = 1;
@@ -116,9 +116,13 @@ class TreeEditor {
     this.render();
   }
 
+  // Messages go wherever the host puts them -- in practice the mascot bar
+  // at the bottom of the screen. They used to write into a line under the
+  // modal title, which on a narrow phone wrapped to three or four lines,
+  // grew the header, and shrank the canvas underneath by that much every
+  // time a message appeared or cleared.
   setFeedback(msg, kind) {
-    this.feedbackEl.textContent = msg || '';
-    this.feedbackEl.className = 'editor-feedback' + (kind ? ' ' + kind : '');
+    if (this.onFeedback) this.onFeedback(msg || '', kind || '');
   }
 
   // `keepFeedback` preserves whatever message is already showing instead of
@@ -129,8 +133,11 @@ class TreeEditor {
   // like the app ignoring you.
   setSnipMode(on, { keepFeedback = false } = {}) {
     this.snipMode = on;
-    if (on) this.setFeedback('Snip mode: tap a joint outlined in red to pull it apart. Tap the empty canvas to cancel.');
-    else if (!keepFeedback) this.setFeedback('');
+    // The standing "you're in snip mode" instruction belongs to the host
+    // (it sets it from onSnipModeChange), so that it can be the message
+    // transient ones fall back to rather than competing with them for the
+    // same slot.
+    if (!on && !keepFeedback) this.setFeedback('');
     if (this.onSnipModeChange) this.onSnipModeChange(on);
     this.render();
   }
