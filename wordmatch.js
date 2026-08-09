@@ -14,8 +14,8 @@
 // tree is static rather than draggable, for a consistent feel between the
 // two canvases.
 const WM_SIZING = {
-  desktop: { r: 26, chipW: 92, chipH: 42, fontSize: 15, snapDist: 90, slotGapY: 34, margin: 1120 },
-  mobile:  { r: 36, chipW: 122, chipH: 54, fontSize: 18, snapDist: 120, slotGapY: 44, margin: 800 },
+  desktop: { r: 26, chipW: 112, chipH: 46, fontSize: 28, snapDist: 90, slotGapY: 34, margin: 1120 },
+  mobile:  { r: 36, chipW: 142, chipH: 58, fontSize: 35, snapDist: 120, slotGapY: 44, margin: 800 },
 };
 
 class WordMatchEditor {
@@ -103,7 +103,8 @@ class WordMatchEditor {
     const wrap = this.svg.parentElement;
     if (!wrap) return;
     requestAnimationFrame(() => {
-      const pad = 30;
+      // Same half-a-box overhang as contentBounds().
+      const pad = 30 + this.sizing.chipW / 2;
       const rawW = this.treeWidth + pad * 2, rawH = this.treeHeight + pad * 2;
       const fitZoom = Math.min(1, wrap.clientWidth / rawW, wrap.clientHeight / rawH);
       this.zoom = fitZoom >= 0.5 ? fitZoom : 1;
@@ -185,6 +186,29 @@ class WordMatchEditor {
     walk(this.root);
 
     for (const mv of this._readyMovements()) moveLayer.appendChild(this._buildMovement(mv));
+
+    this._fitWordText();
+  }
+
+  // The base font size is set from the BOX height, so a word fills its box
+  // rather than floating in the middle of one. That leaves the long words
+  // ("quickly", "chased") overflowing sideways, so this measures each one
+  // now that it's in the document and shrinks only those that need it.
+  // Measuring beats estimating from character count: "will" and "mill" are
+  // the same length and nothing like the same width.
+  _fitWordText() {
+    const s = this.sizing;
+    const maxWidth = s.chipW - 16;
+    for (const node of this.slotNodes) {
+      if (!node._filled || !node._slotEl) continue;
+      const text = node._slotEl.querySelector('text');
+      if (!text) continue;
+      let width;
+      try { width = text.getComputedTextLength(); } catch { continue; }
+      if (!width || width <= maxWidth) continue;
+      const shrunk = Math.max(11, s.fontSize * (maxWidth / width));
+      text.style.fontSize = `${shrunk}px`;
+    }
   }
 
   // ---- movement ----------------------------------------------------------
@@ -473,12 +497,16 @@ class WordMatchEditor {
   // a word slot's height, so the slots hanging below each head are covered.
   contentBounds() {
     if (!this.root) return null;
+    // A word box is centred on its node, so the outermost boxes hang half
+    // their width past the tree's own edges -- which, once the boxes grew,
+    // was enough to clip the leftmost word against the canvas edge.
+    const overhang = this.sizing.chipW / 2 + 8;
     return {
-      minX: this.xOffset,
+      minX: this.xOffset - overhang,
       minY: this.yOffset,
       // Room for a movement arrow's dip below the deepest word slot, so
       // "Fit" frames the arrows too once they appear.
-      maxX: this.xOffset + this.treeWidth,
+      maxX: this.xOffset + this.treeWidth + overhang,
       maxY: this.yOffset + this.treeHeight + 70,
     };
   }
