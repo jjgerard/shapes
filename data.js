@@ -64,6 +64,13 @@ function normalizeAnswer(s) {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+// How many wrong attempts in a row before Levels 1 and 2 stop letting you
+// flounder and just show you one that works. Counted per "thing you're
+// currently stuck on" -- since the last successful join in Level 1, and
+// per word in Level 2 -- so it resets the moment you get somewhere, rather
+// than accumulating across a whole puzzle.
+const HINT_AFTER_ATTEMPTS = 3;
+
 // ---------------------------------------------------------------------------
 // Generic tree helpers -- these work on any {shape, number, children} node
 // and any fragment list, so both modes share them.
