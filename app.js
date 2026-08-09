@@ -167,11 +167,11 @@ const GAME_LEVELS = [
   // pieces hands over the answer to this level's own Mystery Level.
   { n: 5, phase: 'xbar', kind: 'build', title: 'Back to Shapes and Numbers',
     blurb: 'A new inventory, and a fresh Mystery Level.' },
-  { n: 6, phase: 'xbar', kind: 'words', title: 'Words Again',
+  { n: 6, phase: 'xbar', kind: 'words', title: 'Words Revisited',
     blurb: 'Words onto trees, now with the middle layer — and sentences where a word moves and leaves a copy behind.' },
-  { n: 7, phase: 'xbar', kind: 'constituents', title: 'Constituents Again',
+  { n: 7, phase: 'xbar', kind: 'constituents', title: 'Constituents Revisited',
     blurb: 'The same question, on the bigger trees.' },
-  { n: 8, phase: 'xbar', kind: 'categories', title: 'Categories Again',
+  { n: 8, phase: 'xbar', kind: 'categories', title: 'Categories Revisited',
     blurb: 'The same stickers, on the bigger trees.' },
 ];
 
@@ -331,18 +331,17 @@ function syncMascotBarHeight() {
 }
 window.addEventListener('resize', syncMascotBarHeight);
 
+// The header carries the brand and the points, and nothing else. Who you
+// are and the three occasional controls live in the menu.
 function updateHeader() {
-  const info = document.getElementById('player-info');
-  if (!player) { info.classList.add('hidden'); return; }
-  info.classList.remove('hidden');
-  // Name only. The class code is what keeps two classes' points apart, not
-  // something a student needs to keep reading -- and "Jordan (LING378)" was
-  // long enough to be cut off at every phone width. It's still on the
-  // switch-player confirmation, where it's actually relevant.
-  const nameEl = document.getElementById('player-name-display');
-  nameEl.textContent = player.name;
-  nameEl.title = `${player.name} — class ${player.code}`;
-  document.getElementById('player-points').textContent = `${state.points} pts`;
+  const pts = document.getElementById('player-points');
+  pts.classList.toggle('hidden', !player);
+  if (player) pts.textContent = `${state.points} pts`;
+
+  const who = document.getElementById('menu-player');
+  who.classList.toggle('hidden', !player);
+  if (player) who.textContent = `Playing as ${player.name} — class ${player.code}`;
+  document.getElementById('menu-switch').classList.toggle('hidden', !player);
 }
 
 function loginAs(name, code) {
@@ -463,35 +462,41 @@ function closeHelp() {
   document.getElementById('help-overlay').classList.add('hidden');
 }
 document.getElementById('help-close').addEventListener('click', closeHelp);
-document.getElementById('btn-help').addEventListener('click', () => {
-  // The generic panel from the header; modals pass their own key.
-  openHelp('general');
-});
 document.querySelectorAll('[data-help]').forEach(btn => {
   btn.addEventListener('click', (ev) => { ev.stopPropagation(); openHelp(btn.dataset.help); });
 });
 document.addEventListener('keydown', (ev) => {
   if (ev.key !== 'Escape') return;
   if (!document.getElementById('help-overlay').classList.contains('hidden')) { closeHelp(); return; }
+  if (!document.getElementById('menu-overlay').classList.contains('hidden')) { closeMenu(); return; }
   if (!document.getElementById('confirm-overlay').classList.contains('hidden')) settleConfirm(false);
 });
 
-// ---------------- sound toggle ----------------
+// ---------------- menu ----------------
+// Says what the setting IS, not what tapping will do to it -- "Sound is
+// off" can't be misread the way a lone speaker icon can.
 function renderSoundButton() {
-  const btn = document.getElementById('btn-sound');
-  const muted = isSoundMuted();
-  btn.textContent = muted ? '🔇' : '🔊';
-  btn.title = muted ? 'Turn sound on' : 'Turn sound off';
-  btn.setAttribute('aria-label', btn.title);
-  // Deliberately not the .active (red) treatment the scissors button uses --
-  // muted is a preference, not an error state.
-  btn.classList.toggle('btn-icon-off', muted);
+  const btn = document.getElementById('menu-sound');
+  if (!btn) return;
+  btn.textContent = isSoundMuted() ? '🔇 Sound is off' : '🔊 Sound is on';
 }
-document.getElementById('btn-sound').addEventListener('click', () => {
+function openMenu() {
+  renderSoundButton();
+  document.getElementById('menu-overlay').classList.remove('hidden');
+}
+function closeMenu() {
+  document.getElementById('menu-overlay').classList.add('hidden');
+}
+document.getElementById('btn-menu').addEventListener('click', openMenu);
+document.getElementById('menu-close').addEventListener('click', closeMenu);
+document.getElementById('menu-sound').addEventListener('click', () => {
   setSoundMuted(!isSoundMuted());
   renderSoundButton();
-  toast(isSoundMuted() ? 'Sound off' : 'Sound on');
   if (!isSoundMuted()) playCorrectSound();
+});
+document.getElementById('menu-help').addEventListener('click', () => {
+  closeMenu();
+  openHelp('general');
 });
 
 // ---------------- sub-level completion ----------------
@@ -1604,7 +1609,8 @@ document.getElementById('btn-start').addEventListener('click', attemptStart);
   el.addEventListener('input', clearNameError);
 });
 
-document.getElementById('btn-switch-player').addEventListener('click', async () => {
+document.getElementById('menu-switch').addEventListener('click', async () => {
+  closeMenu();
   const ok = await askConfirm({
     title: 'Switch to a different player?',
     message: `${player.name}'s ${state.points} points stay saved on this device under class ${player.code}. Typing the same name and class code again brings them straight back.`,

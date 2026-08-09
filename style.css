@@ -43,8 +43,6 @@ body {
 }
 .brand { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .header-right { display: flex; align-items: center; gap: 10px; min-width: 0; }
-#player-info { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; min-width: 0; }
-#player-name-display { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .points-pill {
   background: var(--accent);
   color: var(--accent-ink);
@@ -111,6 +109,19 @@ button { font-family: inherit; cursor: pointer; }
 .btn-icon-off { background: transparent; border: 1px solid var(--line); opacity: 0.7; }
 #btn-start { margin-top: 20px; width: 100%; }
 .btn-small { padding: 8px 14px; font-size: 0.85rem; border-radius: 8px; }
+/* Spelled out rather than a bare ☰: the icon alone assumes the reader
+   already knows the convention, which is exactly the assumption this app
+   tries not to make. */
+.btn-menu {
+  background: #eee9df; color: var(--ink); border: none; border-radius: 10px;
+  padding: 11px 16px; font-size: 0.95rem; font-weight: 600;
+  min-height: 44px; flex-shrink: 0; white-space: nowrap;
+}
+.btn-menu:hover { background: #e2dccc; }
+/* Full-width rows, so each is an unmissable target and the labels can say
+   what the setting currently IS. */
+.menu-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.menu-item { width: 100%; text-align: left; }
 
 .field-help { font-size: 0.82rem; color: var(--muted); margin: 10px 0 0; line-height: 1.4; }
 /* Errors go inline, right under the fields they're about. A toast at the
@@ -588,10 +599,6 @@ button { font-family: inherit; cursor: pointer; }
 @media (max-width: 640px) {
   html { font-size: 20px; }
   #app-header { padding: 12px 16px; }
-  /* The brand is the only decorative thing in the header, and on a phone
-     it was squeezing the name, the points and the two buttons -- which are
-     all things a student actually uses -- down to ellipses. */
-  .brand { display: none; }
   main { padding: 16px 12px 60px; }
   .card.narrow { margin: 24px auto; padding: 20px; }
   .level-grid, .target-grid, .fragment-grid { grid-template-columns: 1fr; }
@@ -639,9 +646,8 @@ button { font-family: inherit; cursor: pointer; }
      ~44px touch-target guideline, and mid-quiz it's the only way out. */
   .editor-actions .link-btn { padding: 13px 6px; min-height: 44px; display: inline-flex; align-items: center; }
   .btn-icon-sm { width: 44px; height: 44px; }
-  .header-right { gap: 6px; }
-  #player-info { gap: 6px; font-size: 0.82rem; }
-  #btn-switch-player { font-size: 0.82rem; }
+  .header-right { gap: 8px; }
+  .btn-menu { padding: 10px 12px; font-size: 0.9rem; }
   .canvas-controls { right: 10px; bottom: 10px; padding: 5px; gap: 5px; }
   .canvas-btn { min-width: 46px; height: 46px; }
   .wm-statusbar { padding: 8px 12px; }

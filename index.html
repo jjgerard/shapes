@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shapes</title>
-<link rel="stylesheet" href="style.css?v=53">
-<link rel="icon" href="icon.svg?v=53" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=55">
+<link rel="icon" href="icon.svg?v=55" type="image/svg+xml">
 <meta name="theme-color" content="#2f6f5e">
 </head>
 <body>
@@ -14,13 +14,13 @@
   <header id="app-header">
     <div class="brand">Shapes</div>
     <div class="header-right">
-      <div id="player-info" class="hidden">
-        <span id="player-name-display"></span>
-        <span id="player-points" class="points-pill">0 pts</span>
-        <button id="btn-switch-player" class="link-btn">switch player</button>
-      </div>
-      <button id="btn-sound" class="btn-icon btn-icon-sm" title="Turn sound off" aria-label="Turn sound off">🔊</button>
-      <button id="btn-help" class="btn-icon btn-icon-sm" title="How to play" aria-label="How to play">?</button>
+      <span id="player-points" class="points-pill hidden">0 pts</span>
+      <!-- Sound, help and switch-player live behind this. They're all
+           occasional, and in the header they crowded out the two things
+           that aren't: the brand and your points. The word "Menu" is
+           spelled out next to the icon -- a bare ☰ assumes you already
+           know what it means. -->
+      <button id="btn-menu" class="btn-menu" aria-haspopup="dialog">☰ Menu</button>
     </div>
   </header>
 
@@ -230,6 +230,22 @@
   </div>
 </div>
 
+<!-- ============ MENU ============ -->
+<div id="menu-overlay" class="overlay overlay-dialog hidden">
+  <div class="dialog">
+    <h2>Menu</h2>
+    <p id="menu-player" class="dialog-body hidden"></p>
+    <div class="menu-actions">
+      <button id="menu-sound" class="btn-secondary menu-item">🔊 Sound is on</button>
+      <button id="menu-help" class="btn-secondary menu-item">? How to play</button>
+      <button id="menu-switch" class="btn-secondary menu-item hidden">Switch player</button>
+    </div>
+    <div class="dialog-actions">
+      <button id="menu-close" class="btn-primary">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ CONFIRM DIALOG ============ -->
 <div id="confirm-overlay" class="overlay overlay-dialog hidden">
   <div class="dialog">
@@ -254,15 +270,15 @@
   </div>
 </div>
 
-<script src="sound.js?v=53"></script>
-<script src="data.js?v=53"></script>
-<script src="shapes.js?v=53"></script>
-<script src="canvas.js?v=53"></script>
-<script src="wordmatch.js?v=53"></script>
-<script src="editor.js?v=53"></script>
-<script src="streak.js?v=53"></script>
-<script src="treeviewer.js?v=53"></script>
-<script src="app.js?v=53"></script>
+<script src="sound.js?v=55"></script>
+<script src="data.js?v=55"></script>
+<script src="shapes.js?v=55"></script>
+<script src="canvas.js?v=55"></script>
+<script src="wordmatch.js?v=55"></script>
+<script src="editor.js?v=55"></script>
+<script src="streak.js?v=55"></script>
+<script src="treeviewer.js?v=55"></script>
+<script src="app.js?v=55"></script>
 <script>
   // Plain webpage, not an installable app -- clean up any service worker
   // and caches left over from when it registered one, so nobody's stuck
