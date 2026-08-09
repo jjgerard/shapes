@@ -273,6 +273,8 @@ const HELP = {
           and you'll see the target piece glow green just before they do.</li>
       <li>Two pieces only join if their <strong>shape and number both match</strong>, and one of
           them has an empty branch free. If a drop doesn't work, the message at the top says why.</li>
+      <li><strong>Stuck?</strong> After three tries that don't work, two pieces that do fit start
+          glowing amber. Drag either one onto the other.</li>
       <li>The <strong>✂️ scissors</strong> button pulls a joint apart again: tap the scissors,
           then tap a piece outlined in red. Tap empty canvas to cancel.</li>
       ${CANVAS_HELP}
@@ -284,7 +286,9 @@ const HELP = {
     html: `<ul>
       <li>One word at a time appears in the bottom-left corner. Drag it onto the piece it belongs to.</li>
       <li>Wrong piece? The word shakes and bounces back — nothing is lost, just try another piece.</li>
-      <li>Stuck on a word? Tap <strong>Skip this word</strong> and it goes to the back of the queue.</li>
+      <li><strong>Stuck?</strong> After three wrong pieces for the same word, the piece it actually
+          belongs on starts glowing amber.</li>
+      <li>Or tap <strong>Skip this word</strong> to come back to it later.</li>
       <li>A piece marked <strong>∅</strong> has no word at all, so it's never a target.</li>
       ${CANVAS_HELP}
     </ul>`,
@@ -797,7 +801,7 @@ function openWordMatch(sub) {
   setWmFeedback('');
   setModalDoneState(document.getElementById('wordmatch-close'), false);
   wordMatch.onPlace = () => { celebrateCorrect(); setWmFeedback('Nice — that one fits.', 'ok'); renderWmSentence(sub.root); };
-  wordMatch.onReject = (msg) => setWmFeedback(msg);
+  wordMatch.onReject = (msg, kind) => setWmFeedback(msg, kind);
   wordMatch.onComplete = () => { markL2SubDone(sub, POINTS_SENTENCE); };
   document.getElementById('wordmatch-overlay').classList.remove('hidden');
   pushNav(closeWordMatch);

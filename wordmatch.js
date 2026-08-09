@@ -26,6 +26,8 @@ class WordMatchEditor {
     this.zoom = 1;
     this.bgPointers = new Map(); // pointerId -> {x,y}, for background pan/pinch (same scheme as TreeEditor)
     this.bgAnchor = null;
+    this.wrongForCurrentWord = 0; // resets on every new word, for the hint
+    this.hintNode = null;         // the slot currently being pointed at, or null
     this.onPlace = null;    // callback() after any correct placement
     this.onComplete = null; // callback() once every slot is filled
     this.onReject = null;   // callback(message) when a drop doesn't land
@@ -115,6 +117,10 @@ class WordMatchEditor {
   // Pulls the next word off the shuffled queue -- the only chip on screen
   // at any given time.
   _nextChip() {
+    // A new word is a fresh problem -- the count of wrong tries is about
+    // the word in your hand, not about the sentence as a whole.
+    this.wrongForCurrentWord = 0;
+    this.hintNode = null;
     const word = this.queue.shift();
     if (word === undefined) { this.currentChip = null; this.chipEl.classList.add('hidden'); return; }
     this.currentChip = { word };
@@ -171,7 +177,8 @@ class WordMatchEditor {
 
   _buildSlot(node, x, y) {
     const s = this.sizing;
-    const g = svgEl('g', { class: 'wm-slot', transform: `translate(${x},${y})` });
+    const hinted = node === this.hintNode;
+    const g = svgEl('g', { class: 'wm-slot' + (hinted ? ' hinted' : ''), transform: `translate(${x},${y})` });
     node._slotEl = g;
     const filled = !!node._filled;
 
@@ -187,12 +194,15 @@ class WordMatchEditor {
     }
 
     const cat = CATEGORIES[node.shape];
+    // A hinted slot gets a solid amber outline (plus a CSS pulse on the
+    // group) so it reads as "this one" against the dashed grey of every
+    // other empty slot.
     g.appendChild(svgEl('rect', {
       x: -s.chipW / 2, y: -s.chipH / 2, width: s.chipW, height: s.chipH, rx: 10,
-      fill: filled ? cat.color : '#eee9df',
-      stroke: filled ? cat.color : '#b7b0a2',
-      'stroke-width': filled ? 0 : 2,
-      'stroke-dasharray': filled ? 'none' : '5 4',
+      fill: filled ? cat.color : (hinted ? '#fdf3d4' : '#eee9df'),
+      stroke: filled ? cat.color : (hinted ? '#e8b400' : '#b7b0a2'),
+      'stroke-width': filled ? 0 : (hinted ? 4 : 2),
+      'stroke-dasharray': filled || hinted ? 'none' : '5 4',
     }));
     if (filled) {
       const label = svgEl('text', { x: 0, y: 1 });
@@ -392,7 +402,22 @@ class WordMatchEditor {
       if (this.slotNodes.every(n => n._filled) && this.onComplete) this.onComplete();
     } else {
       this._rejectChip();
-      if (this.onReject) this.onReject(`"${this.currentChip.word}" doesn't belong on that piece — try another one.`);
+      this.wrongForCurrentWord++;
+      // Three misses on the same word means the category isn't landing, and
+      // another "try another one" won't change that. Show which piece it
+      // belongs on -- but leave the placing to the student, so the move is
+      // still theirs to make.
+      if (this.wrongForCurrentWord >= HINT_AFTER_ATTEMPTS) {
+        this.hintNode = this.slotNodes.find(n => !n._filled && normalizeAnswer(n.word) === normalizeAnswer(this.currentChip.word)) || null;
+      }
+      this.render();
+      if (this.onReject) {
+        this.onReject(
+          this.hintNode
+            ? `"${this.currentChip.word}" goes on the glowing piece — drag it there.`
+            : `"${this.currentChip.word}" doesn't belong on that piece — try another one.`,
+          this.hintNode ? 'hint' : undefined);
+      }
     }
   }
 }

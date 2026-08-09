@@ -47,6 +47,8 @@ class TreeEditor {
     this.snipMode = false;
     this.snapCount = 0;
     this.snipCount = 0;
+    this.failedAttempts = 0;   // failed snaps since the last successful one, for the hint
+    this.hintIds = null;       // [leafId, rootId] currently being pointed at, or null
     this.onChange = null;      // callback() invoked after any state change (for UI to refresh counters etc.)
     this.onSnipModeChange = null; // callback(bool) invoked whenever snip mode toggles
     this.onSnap = null;        // callback() invoked whenever two pieces snap together
@@ -94,6 +96,8 @@ class TreeEditor {
     this.snipMode = false;
     this.snapCount = 0;
     this.snipCount = 0;
+    this.failedAttempts = 0;
+    this.hintIds = null;
     this.nextId = 1;
     this.setFeedback('');
     this.render();
@@ -286,6 +290,10 @@ class TreeEditor {
     this.edges.forEach(e => { if (e.parent === rootId) e.parent = leafId; });
     this.nodes = this.nodes.filter(n => n.id !== rootId);
     this.snapCount++;
+    // Getting somewhere clears the slate: the hint counter is about being
+    // stuck right now, not about a tally over the whole puzzle.
+    this.failedAttempts = 0;
+    this.hintIds = null;
     this.setFeedback('Snapped together.', 'ok');
     playClickSound();
     if (this.onSnap) this.onSnap();
@@ -333,6 +341,8 @@ class TreeEditor {
     }
     this.seams.delete(nodeId);
     this.snipCount++;
+    this.failedAttempts = 0;
+    this.hintIds = null;
     this.setFeedback('Snipped apart.', 'ok');
     if (this.onChange) this.onChange();
     return true;
@@ -386,8 +396,10 @@ class TreeEditor {
       const isDragging = this.drag && this.drag.id === n.id;
       const isTarget = n.id === this.snapTargetId;
       const isSnippable = this.snipMode && this.hasSeam(n.id);
+      const isHinted = !!this.hintIds && this.hintIds.includes(n.id);
       let cls = 'tree-node';
       if (isDragging) cls += ' dragging';
+      if (isHinted) cls += ' hinted';
       if (isTarget) cls += ' snap-ready';
       if (this.snipMode) cls += isSnippable ? ' snippable' : ' snip-disabled';
       g.setAttribute('class', cls);
@@ -552,7 +564,8 @@ class TreeEditor {
       if (d < reach && d < bestDist) { bestDist = d; near = other; }
     }
     // Dropped in open space -- that's just moving a piece around, not a
-    // failed attempt at anything, so it deserves no complaint.
+    // failed attempt at anything, so it deserves no complaint and no tick
+    // on the counter.
     if (!near) { this.setFeedback(''); return; }
 
     if (near.catKey !== node.catKey) {
@@ -562,6 +575,30 @@ class TreeEditor {
     } else {
       this.setFeedback('Right shape and number, but neither one has a free branch to plug into.', 'err');
     }
+
+    this.failedAttempts++;
+    if (this.failedAttempts >= HINT_AFTER_ATTEMPTS) this._offerHint();
+  }
+
+  // Point at a pair that genuinely fits, rather than leaving someone to
+  // keep guessing. Explaining why each individual attempt failed is only
+  // useful while the explanations are still telling you something new;
+  // after three in a row they're just repeating themselves.
+  _offerHint() {
+    for (const a of this.nodes) {
+      for (const b of this.nodes) {
+        const pair = this.resolveSnapPair(a.id, b.id);
+        if (!pair) continue;
+        this.hintIds = pair;
+        this.failedAttempts = 0;
+        this.setFeedback('Here are two that fit — drag either glowing piece onto the other.', 'hint');
+        return true;
+      }
+    }
+    // Nothing left that can legally join. Either it's finished or every
+    // remaining piece is already plugged in, so there's no hint to give.
+    this.failedAttempts = 0;
+    return false;
   }
 
   _onNodePointerDown(ev, id) {

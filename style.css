@@ -309,6 +309,7 @@ button { font-family: inherit; cursor: pointer; }
 .editor-feedback { font-size: 0.85rem; font-weight: 600; min-height: 1.1em; }
 .editor-feedback.ok { color: var(--accent); }
 .editor-feedback.err { color: var(--danger); }
+.editor-feedback.hint { color: #a17a00; }
 
 /* svg node styling */
 .tree-node { cursor: grab; touch-action: none; }
@@ -325,6 +326,15 @@ button { font-family: inherit; cursor: pointer; }
    needs to scale with the shape's radius (which varies by device), and
    this same element is reused by the static reveal/legend trees, which
    never had a .tree-node ancestor to pick this rule up from anyway. */
+/* Shown after three failed joins in a row: two pieces that actually fit,
+   pulsing amber. Distinct from .snap-ready's green (which means "let go
+   now and these will join") -- this one means "start here". */
+@keyframes hint-pulse {
+  0%, 100% { stroke-width: 3; filter: drop-shadow(0 0 3px rgba(232,180,0,0.55)); }
+  50%      { stroke-width: 6; filter: drop-shadow(0 0 12px rgba(232,180,0,0.95)); }
+}
+.tree-node.hinted .node-shape { stroke: #e8b400; animation: hint-pulse 1.2s ease-in-out infinite; }
+.wm-slot.hinted { animation: hint-pulse 1.2s ease-in-out infinite; }
 .tree-node.snip-disabled { opacity: 0.45; }
 .tree-node.snippable .node-shape {
   stroke: var(--danger);
@@ -357,6 +367,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .wm-feedback { font-size: 0.88rem; font-weight: 600; min-height: 1.2em; color: var(--danger); }
 .wm-feedback.ok { color: var(--accent); }
+.wm-feedback.hint { color: #a17a00; }
 /* Natural size, not stretched to fill -- same as #editor-canvas -- so a
    big tree scrolls/zooms in .canvas-wrap instead of auto-shrinking. */
 #wordmatch-canvas {
