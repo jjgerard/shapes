@@ -163,10 +163,10 @@ const GAME_LEVELS = [
     blurb: 'Is this string of words a constituent? Prove it with a run of correct answers.' },
   { n: 4, phase: 'prex', kind: 'categories', title: 'Categories',
     blurb: 'Click the category sticker that matches the highlighted constituent.' },
-  // Careful with this wording: describing what the new pieces ARE would
-  // hand over the answer to this level's own Mystery Level.
+  // Deliberately says nothing about what is new. Any description of the
+  // pieces hands over the answer to this level's own Mystery Level.
   { n: 5, phase: 'xbar', kind: 'build', title: 'Back to Shapes and Numbers',
-    blurb: 'The same puzzle as Level 1, but the pieces have changed — and there is a fresh Mystery Level to work out what changed.' },
+    blurb: 'A new inventory, and a fresh Mystery Level.' },
   { n: 6, phase: 'xbar', kind: 'words', title: 'Words Again',
     blurb: 'Words onto trees, now with the middle layer — and sentences where a word moves and leaves a copy behind.' },
   { n: 7, phase: 'xbar', kind: 'constituents', title: 'Constituents Again',
@@ -335,7 +335,13 @@ function updateHeader() {
   const info = document.getElementById('player-info');
   if (!player) { info.classList.add('hidden'); return; }
   info.classList.remove('hidden');
-  document.getElementById('player-name-display').textContent = `${player.name} (${player.code})`;
+  // Name only. The class code is what keeps two classes' points apart, not
+  // something a student needs to keep reading -- and "Jordan (LING378)" was
+  // long enough to be cut off at every phone width. It's still on the
+  // switch-player confirmation, where it's actually relevant.
+  const nameEl = document.getElementById('player-name-display');
+  nameEl.textContent = player.name;
+  nameEl.title = `${player.name} — class ${player.code}`;
   document.getElementById('player-points').textContent = `${state.points} pts`;
 }
 
@@ -1601,7 +1607,7 @@ document.getElementById('btn-start').addEventListener('click', attemptStart);
 document.getElementById('btn-switch-player').addEventListener('click', async () => {
   const ok = await askConfirm({
     title: 'Switch to a different player?',
-    message: `${player.name}'s ${state.points} points stay saved on this device. Typing the same name and class code again brings them straight back.`,
+    message: `${player.name}'s ${state.points} points stay saved on this device under class ${player.code}. Typing the same name and class code again brings them straight back.`,
     okLabel: 'Yes, switch player',
     cancelLabel: 'No, stay here',
   });

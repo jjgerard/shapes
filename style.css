@@ -33,6 +33,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 14px 24px;
   background: var(--panel);
   border-bottom: 1px solid var(--line);
@@ -40,7 +41,7 @@ body {
   top: 0;
   z-index: 5;
 }
-.brand { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; }
+.brand { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .header-right { display: flex; align-items: center; gap: 10px; min-width: 0; }
 #player-info { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; min-width: 0; }
 #player-name-display { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -241,7 +242,10 @@ button { font-family: inherit; cursor: pointer; }
 /* Title truncates instead of wrapping/squeezing -- the button group must
    never get pushed out of view, that's how it ended up "covered" before. */
 .editor-header-text { min-width: 0; flex: 1 1 auto; }
-#editor-title {
+/* Applies to all four modal titles, not just the editor's: the header
+   wraps now, so any title long enough to fill the row would push the
+   close button down onto a line of its own. */
+.editor-header-text > div {
   font-weight: 700; font-size: 1.1rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -584,15 +588,21 @@ button { font-family: inherit; cursor: pointer; }
 @media (max-width: 640px) {
   html { font-size: 20px; }
   #app-header { padding: 12px 16px; }
+  /* The brand is the only decorative thing in the header, and on a phone
+     it was squeezing the name, the points and the two buttons -- which are
+     all things a student actually uses -- down to ellipses. */
+  .brand { display: none; }
   main { padding: 16px 12px 60px; }
   .card.narrow { margin: 24px auto; padding: 20px; }
   .level-grid, .target-grid, .fragment-grid { grid-template-columns: 1fr; }
+  .level-card.level-done p { display: none; }
+  .level-card.level-done { padding: 14px 18px; }
   .level-card, .target-card { padding: 18px; }
   .btn-primary, .btn-secondary { padding: 14px 22px; font-size: 1.05rem; min-height: 48px; }
   .overlay { padding: 0; }
   .editor { width: 100%; height: 100%; max-height: 100vh; border-radius: 0; }
   .editor-header { padding: 10px 12px; gap: 8px; }
-  #editor-title { font-size: 1.05rem; }
+  .editor-header-text > div { font-size: 1.05rem; }
   .editor-actions { gap: 6px; }
   .editor-actions .btn-secondary { padding: 11px 14px; }
   .editor-actions .link-btn { font-size: 0.9rem; }
