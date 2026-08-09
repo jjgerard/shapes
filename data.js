@@ -658,6 +658,10 @@ const MODES = {
       1: 'The bigger layer -- a whole group of words that behaves as one unit.',
       2: 'The smaller layer -- one actual word, not built out of anything smaller.',
     },
+    // The one wording to show when the Mystery Level gives up and tells
+    // you the answer. Must itself be an accepted answer above, or being
+    // told the answer would leave you unable to enter it.
+    levelCanonical: { 1: 'Phrase', 2: 'Head' },
   }),
   xbar: buildMode({
     id: 'xbar',
@@ -681,6 +685,7 @@ const MODES = {
       2: 'A layer in between -- bigger than a bare word, smaller than the whole phrase.',
       3: 'The smallest layer -- an actual word, not built out of anything smaller.',
     },
+    levelCanonical: { 1: 'Phrase', 2: 'Bar level', 3: 'Head' },
   }),
 };
 const MODE_IDS = ['prex', 'xbar'];
@@ -737,4 +742,13 @@ function looseAnswerNote(number, answer) {
 }
 function levelHint(number) {
   return MODE.levelHints[number];
+}
+// The answer to show once the Mystery Level stops asking and just tells
+// you. Shapes use their full category name, which every SHAPE_ANSWERS list
+// already accepts.
+function levelCanonicalAnswer(number) {
+  return MODE.levelCanonical[number];
+}
+function shapeCanonicalAnswer(catKey) {
+  return CATEGORIES[catKey].name;
 }
