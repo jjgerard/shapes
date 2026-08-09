@@ -11,8 +11,14 @@ const TV_SIZING = {
 };
 
 class TreeViewer {
-  constructor(svg) {
+  // `reveal` decides whether nodes are painted with their real labels
+  // (NP, V', T⁰ ...) or with the bare mystery numbers they were built
+  // from. Levels 3 and 4 always show the real thing; the Level 1 Mystery
+  // Level flips it on only once the code has been cracked, so it's a
+  // mutable property rather than a constructor-time constant.
+  constructor(svg, { reveal = true } = {}) {
     this.svg = svg;
+    this.reveal = reveal;
     this.zoom = 1;
     this.bgPointers = new Map();
     this.bgAnchor = null;
@@ -50,7 +56,7 @@ class TreeViewer {
 
     const contentLayer = svgEl('g', { transform: `translate(0,${this.yOffset})` });
     this.svg.appendChild(contentLayer);
-    paintStaticTree(contentLayer, this.root, { r: s.r, reveal: true, xOffset: this.xOffset, fontScale: 0.62 });
+    paintStaticTree(contentLayer, this.root, { r: s.r, reveal: this.reveal, xOffset: this.xOffset, fontScale: 0.62 });
   }
 
   // The tree's bounding box in content coordinates, for the "Fit" button.

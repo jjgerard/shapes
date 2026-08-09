@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shapes</title>
-<link rel="stylesheet" href="style.css?v=56">
-<link rel="icon" href="icon.svg?v=56" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=57">
+<link rel="icon" href="icon.svg?v=57" type="image/svg+xml">
 <meta name="theme-color" content="#2f6f5e">
 </head>
 <body>
@@ -13,7 +13,7 @@
 
   <header id="app-header">
     <div class="brand">
-      <img src="icon.svg?v=56" alt="" class="brand-logo">
+      <img src="icon.svg?v=57" alt="" class="brand-logo">
       <span class="brand-name">Shapes</span>
     </div>
     <div class="header-right">
@@ -98,7 +98,23 @@
       <h1>Mystery Level</h1>
       <p class="muted">Here's a shape you built. Type what you think each shape and each number stands for &mdash; a short word or abbreviation is fine.</p>
       <button id="btn-redo-reveal" class="btn-secondary redo-btn">&#8635; Redo from scratch</button>
-      <div id="reveal-body"></div>
+      <div id="reveal-body">
+        <p id="reveal-win" class="reveal-win hidden"><strong>You've cracked the code!</strong> The shape on the left now shows the real labels.</p>
+        <div class="legend-layout">
+          <!-- Same pannable/zoomable canvas skeleton as every other tree in
+               the game, so the Mystery Level tree can be zoomed in on and
+               dragged around rather than being squashed into a fixed box. -->
+          <div class="legend-tree">
+            <div class="canvas-stage">
+              <div class="canvas-wrap">
+                <svg id="reveal-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+              </div>
+            </div>
+          </div>
+          <div class="legend-lists" id="reveal-lists"></div>
+        </div>
+        <div class="reveal-footer" id="reveal-footer"></div>
+      </div>
     </section>
 
   </main>
@@ -273,15 +289,15 @@
   </div>
 </div>
 
-<script src="sound.js?v=56"></script>
-<script src="data.js?v=56"></script>
-<script src="shapes.js?v=56"></script>
-<script src="canvas.js?v=56"></script>
-<script src="wordmatch.js?v=56"></script>
-<script src="editor.js?v=56"></script>
-<script src="streak.js?v=56"></script>
-<script src="treeviewer.js?v=56"></script>
-<script src="app.js?v=56"></script>
+<script src="sound.js?v=57"></script>
+<script src="data.js?v=57"></script>
+<script src="shapes.js?v=57"></script>
+<script src="canvas.js?v=57"></script>
+<script src="wordmatch.js?v=57"></script>
+<script src="editor.js?v=57"></script>
+<script src="streak.js?v=57"></script>
+<script src="treeviewer.js?v=57"></script>
+<script src="app.js?v=57"></script>
 <script>
   // Plain webpage, not an installable app -- clean up any service worker
   // and caches left over from when it registered one, so nobody's stuck
