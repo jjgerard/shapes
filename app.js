@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
-// App orchestration: name gate, level select, Level 1 sub-levels (tutorial,
-// build, and the final free-text reveal), points, and localStorage
-// persistence.
+// App orchestration: name gate, mode select, level select, Level 1
+// sub-levels (tutorial, build, and the final free-text reveal), the Level
+// 2-4 games, points, and localStorage persistence.
 // ---------------------------------------------------------------------------
 
 const POINTS_TUTORIAL = 20;
@@ -11,43 +11,113 @@ const POINTS_SENTENCE = 30;
 const POINTS_STREAK_COMPLETE = 50;
 
 let player = null;   // {name, code, key}
-// {points, trees:[ids], sentences:[ids], constituency:[ids],
-//  reveal:{shapes:{}, numbers:{}} -- current answers shown on screen, reset-able via Redo,
-//  revealSolved:{shapes:{}, numbers:{}} -- permanent "ever gotten this one right" record}
+// { points, modes: { <modeId>: {
+//     trees:[ids], sentences:[ids], constituency:[ids], categoryid:[ids],
+//     reveal:{shapes:{}, numbers:{}}        -- current answers on screen, reset-able via Redo,
+//     revealSolved:{shapes:{}, numbers:{}}  -- permanent "ever gotten this right" record
+//   } } }
+// Points are deliberately shared across modes (one running total for the
+// student); everything else is per-mode, so working through Tree Basics
+// doesn't mark X-bar as done or vice versa.
 let state = null;
 
 // ---------------- storage ----------------
 function storageKey(name, code) {
   return `stb:${name.trim().toLowerCase()}|${code.trim().toLowerCase()}`;
 }
-function defaultState() {
+function defaultModeProgress() {
   return {
-    points: 0, trees: [], sentences: [], constituency: [], categoryid: [],
+    trees: [], sentences: [], constituency: [], categoryid: [],
     reveal: { shapes: {}, numbers: {} },
     revealSolved: { shapes: {}, numbers: {} },
   };
 }
+function defaultState() {
+  return { points: 0, modes: {} };
+}
+
+function normalizeModeProgress(src = {}) {
+  const base = defaultModeProgress();
+  return {
+    trees: Array.isArray(src.trees) ? src.trees : base.trees,
+    sentences: Array.isArray(src.sentences) ? src.sentences : base.sentences,
+    constituency: Array.isArray(src.constituency) ? src.constituency : base.constituency,
+    categoryid: Array.isArray(src.categoryid) ? src.categoryid : base.categoryid,
+    reveal: {
+      shapes: { ...(src.reveal?.shapes || {}) },
+      numbers: { ...(src.reveal?.numbers || {}) },
+    },
+    revealSolved: {
+      shapes: { ...(src.revealSolved?.shapes || {}) },
+      numbers: { ...(src.revealSolved?.numbers || {}) },
+    },
+  };
+}
+
 function loadState(key) {
+  const st = defaultState();
+  let parsed = null;
   try {
     const raw = localStorage.getItem(key);
-    if (!raw) return defaultState();
-    const merged = { ...defaultState(), ...JSON.parse(raw) };
-    // Backfill revealSolved from whatever's already filled in on state.reveal
-    // -- covers saves from before revealSolved existed, and is a harmless
-    // no-op otherwise (only ever sets true, never clears it), so a Redo's
-    // reset of state.reveal can never un-solve something already earned.
-    for (const k of Object.keys(CATEGORIES)) if (merged.reveal.shapes[k]) merged.revealSolved.shapes[k] = true;
-    for (const n of [1, 2, 3]) if (merged.reveal.numbers[n]) merged.revealSolved.numbers[n] = true;
-    return merged;
-  } catch { return defaultState(); }
+    parsed = raw ? JSON.parse(raw) : null;
+  } catch { parsed = null; }
+
+  if (parsed) st.points = Number(parsed.points) || 0;
+  // Saves written before modes existed have their progress lists sitting at
+  // the top level, and everything in them was X-bar -- that was the only
+  // thing the game had. Fold them into the X-bar slot so nobody loses a
+  // completed playthrough to this change.
+  const legacy = parsed && !parsed.modes ? parsed : null;
+  for (const id of MODE_IDS) {
+    const src = (parsed && parsed.modes && parsed.modes[id]) || (id === 'xbar' ? legacy : null);
+    const prog = normalizeModeProgress(src || {});
+    // Backfill revealSolved from whatever's filled in on reveal -- covers
+    // saves from before revealSolved existed, and is a harmless no-op
+    // otherwise (only ever sets true, never clears), so a Redo's reset of
+    // reveal can never un-solve something already earned.
+    for (const k of Object.keys(prog.reveal.shapes)) if (prog.reveal.shapes[k]) prog.revealSolved.shapes[k] = true;
+    for (const n of Object.keys(prog.reveal.numbers)) if (prog.reveal.numbers[n]) prog.revealSolved.numbers[n] = true;
+    st.modes[id] = prog;
+  }
+  return st;
 }
 function saveState() {
   localStorage.setItem(player.key, JSON.stringify(state));
 }
+// Progress for whichever mode is currently active.
+function prog() {
+  if (!state.modes[MODE.id]) state.modes[MODE.id] = defaultModeProgress();
+  return state.modes[MODE.id];
+}
 
-// ---------------- navigation ----------------
+// ---------------- navigation / browser back button ----------------
+// On a phone, the system back gesture is the instinctive "get me out of
+// here" -- and without this it left the site entirely from the middle of a
+// puzzle. Every forward step registers an undo, so back always walks one
+// step back through the app instead.
+const navStack = [];
+function pushNav(undo) {
+  navStack.push(undo);
+  history.pushState({ depth: navStack.length }, '');
+}
+// Every close/back control in the UI routes through here rather than
+// closing things directly, so our stack and the browser's history can't
+// drift apart.
+function navBack() {
+  if (navStack.length) history.back();
+}
+function resetNav() {
+  navStack.length = 0;
+}
+window.addEventListener('popstate', () => {
+  const undo = navStack.pop();
+  if (undo) undo();
+});
+
+// ---------------- screens ----------------
 const SCREEN_SPEECH = {
   name: "Hi! What's your name?",
+  modes: 'Pick a version to play!',
   levels: 'Pick a level to start!',
   level1: 'Choose a sub-level below!',
   level2: 'Choose a sentence below!',
@@ -59,14 +129,18 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById('screen-' + id).classList.remove('hidden');
   if (SCREEN_SPEECH[id]) setMascotSpeech(SCREEN_SPEECH[id]);
+  window.scrollTo(0, 0);
 }
+
+function gotoModes() { renderModeSelect(); showScreen('modes'); }
+function gotoLevels() { renderLevelSelect(); showScreen('levels'); }
 
 function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.remove('hidden');
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => el.classList.add('hidden'), 1900);
+  toast._t = setTimeout(() => el.classList.add('hidden'), 2600);
 }
 
 // ---------------- mascot ----------------
@@ -82,13 +156,13 @@ function mascotPulse(className, duration) {
 function celebrateCorrect() { mascotPulse('jumping', 650); }
 function celebrateComplete() { mascotPulse('dancing', 1350); playChimeSound(); }
 
-// A modal's close link turns into a big, hard-to-miss "Return to levels"
-// button the moment its puzzle/sentence is actually finished -- the small
-// "x close" is easy to miss (and fine while still working), but once
-// there's nothing left to do, the exit should be the obvious next tap.
+// A modal's close link turns into a big, hard-to-miss button the moment its
+// puzzle/sentence is actually finished -- the small "x close" is easy to
+// miss (and fine while still working), but once there's nothing left to do,
+// the exit should be the obvious next tap.
 function setModalDoneState(btn, done) {
   if (done) {
-    btn.textContent = 'Return to levels';
+    btn.textContent = 'Done — back to the list';
     btn.className = 'btn-primary btn-return';
   } else {
     btn.textContent = '× close';
@@ -128,25 +202,237 @@ function loginAs(name, code) {
   state = loadState(player.key);
   localStorage.setItem('stb:lastPlayer', JSON.stringify({ name, code }));
   updateHeader();
-  showScreen('levels');
-  renderLevelSelect();
+  resetNav();
+  gotoModes();
 }
+
+// ---------------- confirm dialog ----------------
+// Start over and switch player both used to destroy work on a single
+// mis-tap with no warning. A native confirm() would prevent that, but it
+// renders as a browser-chrome security prompt ("this site says…"), which is
+// exactly the sort of thing that makes a nervous user bail out of the page.
+let confirmResolver = null;
+function askConfirm({ title, message, okLabel = 'Yes', cancelLabel = 'No, go back' }) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-message').textContent = message;
+  document.getElementById('confirm-ok').textContent = okLabel;
+  document.getElementById('confirm-cancel').textContent = cancelLabel;
+  document.getElementById('confirm-overlay').classList.remove('hidden');
+  return new Promise(resolve => { confirmResolver = resolve; });
+}
+function settleConfirm(answer) {
+  document.getElementById('confirm-overlay').classList.add('hidden');
+  const resolve = confirmResolver;
+  confirmResolver = null;
+  if (resolve) resolve(answer);
+}
+document.getElementById('confirm-ok').addEventListener('click', () => settleConfirm(true));
+document.getElementById('confirm-cancel').addEventListener('click', () => settleConfirm(false));
+
+// ---------------- how to play ----------------
+// Every screen with a gesture in it gets a plain-language explanation on
+// demand. The mascot bubble carries a one-line hint, but it's small, it
+// fades, and it gets replaced -- there was nowhere to look things up if you
+// missed it the first time.
+const CANVAS_HELP = `
+  <li><strong>Lost the pieces?</strong> Tap <strong>Fit</strong> at the bottom-right of the
+      canvas. That always brings everything back into view, however far off you've wandered.</li>
+  <li>Drag the <em>empty space</em> between pieces to move the whole canvas around.
+      Use <strong>−</strong> and <strong>+</strong> to zoom.</li>`;
+const HELP = {
+  general: {
+    title: 'How Shapes works',
+    html: `<ul>
+      <li>Work through the levels in order. Each one unlocks when you finish the one before it.</li>
+      <li>Your points are saved automatically on this device, under your name and class code.
+          You can close the page at any time and pick up where you left off.</li>
+      <li><strong>Nothing you do here can break anything.</strong> If something goes wrong,
+          close the puzzle and open it again — you'll never lose points you've already earned.</li>
+      <li>Tap <strong>🔊</strong> at the top of the screen to turn the sounds off.</li>
+      <li>Tap <strong>?</strong> on any screen for help with that screen.</li>
+    </ul>`,
+  },
+  editor: {
+    title: 'Level 1 — Shapes',
+    html: `<ul>
+      <li>Drag one piece onto another. If they belong together they <strong>snap</strong>,
+          and you'll see the target piece glow green just before they do.</li>
+      <li>Two pieces only join if their <strong>shape and number both match</strong>, and one of
+          them has an empty branch free. If a drop doesn't work, the message at the top says why.</li>
+      <li>The <strong>✂️ scissors</strong> button pulls a joint apart again: tap the scissors,
+          then tap a piece outlined in red. Tap empty canvas to cancel.</li>
+      ${CANVAS_HELP}
+      <li><strong>Start over</strong> scatters the pieces again from scratch. It asks first.</li>
+    </ul>`,
+  },
+  wordmatch: {
+    title: 'Level 2 — Words',
+    html: `<ul>
+      <li>One word at a time appears in the bottom-left corner. Drag it onto the piece it belongs to.</li>
+      <li>Wrong piece? The word shakes and bounces back — nothing is lost, just try another piece.</li>
+      <li>Stuck on a word? Tap <strong>Skip this word</strong> and it goes to the back of the queue.</li>
+      <li>A piece marked <strong>∅</strong> has no word at all, so it's never a target.</li>
+      ${CANVAS_HELP}
+    </ul>`,
+  },
+  quiz3: {
+    title: 'Level 3 — Constituents',
+    html: `<ul>
+      <li>Some words in the sentence are highlighted. Answer whether that highlighted string is
+          a <strong>constituent</strong> — everything that hangs under one single piece of the tree,
+          with nothing left over.</li>
+      <li>The tree below is there to check against. Scroll and zoom it as much as you like.</li>
+      <li>Right answers build your streak; a wrong one sends it back to zero, so it's worth
+          checking the tree rather than guessing.</li>
+      <li>After a wrong answer the explanation stays up until you tap <strong>Next question</strong>.</li>
+      ${CANVAS_HELP}
+    </ul>`,
+  },
+  quiz4: {
+    title: 'Level 4 — Categories',
+    html: `<ul>
+      <li>Some words are highlighted. Tap the sticker for the <strong>category</strong> that
+          highlighted piece is.</li>
+      <li>Each category has two stickers: the <strong>top row is the whole phrase</strong>,
+          the <strong>bottom row is the single word</strong>. One highlighted word means
+          you want the bottom row.</li>
+      <li>After a wrong answer the explanation stays up until you tap <strong>Next question</strong>.</li>
+      ${CANVAS_HELP}
+    </ul>`,
+  },
+};
+function openHelp(key) {
+  const entry = HELP[key] || HELP.general;
+  document.getElementById('help-title').textContent = entry.title;
+  document.getElementById('help-body').innerHTML = entry.html;
+  document.getElementById('help-overlay').classList.remove('hidden');
+}
+function closeHelp() {
+  document.getElementById('help-overlay').classList.add('hidden');
+}
+document.getElementById('help-close').addEventListener('click', closeHelp);
+document.getElementById('btn-help').addEventListener('click', () => {
+  // The generic panel from the header; modals pass their own key.
+  openHelp('general');
+});
+document.querySelectorAll('[data-help]').forEach(btn => {
+  btn.addEventListener('click', (ev) => { ev.stopPropagation(); openHelp(btn.dataset.help); });
+});
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Escape') return;
+  if (!document.getElementById('help-overlay').classList.contains('hidden')) { closeHelp(); return; }
+  if (!document.getElementById('confirm-overlay').classList.contains('hidden')) settleConfirm(false);
+});
+
+// ---------------- sound toggle ----------------
+function renderSoundButton() {
+  const btn = document.getElementById('btn-sound');
+  const muted = isSoundMuted();
+  btn.textContent = muted ? '🔇' : '🔊';
+  btn.title = muted ? 'Turn sound on' : 'Turn sound off';
+  btn.setAttribute('aria-label', btn.title);
+  // Deliberately not the .active (red) treatment the scissors button uses --
+  // muted is a preference, not an error state.
+  btn.classList.toggle('btn-icon-off', muted);
+}
+document.getElementById('btn-sound').addEventListener('click', () => {
+  setSoundMuted(!isSoundMuted());
+  renderSoundButton();
+  toast(isSoundMuted() ? 'Sound off' : 'Sound on');
+  if (!isSoundMuted()) playCorrectSound();
+});
 
 // ---------------- sub-level completion ----------------
 // Whether the CURRENT on-screen attempt is fully filled in -- drives the
 // tree-reveal visual and the "you cracked the code" message, and resets
-// (goes back to false) whenever Redo clears state.reveal.
+// (goes back to false) whenever Redo clears reveal.
 function revealComplete() {
-  return Object.keys(CATEGORIES).every(k => state.reveal.shapes[k]) && [1, 2, 3].every(n => state.reveal.numbers[n]);
+  const p = prog();
+  return Object.keys(CATEGORIES).every(k => p.reveal.shapes[k]) && LEVEL_NUMBERS.every(n => p.reveal.numbers[n]);
 }
 // Whether it's EVER been fully solved -- permanent, drives Level 2's lock
 // and the sub-level's own done/locked state, so a Redo (for practice) can
 // never re-lock Level 2 or take back an already-earned sub-level.
 function revealEverSolved() {
-  return Object.keys(CATEGORIES).every(k => state.revealSolved.shapes[k]) && [1, 2, 3].every(n => state.revealSolved.numbers[n]);
+  const p = prog();
+  return Object.keys(CATEGORIES).every(k => p.revealSolved.shapes[k]) && LEVEL_NUMBERS.every(n => p.revealSolved.numbers[n]);
 }
 function isSubComplete(sub) {
-  return sub.kind === 'reveal' ? revealEverSolved() : state.trees.includes(sub.id);
+  return sub.kind === 'reveal' ? revealEverSolved() : prog().trees.includes(sub.id);
+}
+
+// ---------------- mode select ----------------
+// A small row of this mode's shapes at the levels each one projects
+// through, so the difference between the two versions is visible on the
+// card rather than only describable in words.
+function buildModePreview(mode) {
+  const row = document.createElement('div');
+  row.className = 'mode-shape-row';
+  const numbers = Object.keys(mode.levels).map(Number).sort((a, b) => a - b);
+  for (const n of numbers) {
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '-32 -32 64 64');
+    svg.appendChild(buildShapeGroup('D', mode.levels[n].code.replace('X', 'D'), 26, 0.55));
+    row.appendChild(svg);
+  }
+  return row;
+}
+
+function renderModeSelect() {
+  const grid = document.getElementById('mode-grid');
+  grid.innerHTML = '';
+  const activeId = MODE ? MODE.id : null;
+  for (const id of MODE_IDS) {
+    const mode = MODES[id];
+    const card = document.createElement('button');
+    card.className = 'level-card mode-card' + (id === activeId ? ' current' : '');
+
+    const num = document.createElement('div');
+    num.className = 'level-num';
+    num.textContent = mode.tagline;
+    card.appendChild(num);
+
+    const title = document.createElement('div');
+    title.className = 'level-title';
+    title.textContent = mode.name;
+    card.appendChild(title);
+
+    const blurb = document.createElement('p');
+    blurb.textContent = mode.blurb;
+    card.appendChild(blurb);
+
+    card.appendChild(buildModePreview(mode));
+
+    const done = document.createElement('div');
+    done.className = 'level-progress';
+    const p = state.modes[id] || defaultModeProgress();
+    const levelsDone =
+      (mode.level1.every(s => s.kind === 'reveal'
+        ? Object.keys(CATEGORIES).every(k => p.revealSolved.shapes[k]) && mode.numbers.every(n => p.revealSolved.numbers[n])
+        : p.trees.includes(s.id)) ? 1 : 0) +
+      (mode.level2.every(s => p.sentences.includes(s.id)) ? 1 : 0) +
+      (mode.quiz.every(s => p.constituency.includes(s.id)) ? 1 : 0) +
+      (mode.quiz.every(s => p.categoryid.includes(s.id)) ? 1 : 0);
+    done.textContent = `${levelsDone} / 4 levels done`;
+    card.appendChild(done);
+
+    if (id === activeId) {
+      const badge = document.createElement('div');
+      badge.className = 'mode-current-badge';
+      badge.textContent = 'Currently playing';
+      card.appendChild(badge);
+    }
+
+    card.addEventListener('click', () => selectMode(id));
+    grid.appendChild(card);
+  }
+}
+
+function selectMode(id) {
+  setMode(id);
+  localStorage.setItem('stb:lastMode', id);
+  pushNav(gotoModes);
+  gotoLevels();
 }
 
 // ---------------- level select ----------------
@@ -154,6 +440,9 @@ function isSubComplete(sub) {
 // blank "🔒 Locked" tile (same as the greyed-out roadmap ahead of it) --
 // title and description included -- until every Level 1 sub-level is done.
 function renderLevelSelect() {
+  document.getElementById('levels-mode-note').textContent =
+    `Playing ${MODE.name} — ${MODE.tagline.toLowerCase()}.`;
+
   const doneCount = LEVEL1_SUBLEVELS.filter(isSubComplete).length;
   document.getElementById('progress-1').textContent = `${doneCount} / ${LEVEL1_SUBLEVELS.length} sub-levels done`;
 
@@ -172,21 +461,21 @@ function renderLevelSelect() {
   }
 
   const level3Card = document.getElementById('level3-card');
-  const level3Unlocked = LEVEL2_SUBLEVELS.every(isL2SubComplete);
+  const level3Unlocked = level2Unlocked && LEVEL2_SUBLEVELS.every(isL2SubComplete);
   level3Card.classList.toggle('locked', !level3Unlocked);
   if (level3Unlocked) {
     const doneCount3 = QUIZ_SUBLEVELS.filter(isL3SubComplete).length;
     level3Card.innerHTML =
       '<div class="level-num">Level 3</div>' +
       '<div class="level-title">Constituents</div>' +
-      '<p>Is this string of words a constituent? Get 10 in a row to prove it.</p>' +
+      '<p>Is this string of words a constituent? Prove it with a run of correct answers.</p>' +
       `<div class="level-progress">${doneCount3} / ${QUIZ_SUBLEVELS.length} sub-levels done</div>`;
   } else {
     level3Card.innerHTML = '<div class="level-num">Level 3</div><div class="lock-badge">🔒 Locked</div>';
   }
 
   const level4Card = document.getElementById('level4-card');
-  const level4Unlocked = QUIZ_SUBLEVELS.every(isL3SubComplete);
+  const level4Unlocked = level3Unlocked && QUIZ_SUBLEVELS.every(isL3SubComplete);
   level4Card.classList.toggle('locked', !level4Unlocked);
   if (level4Unlocked) {
     const doneCount4 = QUIZ_SUBLEVELS.filter(isL4SubComplete).length;
@@ -216,10 +505,19 @@ function renderLevelSelect() {
   });
 }
 
+// What a locked level is waiting for -- said out loud, because a tap that
+// does literally nothing reads as a broken button.
+function lockedLevelReason(level) {
+  if (level === 2) return 'Level 2 unlocks when all of Level 1 is done — including the Mystery Level.';
+  if (level === 3) return 'Level 3 unlocks when every Level 2 sentence is done.';
+  if (level === 4) return 'Level 4 unlocks when every Level 3 sub-level is done.';
+  return 'Finish the previous level first.';
+}
+
 // ---------------- shared editor modal ----------------
 let editor = null;
 let activeCheck = null;  // function() -> void, checked automatically after every move
-let currentItems = null; // flat list of STRUCTURES items for the open sub-level, so Clear can re-scatter them
+let currentItems = null; // flat list of STRUCTURES items for the open sub-level, so Start over can re-scatter them
 
 function ensureEditor() {
   if (!editor) {
@@ -245,9 +543,6 @@ function expandInventory(inventory) {
 // there as pieces get dragged around.
 function fitCanvasSize(maxW, maxH) {
   const isNarrow = window.innerWidth < 640;
-  // The editor modal now fills essentially the whole viewport (16px overlay
-  // padding, plus the header on top) rather than a capped-width box, so
-  // these margins only need to cover that chrome, not a big unused margin.
   const availW = window.innerWidth - (isNarrow ? 24 : 40);
   const availH = window.innerHeight - (isNarrow ? 130 : 95);
   return {
@@ -278,6 +573,7 @@ function openEditor({ title, hint, items, viewW, viewH, onCheck }) {
   editor.onChange = () => { if (activeCheck) activeCheck(true); };
   activeCheck = onCheck;
   document.getElementById('editor-overlay').classList.remove('hidden');
+  pushNav(closeEditor);
 }
 
 function closeEditor() {
@@ -286,9 +582,19 @@ function closeEditor() {
   setMascotSpeech(SCREEN_SPEECH.level1);
 }
 
-document.getElementById('editor-close').addEventListener('click', closeEditor);
-document.getElementById('editor-clear').addEventListener('click', () => {
+document.getElementById('editor-close').addEventListener('click', navBack);
+document.getElementById('editor-clear').addEventListener('click', async () => {
   if (!editor || !currentItems) return;
+  // Only worth interrupting them over if there's actually something to
+  // lose -- a confirm on an untouched puzzle is just noise.
+  if (editor.snapCount > 0) {
+    const ok = await askConfirm({
+      title: 'Start this puzzle over?',
+      message: 'The pieces you\'ve joined will come apart and be scattered again. Your points are safe either way.',
+      okLabel: 'Yes, start over',
+    });
+    if (!ok) return;
+  }
   editor.clear();
   editor.scatterAll(currentItems);
   setSnipButtonActive(false);
@@ -356,7 +662,7 @@ function renderTargetGrid() {
       btn.addEventListener('click', () => {
         if (sub.kind === 'tutorial') openTutorialEditor(sub);
         else if (sub.kind === 'build') openTargetEditor(sub);
-        else { renderReveal(); showScreen('reveal'); }
+        else { renderReveal(); pushNav(() => { renderTargetGrid(); showScreen('level1'); }); showScreen('reveal'); }
       });
       card.appendChild(btn);
     }
@@ -365,9 +671,9 @@ function renderTargetGrid() {
 }
 
 function markSubDone(sub, points) {
-  const already = state.trees.includes(sub.id);
+  const already = prog().trees.includes(sub.id);
   if (!already) {
-    state.trees.push(sub.id);
+    prog().trees.push(sub.id);
     state.points += points;
     saveState();
     toast(`✓ ${sub.name} complete — +${points} pts`);
@@ -416,7 +722,7 @@ function openTargetEditor(sub) {
 
 // ================= LEVEL 2: word matching =================
 function isL2SubComplete(sub) {
-  return state.sentences.includes(sub.id);
+  return prog().sentences.includes(sub.id);
 }
 
 function renderLevel2Grid() {
@@ -455,9 +761,9 @@ function renderLevel2Grid() {
 }
 
 function markL2SubDone(sub, points) {
-  const already = state.sentences.includes(sub.id);
+  const already = prog().sentences.includes(sub.id);
   if (!already) {
-    state.sentences.push(sub.id);
+    prog().sentences.push(sub.id);
     state.points += points;
     saveState();
     toast(`✓ ${sub.name} complete — +${points} pts`);
@@ -475,6 +781,12 @@ let currentL2Sub = null;
 function ensureWordMatch() {
   if (!wordMatch) wordMatch = new WordMatchEditor(document.getElementById('wordmatch-canvas'));
   return wordMatch;
+}
+
+function setWmFeedback(msg, kind) {
+  const el = document.getElementById('wordmatch-feedback');
+  el.textContent = msg || '';
+  el.className = 'wm-feedback' + (kind ? ' ' + kind : '');
 }
 
 // Reads the sentence-so-far off the tree itself (each filled/blank word in
@@ -504,29 +816,50 @@ function openWordMatch(sub) {
   const fit = fitCanvasSize(1100, 800);
   wordMatch.open(sub.root, fit.w, fit.h);
   renderWmSentence(sub.root);
+  setWmFeedback('');
   setModalDoneState(document.getElementById('wordmatch-close'), false);
-  wordMatch.onPlace = () => { celebrateCorrect(); renderWmSentence(sub.root); };
+  wordMatch.onPlace = () => { celebrateCorrect(); setWmFeedback('Nice — that one fits.', 'ok'); renderWmSentence(sub.root); };
+  wordMatch.onReject = (msg) => setWmFeedback(msg);
   wordMatch.onComplete = () => { markL2SubDone(sub, POINTS_SENTENCE); };
   document.getElementById('wordmatch-overlay').classList.remove('hidden');
+  pushNav(closeWordMatch);
 }
 
 function closeWordMatch() {
   document.getElementById('wordmatch-overlay').classList.add('hidden');
+  // The floating word chip lives outside the modal box, so it has to be
+  // put away explicitly or it hangs over the level list after closing.
+  if (wordMatch) wordMatch.chipEl.classList.add('hidden');
   currentL2Sub = null;
   setMascotSpeech(SCREEN_SPEECH.level2);
 }
 
-document.getElementById('wordmatch-close').addEventListener('click', closeWordMatch);
-document.getElementById('wordmatch-clear').addEventListener('click', () => {
+document.getElementById('wordmatch-close').addEventListener('click', navBack);
+document.getElementById('wordmatch-clear').addEventListener('click', async () => {
   if (!wordMatch || !currentL2Sub) return;
+  const placed = wordMatch.slotNodes.filter(n => n._filled).length;
+  if (placed > 0) {
+    const ok = await askConfirm({
+      title: 'Start this sentence over?',
+      message: `You'll lose the ${placed} word${placed === 1 ? '' : 's'} you've already placed. Your points are safe either way.`,
+      okLabel: 'Yes, start over',
+    });
+    if (!ok) return;
+  }
   wordMatch.open(currentL2Sub.root, wordMatch.viewW, wordMatch.viewH);
   renderWmSentence(currentL2Sub.root);
+  setWmFeedback('');
   setModalDoneState(document.getElementById('wordmatch-close'), false);
+});
+document.getElementById('wordmatch-skip').addEventListener('click', () => {
+  if (!wordMatch) return;
+  if (wordMatch.skipCurrentWord()) setWmFeedback('Skipped — that word will come back around.', 'ok');
+  else setWmFeedback('That\'s the last word left, so there\'s nothing to skip to.');
 });
 
 // ================= LEVEL 3: constituency yes/no =================
 function isL3SubComplete(sub) {
-  return state.constituency.includes(sub.id);
+  return prog().constituency.includes(sub.id);
 }
 
 function renderConstituencyGrid() {
@@ -565,9 +898,9 @@ function renderConstituencyGrid() {
 }
 
 function markL3SubDone(sub) {
-  const already = state.constituency.includes(sub.id);
+  const already = prog().constituency.includes(sub.id);
   if (!already) {
-    state.constituency.push(sub.id);
+    prog().constituency.push(sub.id);
     state.points += POINTS_STREAK_COMPLETE;
     saveState();
     toast(`✓ ${sub.name} complete — +${POINTS_STREAK_COMPLETE} pts`);
@@ -594,7 +927,7 @@ function ensureConstituencyViewer() {
 // Shared by Level 3 and Level 4 -- `prefix` is 'constituency' or the Level 4
 // modal's id prefix ('categoryid'), each with its own -streak-fill/-label.
 // Reads the target off the game itself, not a flat constant, since it
-// varies per sub-level (see QUIZ_SUBLEVELS.streakTarget).
+// varies per sub-level.
 function renderStreakBar(prefix, game) {
   const fill = document.getElementById(`${prefix}-streak-fill`);
   const label = document.getElementById(`${prefix}-streak-label`);
@@ -613,12 +946,24 @@ function renderQuizSentence(elId, tokens, span) {
   });
 }
 
+// After a wrong answer the answer controls are swapped for a Next button,
+// so the explanation of what the right answer was stays on screen until
+// it's actually been read. Correct answers still auto-advance.
+function setQuizAwaitingNext(prefix, awaiting) {
+  const panel = document.getElementById(`${prefix}-overlay`);
+  const next = document.getElementById(`${prefix}-next`);
+  next.classList.toggle('hidden', !awaiting);
+  const answers = panel.querySelector('.quiz-answer-row') || panel.querySelector('.quiz-category-matrix');
+  if (answers) answers.classList.toggle('hidden', awaiting);
+}
+
 function nextConstituencyQuestion() {
+  setQuizAwaitingNext('constituency', false);
   const pools = currentL3Sub.pools;
   const wantConstituent = Math.random() < 0.5;
-  // Every QUIZ_SUBLEVELS tree has both pools non-empty -- the one sentence
-  // ("the cat") short enough to have no non-constituent spans at all was
-  // excluded from this level entirely.
+  // Every QUIZ_SUBLEVELS tree has both pools non-empty -- any sentence
+  // short enough to have no non-constituent spans at all was excluded from
+  // this level entirely.
   const pool = wantConstituent ? pools.constituents : pools.nonConstituents;
   const span = pool[Math.floor(Math.random() * pool.length)];
   l3CurrentQuestion = { span, isConstituent: wantConstituent };
@@ -628,13 +973,8 @@ function nextConstituencyQuestion() {
   feedback.className = 'quiz-feedback';
 }
 
-// Feedback (text + sound + mascot) needs to actually be visible for a beat
-// before the next question replaces it -- it used to get loaded synchronously
-// in the same tick, so the "Correct!"/"Not quite" message and its point
-// delta were overwritten before the browser ever painted them, and a wrong
-// answer had no signal at all (no sound, no mascot, and -- because of that
-// bug -- no visible text either).
-const QUIZ_FEEDBACK_DELAY_MS = { correct: 900, wrong: 1500 };
+// Correct answers get just enough of a beat to see the "+N pts" land.
+const QUIZ_CORRECT_DELAY_MS = 900;
 
 function answerConstituencyQuestion(saidYes) {
   if (!l3CurrentQuestion) return;
@@ -663,7 +1003,8 @@ function answerConstituencyQuestion(saidYes) {
     markL3SubDone(currentL3Sub);
     return;
   }
-  l3AdvanceTimer = setTimeout(nextConstituencyQuestion, correct ? QUIZ_FEEDBACK_DELAY_MS.correct : QUIZ_FEEDBACK_DELAY_MS.wrong);
+  if (correct) l3AdvanceTimer = setTimeout(nextConstituencyQuestion, QUIZ_CORRECT_DELAY_MS);
+  else setQuizAwaitingNext('constituency', true);
 }
 
 function openConstituencyQuiz(sub) {
@@ -678,6 +1019,7 @@ function openConstituencyQuiz(sub) {
   setModalDoneState(document.getElementById('constituency-close'), false);
   nextConstituencyQuestion();
   document.getElementById('constituency-overlay').classList.remove('hidden');
+  pushNav(closeConstituencyQuiz);
 }
 
 function closeConstituencyQuiz() {
@@ -688,13 +1030,14 @@ function closeConstituencyQuiz() {
   setMascotSpeech(SCREEN_SPEECH.level3);
 }
 
-document.getElementById('constituency-close').addEventListener('click', closeConstituencyQuiz);
+document.getElementById('constituency-close').addEventListener('click', navBack);
 document.getElementById('constituency-yes').addEventListener('click', () => answerConstituencyQuestion(true));
 document.getElementById('constituency-no').addEventListener('click', () => answerConstituencyQuestion(false));
+document.getElementById('constituency-next').addEventListener('click', nextConstituencyQuestion);
 
 // ================= LEVEL 4: category ID =================
 function isL4SubComplete(sub) {
-  return state.categoryid.includes(sub.id);
+  return prog().categoryid.includes(sub.id);
 }
 
 function renderCategoryIdGrid() {
@@ -733,9 +1076,9 @@ function renderCategoryIdGrid() {
 }
 
 function markL4SubDone(sub) {
-  const already = state.categoryid.includes(sub.id);
+  const already = prog().categoryid.includes(sub.id);
   if (!already) {
-    state.categoryid.push(sub.id);
+    prog().categoryid.push(sub.id);
     state.points += POINTS_STREAK_COMPLETE;
     saveState();
     toast(`✓ ${sub.name} complete — +${POINTS_STREAK_COMPLETE} pts`);
@@ -751,7 +1094,8 @@ function markL4SubDone(sub) {
 let categoryViewer = null;
 let currentL4Sub = null;
 let l4Game = null;
-let l4CurrentQuestion = null; // {span: {start,end,shape}, shape}
+let l4Pool = null;            // the concatenated question pool for the open sub-level
+let l4CurrentQuestion = null; // {span: {start,end,shape}, shape, isHead}
 let l4AdvanceTimer = null;    // pending "load next question" timeout
 
 function ensureCategoryViewer() {
@@ -759,24 +1103,25 @@ function ensureCategoryViewer() {
   return categoryViewer;
 }
 
-// Always all 6 categories, every sub-level -- not scaffolded down to just
-// whatever's in the current sentence, since by Level 4 the whole system
-// has already been taught. TWO stickers per category -- phrase-level
-// ("DP") and head-level ("D⁰") -- since questions are drawn from both
-// pools; offering only the phrase-level sticker would leave head-level
-// questions (like a single "the") with no correct option to actually pick.
+// Always every category, every sub-level -- not scaffolded down to just
+// whatever's in the current sentence, since by Level 4 the whole system has
+// already been taught. TWO stickers per category -- phrase-level and
+// head-level -- since questions are drawn from both pools; offering only
+// the phrase-level sticker would leave head-level questions (like a single
+// "the") with no correct option to pick. Which numbers those two levels
+// are is mode-dependent: 1 and 3 in X-bar, 1 and 2 in Tree Basics.
 function buildCategoryMatrix() {
   const matrix = document.getElementById('categoryid-matrix');
   matrix.innerHTML = '';
   Object.keys(CATEGORIES).forEach(key => {
-    [{ isHead: false, level: 1 }, { isHead: true, level: 3 }].forEach(({ isHead, level }) => {
+    [{ isHead: false, level: PHRASE_NUMBER }, { isHead: true, level: HEAD_NUMBER }].forEach(({ isHead, level }) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'quiz-sticker';
       btn.title = `${CATEGORIES[key].name} (${isHead ? 'head' : 'phrase'})`;
       const svg = document.createElementNS(SVG_NS, 'svg');
       svg.setAttribute('viewBox', '-30 -30 60 60');
-      svg.appendChild(buildShapeGroup(key, xbarLabel(key, level), 26));
+      svg.appendChild(buildShapeGroup(key, nodeLabel(key, level), 26));
       btn.appendChild(svg);
       btn.addEventListener('click', () => answerCategoryQuestion(key, isHead));
       matrix.appendChild(btn);
@@ -785,12 +1130,9 @@ function buildCategoryMatrix() {
 }
 
 function nextCategoryQuestion() {
+  setQuizAwaitingNext('categoryid', false);
   const pools = currentL4Sub.pools;
-  // Phrase-level (2+ words) and head-level (single word) constituents both
-  // count as fair game here -- every entry in either pool is a genuine
-  // constituent, just at a different bar level.
-  const pool = pools.constituents.concat(pools.headConstituents);
-  const span = pool[Math.floor(Math.random() * pool.length)];
+  const span = l4Pool[Math.floor(Math.random() * l4Pool.length)];
   l4CurrentQuestion = { span, shape: span.shape, isHead: span.start === span.end };
   renderQuizSentence('categoryid-sentence', pools.tokens, span);
   const feedback = document.getElementById('categoryid-feedback');
@@ -810,7 +1152,7 @@ function answerCategoryQuestion(chosenShape, chosenIsHead) {
   renderStreakBar('categoryid', l4Game);
 
   const feedback = document.getElementById('categoryid-feedback');
-  const answerLabel = xbarLabel(question.shape, question.isHead ? 3 : 1);
+  const answerLabel = nodeLabel(question.shape, question.isHead ? HEAD_NUMBER : PHRASE_NUMBER);
   if (correct) {
     feedback.textContent = `Correct! ${result.pointsDelta >= 0 ? '+' : ''}${result.pointsDelta} pts`;
     feedback.className = 'quiz-feedback ok';
@@ -826,15 +1168,24 @@ function answerCategoryQuestion(chosenShape, chosenIsHead) {
     markL4SubDone(currentL4Sub);
     return;
   }
-  l4AdvanceTimer = setTimeout(nextCategoryQuestion, correct ? QUIZ_FEEDBACK_DELAY_MS.correct : QUIZ_FEEDBACK_DELAY_MS.wrong);
+  if (correct) l4AdvanceTimer = setTimeout(nextCategoryQuestion, QUIZ_CORRECT_DELAY_MS);
+  else setQuizAwaitingNext('categoryid', true);
 }
 
 function openCategoryQuiz(sub) {
   ensureCategoryViewer();
   currentL4Sub = sub;
-  l4Game = new StreakGame(sub.streakTarget);
+  // Phrase-level (2+ words) and head-level (single word) constituents both
+  // count as fair game here -- every entry in either pool is a genuine
+  // constituent, just at a different projection level.
+  l4Pool = sub.pools.constituents.concat(sub.pools.headConstituents);
+  // Never demand a longer streak than the sentence has distinct questions
+  // to ask: a short sentence would otherwise be guaranteed to repeat
+  // itself before the streak could ever be finished.
+  const target = Math.min(sub.streakTarget, l4Pool.length);
+  l4Game = new StreakGame(target);
   document.getElementById('categoryid-title').textContent = sub.name;
-  setMascotSpeech(`Click the category sticker that matches the highlighted constituent. ${sub.streakTarget} in a row to finish.`);
+  setMascotSpeech(`Click the category sticker that matches the highlighted constituent. ${target} in a row to finish.`);
   buildCategoryMatrix();
   const fit = fitCanvasSize(1100, 800);
   categoryViewer.open(sub.root, fit.w, fit.h);
@@ -842,6 +1193,7 @@ function openCategoryQuiz(sub) {
   setModalDoneState(document.getElementById('categoryid-close'), false);
   nextCategoryQuestion();
   document.getElementById('categoryid-overlay').classList.remove('hidden');
+  pushNav(closeCategoryQuiz);
 }
 
 function closeCategoryQuiz() {
@@ -852,7 +1204,8 @@ function closeCategoryQuiz() {
   setMascotSpeech(SCREEN_SPEECH.level4);
 }
 
-document.getElementById('categoryid-close').addEventListener('click', closeCategoryQuiz);
+document.getElementById('categoryid-close').addEventListener('click', navBack);
+document.getElementById('categoryid-next').addEventListener('click', nextCategoryQuestion);
 
 // ================= REVEAL: fill in what the shapes mean =================
 function renderReveal() {
@@ -887,13 +1240,13 @@ function renderReveal() {
         el.appendChild(mini);
       },
       isCorrect: (val) => isCorrectShapeAnswer(key, val),
-      correctMap: state.reveal.shapes,
+      correctMap: prog().reveal.shapes,
       hint: SHAPE_HINTS[key],
     })),
     onCorrect: (key, val) => {
-      state.reveal.shapes[key] = val;
-      if (!state.revealSolved.shapes[key]) {
-        state.revealSolved.shapes[key] = true;
+      prog().reveal.shapes[key] = val;
+      if (!prog().revealSolved.shapes[key]) {
+        prog().revealSolved.shapes[key] = true;
         state.points += POINTS_REVEAL_SLOT;
       }
       saveState(); updateHeader();
@@ -904,7 +1257,7 @@ function renderReveal() {
 
   lists.appendChild(buildRevealGroup({
     heading: 'What does each number mean?',
-    items: [1, 2, 3].map(n => ({
+    items: LEVEL_NUMBERS.map(n => ({
       key: n,
       render: (el) => {
         const b = document.createElement('span');
@@ -913,14 +1266,14 @@ function renderReveal() {
         el.appendChild(b);
       },
       isCorrect: (val) => isCorrectLevelAnswer(n, val),
-      correctMap: state.reveal.numbers,
-      hint: LEVEL_HINTS[n],
+      correctMap: prog().reveal.numbers,
+      hint: levelHint(n),
       looseNote: (val) => looseAnswerNote(n, val),
     })),
     onCorrect: (key, val) => {
-      state.reveal.numbers[key] = val;
-      if (!state.revealSolved.numbers[key]) {
-        state.revealSolved.numbers[key] = true;
+      prog().reveal.numbers[key] = val;
+      if (!prog().revealSolved.numbers[key]) {
+        prog().revealSolved.numbers[key] = true;
         state.points += POINTS_REVEAL_SLOT;
       }
       saveState(); updateHeader();
@@ -976,6 +1329,11 @@ function buildRevealGroup({ heading, items, onCorrect }) {
       input.placeholder = 'type your answer';
       input.autocomplete = 'off';
       input.spellcheck = false;
+      // Phone keyboards otherwise capitalise and "helpfully" rewrite short
+      // linguistic abbreviations mid-typing, which turns a correct answer
+      // into a wrong one between the keystroke and the tap on Check.
+      input.setAttribute('autocapitalize', 'none');
+      input.setAttribute('autocorrect', 'off');
       const attempt = () => {
         const val = input.value.trim();
         if (!val) return;
@@ -1022,45 +1380,103 @@ function buildRevealGroup({ heading, items, onCorrect }) {
 }
 
 // ---------------- wiring ----------------
-document.getElementById('btn-start').addEventListener('click', () => {
-  const name = document.getElementById('input-name').value.trim();
-  const code = document.getElementById('input-code').value.trim();
-  if (!name || !code) { toast('Enter a name and a class code.'); return; }
+function showNameError(msg, focusEl) {
+  const el = document.getElementById('name-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  if (focusEl) { focusEl.classList.add('invalid'); focusEl.focus(); }
+}
+function clearNameError() {
+  document.getElementById('name-error').classList.add('hidden');
+  document.getElementById('input-name').classList.remove('invalid');
+  document.getElementById('input-code').classList.remove('invalid');
+}
+
+function attemptStart() {
+  const nameEl = document.getElementById('input-name');
+  const codeEl = document.getElementById('input-code');
+  const name = nameEl.value.trim();
+  const code = codeEl.value.trim();
+  clearNameError();
+  if (!name) return showNameError('Type your name in the first box, then press Start building.', nameEl);
+  if (!code) return showNameError('You still need the class code — your teacher will have given you one.', codeEl);
   loginAs(name, code);
+}
+document.getElementById('btn-start').addEventListener('click', attemptStart);
+// Pressing Enter in either field starts the game. Without this, typing a
+// name and hitting Enter -- the single most natural thing to do on a form
+// -- did absolutely nothing.
+['input-name', 'input-code'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') attemptStart(); });
+  el.addEventListener('input', clearNameError);
 });
-document.getElementById('btn-switch-player').addEventListener('click', () => {
+
+document.getElementById('btn-switch-player').addEventListener('click', async () => {
+  const ok = await askConfirm({
+    title: 'Switch to a different player?',
+    message: `${player.name}'s ${state.points} points stay saved on this device. Typing the same name and class code again brings them straight back.`,
+    okLabel: 'Yes, switch player',
+    cancelLabel: 'No, stay here',
+  });
+  if (!ok) return;
   localStorage.removeItem('stb:lastPlayer');
   player = null; state = null;
   updateHeader();
+  resetNav();
   document.getElementById('input-name').value = '';
   document.getElementById('input-code').value = '';
+  clearNameError();
   showScreen('name');
 });
 
-document.getElementById('btn-redo-reveal').addEventListener('click', () => {
+document.getElementById('btn-redo-reveal').addEventListener('click', async () => {
+  const ok = await askConfirm({
+    title: 'Clear your answers and try again?',
+    message: 'The answers you typed will be wiped so you can have another go. Points you\'ve already earned are kept, and this sub-level stays finished.',
+    okLabel: 'Yes, clear them',
+  });
+  if (!ok) return;
   // Only resets the CURRENT on-screen attempt -- revealSolved (points,
   // Level 2's unlock) is untouched, same as "Rebuild" elsewhere never
   // takes back an already-earned sub-level.
-  state.reveal = { shapes: {}, numbers: {} };
+  prog().reveal = { shapes: {}, numbers: {} };
   saveState();
   renderReveal();
 });
 
 document.querySelectorAll('.level-card[data-level]').forEach(card => {
   card.addEventListener('click', () => {
-    if (card.classList.contains('locked')) return;
-    if (card.dataset.level === '2') { renderLevel2Grid(); showScreen('level2'); }
-    else if (card.dataset.level === '3') { renderConstituencyGrid(); showScreen('level3'); }
-    else if (card.dataset.level === '4') { renderCategoryIdGrid(); showScreen('level4'); }
+    const level = Number(card.dataset.level);
+    // A locked card used to swallow the tap in silence. Say what it's
+    // waiting for instead.
+    if (card.classList.contains('locked')) { toast(lockedLevelReason(level)); return; }
+    pushNav(gotoLevels);
+    if (level === 2) { renderLevel2Grid(); showScreen('level2'); }
+    else if (level === 3) { renderConstituencyGrid(); showScreen('level3'); }
+    else if (level === 4) { renderCategoryIdGrid(); showScreen('level4'); }
     else { renderTargetGrid(); showScreen('level1'); }
   });
 });
-document.querySelectorAll('[data-back]').forEach(btn => {
-  btn.addEventListener('click', () => { renderLevelSelect(); showScreen('levels'); });
+document.querySelectorAll('[data-back], [data-back-to]').forEach(btn => {
+  btn.addEventListener('click', navBack);
 });
 
 // ---------------- boot ----------------
 (function boot() {
+  history.replaceState({ depth: 0 }, '');
+  renderSoundButton();
+
+  const savedMode = localStorage.getItem('stb:lastMode');
+  setMode(MODE_IDS.includes(savedMode) ? savedMode : DEFAULT_MODE_ID);
+
+  // Wire the on-canvas zoom/fit controls once. The getters are lazy, so
+  // it's fine that none of the view objects exist yet.
+  attachCanvasControls(document.querySelector('#editor-overlay .canvas-stage'), () => editor);
+  attachCanvasControls(document.querySelector('#wordmatch-overlay .canvas-stage'), () => wordMatch);
+  attachCanvasControls(document.querySelector('#constituency-overlay .canvas-stage'), () => constituencyViewer);
+  attachCanvasControls(document.querySelector('#categoryid-overlay .canvas-stage'), () => categoryViewer);
+
   const last = JSON.parse(localStorage.getItem('stb:lastPlayer') || 'null');
   if (last && last.name && last.code) {
     document.getElementById('input-name').value = last.name;

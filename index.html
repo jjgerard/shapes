@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shapes</title>
-<link rel="stylesheet" href="style.css?v=41">
-<link rel="icon" href="icon.svg?v=41" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=42">
+<link rel="icon" href="icon.svg?v=42" type="image/svg+xml">
 <meta name="theme-color" content="#2f6f5e">
 </head>
 <body>
@@ -13,10 +13,14 @@
 
   <header id="app-header">
     <div class="brand">Shapes</div>
-    <div id="player-info" class="hidden">
-      <span id="player-name-display"></span>
-      <span id="player-points" class="points-pill">0 pts</span>
-      <button id="btn-switch-player" class="link-btn">switch player</button>
+    <div class="header-right">
+      <div id="player-info" class="hidden">
+        <span id="player-name-display"></span>
+        <span id="player-points" class="points-pill">0 pts</span>
+        <button id="btn-switch-player" class="link-btn">switch player</button>
+      </div>
+      <button id="btn-sound" class="btn-icon btn-icon-sm" title="Turn sound off" aria-label="Turn sound off">🔊</button>
+      <button id="btn-help" class="btn-icon btn-icon-sm" title="How to play" aria-label="How to play">?</button>
     </div>
   </header>
 
@@ -26,20 +30,33 @@
     <section id="screen-name" class="screen">
       <div class="card narrow">
         <h1>Who's building?</h1>
-        <p class="muted">Enter your name and your class code. Points are saved on this device.</p>
-        <label>Name
-          <input id="input-name" type="text" maxlength="30" autocomplete="off" placeholder="e.g. Jordan">
+        <p class="muted">Your points are saved on this device, under your name and class code.</p>
+        <label>Your name
+          <input id="input-name" type="text" maxlength="30" autocomplete="off"
+                 autocapitalize="words" autocorrect="off" spellcheck="false" placeholder="e.g. Jordan">
         </label>
         <label>Class code
-          <input id="input-code" type="text" maxlength="20" autocomplete="off" placeholder="e.g. LING378">
+          <input id="input-code" type="text" maxlength="20" autocomplete="off"
+                 autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="e.g. LING378">
         </label>
+        <p class="field-help">Your teacher gives you the class code. It just keeps your points separate from other classes &mdash; it isn't a password.</p>
+        <p id="name-error" class="field-error hidden"></p>
         <button id="btn-start" class="btn-primary">Start building</button>
       </div>
     </section>
 
+    <!-- ============ MODE SELECT ============ -->
+    <section id="screen-modes" class="screen hidden">
+      <h1>Pick how deep to go</h1>
+      <p class="muted">Both versions have the same four levels and the same shapes. They differ in how many layers a phrase is built from. You can switch between them whenever you like &mdash; your progress in each is kept separately.</p>
+      <div class="level-grid" id="mode-grid"></div>
+    </section>
+
     <!-- ============ LEVEL SELECT ============ -->
     <section id="screen-levels" class="screen hidden">
+      <button class="link-btn back-btn" data-back-to="modes">&larr; Change version</button>
       <h1>Choose a level</h1>
+      <p class="muted" id="levels-mode-note"></p>
       <div class="level-grid">
         <button class="level-card" data-level="1">
           <div class="level-num">Level 1</div>
@@ -83,7 +100,7 @@
     <section id="screen-level3" class="screen hidden">
       <button class="link-btn back-btn" data-back>&larr; Levels</button>
       <h1>Level 3 &mdash; Constituents</h1>
-      <p class="muted">A string of words from the sentence is highlighted below the tree &mdash; is it a constituent (the whole yield of some single piece) or not? Get 10 in a row to finish.</p>
+      <p class="muted">A string of words from the sentence is highlighted below the tree &mdash; is it a constituent (the whole yield of some single piece) or not? Get a run of correct answers to finish.</p>
       <div class="target-grid" id="constituency-grid"></div>
     </section>
 
@@ -91,7 +108,7 @@
     <section id="screen-level4" class="screen hidden">
       <button class="link-btn back-btn" data-back>&larr; Levels</button>
       <h1>Level 4 &mdash; Categories</h1>
-      <p class="muted">A constituent from the sentence is highlighted below the tree &mdash; click the matching category sticker. Get 10 in a row to finish.</p>
+      <p class="muted">A constituent from the sentence is highlighted below the tree &mdash; click the matching category sticker. Get a run of correct answers to finish.</p>
       <div class="target-grid" id="categoryid-grid"></div>
     </section>
 
@@ -107,7 +124,7 @@
   </main>
 </div>
 
-<!-- ============ SHARED EDITOR MODAL (used by Level 1 and Level 2) ============ -->
+<!-- ============ SHARED EDITOR MODAL (Level 1) ============ -->
 <div id="editor-overlay" class="overlay hidden">
   <div class="editor">
     <div class="editor-header">
@@ -116,20 +133,23 @@
         <div id="editor-feedback" class="editor-feedback"></div>
       </div>
       <div class="editor-actions">
-        <button id="editor-snip" class="btn-icon" title="Snip a joint apart">&#9986;&#65039;</button>
-        <button id="editor-clear" class="btn-secondary">Clear</button>
+        <button class="btn-icon btn-icon-sm" data-help="editor" title="How to play" aria-label="How to play">?</button>
+        <button id="editor-snip" class="btn-icon" title="Snip a joint apart" aria-label="Snip a joint apart">&#9986;&#65039;</button>
+        <button id="editor-clear" class="btn-secondary">Start over</button>
         <button id="editor-close" class="link-btn">&times; close</button>
       </div>
     </div>
     <div class="editor-body">
-      <div class="canvas-wrap">
-        <svg id="editor-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="canvas-stage">
+        <div class="canvas-wrap">
+          <svg id="editor-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ============ WORD MATCH MODAL (used by Level 2) ============ -->
+<!-- ============ WORD MATCH MODAL (Level 2) ============ -->
 <div id="wordmatch-overlay" class="overlay hidden">
   <div class="editor">
     <div class="editor-header">
@@ -137,20 +157,27 @@
         <div id="wordmatch-title">Build it</div>
       </div>
       <div class="editor-actions">
-        <button id="wordmatch-clear" class="btn-secondary">Clear</button>
+        <button class="btn-icon btn-icon-sm" data-help="wordmatch" title="How to play" aria-label="How to play">?</button>
+        <button id="wordmatch-clear" class="btn-secondary">Start over</button>
         <button id="wordmatch-close" class="link-btn">&times; close</button>
       </div>
     </div>
     <div class="editor-body wm-body">
       <div id="wordmatch-sentence" class="wm-sentence"></div>
-      <div class="canvas-wrap">
-        <svg id="wordmatch-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="wm-statusbar">
+        <div id="wordmatch-feedback" class="wm-feedback" role="status"></div>
+        <button id="wordmatch-skip" class="btn-secondary btn-small">Skip this word &rarr;</button>
+      </div>
+      <div class="canvas-stage">
+        <div class="canvas-wrap">
+          <svg id="wordmatch-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ============ CONSTITUENCY QUIZ MODAL (used by Level 3) ============ -->
+<!-- ============ CONSTITUENCY QUIZ MODAL (Level 3) ============ -->
 <div id="constituency-overlay" class="overlay hidden">
   <div class="editor">
     <div class="editor-header">
@@ -158,6 +185,7 @@
         <div id="constituency-title">Build it</div>
       </div>
       <div class="editor-actions">
+        <button class="btn-icon btn-icon-sm" data-help="quiz3" title="How to play" aria-label="How to play">?</button>
         <button id="constituency-close" class="link-btn">&times; close</button>
       </div>
     </div>
@@ -168,20 +196,23 @@
           <div id="constituency-streak-label" class="streak-label"></div>
         </div>
         <div id="constituency-sentence" class="quiz-sentence"></div>
-        <div id="constituency-feedback" class="quiz-feedback"></div>
+        <div id="constituency-feedback" class="quiz-feedback" role="status"></div>
         <div class="quiz-answer-row">
           <button id="constituency-yes" class="btn-primary quiz-answer-btn">Yes, it's a constituent</button>
           <button id="constituency-no" class="btn-secondary quiz-answer-btn">No, it's not</button>
         </div>
+        <button id="constituency-next" class="btn-primary quiz-next hidden">Next question &rarr;</button>
       </div>
-      <div class="canvas-wrap">
-        <svg id="constituency-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="canvas-stage">
+        <div class="canvas-wrap">
+          <svg id="constituency-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ============ CATEGORY ID QUIZ MODAL (used by Level 4) ============ -->
+<!-- ============ CATEGORY ID QUIZ MODAL (Level 4) ============ -->
 <div id="categoryid-overlay" class="overlay hidden">
   <div class="editor">
     <div class="editor-header">
@@ -189,6 +220,7 @@
         <div id="categoryid-title">Build it</div>
       </div>
       <div class="editor-actions">
+        <button class="btn-icon btn-icon-sm" data-help="quiz4" title="How to play" aria-label="How to play">?</button>
         <button id="categoryid-close" class="link-btn">&times; close</button>
       </div>
     </div>
@@ -199,21 +231,47 @@
           <div id="categoryid-streak-label" class="streak-label"></div>
         </div>
         <div id="categoryid-sentence" class="quiz-sentence"></div>
-        <div id="categoryid-feedback" class="quiz-feedback"></div>
+        <div id="categoryid-feedback" class="quiz-feedback" role="status"></div>
         <div id="categoryid-matrix" class="quiz-category-matrix"></div>
+        <button id="categoryid-next" class="btn-primary quiz-next hidden">Next question &rarr;</button>
       </div>
-      <div class="canvas-wrap">
-        <svg id="categoryid-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="canvas-stage">
+        <div class="canvas-wrap">
+          <svg id="categoryid-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HOW-TO-PLAY PANEL ============ -->
+<div id="help-overlay" class="overlay overlay-dialog hidden">
+  <div class="dialog">
+    <h2 id="help-title">How to play</h2>
+    <div id="help-body" class="dialog-body"></div>
+    <div class="dialog-actions">
+      <button id="help-close" class="btn-primary">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIRM DIALOG ============ -->
+<div id="confirm-overlay" class="overlay overlay-dialog hidden">
+  <div class="dialog">
+    <h2 id="confirm-title">Are you sure?</h2>
+    <p id="confirm-message" class="dialog-body"></p>
+    <div class="dialog-actions">
+      <button id="confirm-cancel" class="btn-secondary">No, go back</button>
+      <button id="confirm-ok" class="btn-primary">Yes</button>
     </div>
   </div>
 </div>
 
 <div id="toast" class="toast hidden"></div>
 
-<div class="mascot-wrap" aria-hidden="true">
-  <div id="mascot-bubble" class="mascot-bubble"></div>
-  <div id="mascot" class="mascot">
+<div class="mascot-wrap">
+  <div id="mascot-bubble" class="mascot-bubble" role="status"></div>
+  <div id="mascot" class="mascot" aria-hidden="true">
     <svg viewBox="0 0 100 100">
       <polygon class="mascot-body" points="50,8 86,29 86,71 50,92 14,71 14,29"/>
       <circle cx="36" cy="46" r="6" fill="#1c2a28"/>
@@ -223,14 +281,15 @@
   </div>
 </div>
 
-<script src="sound.js?v=41"></script>
-<script src="data.js?v=41"></script>
-<script src="shapes.js?v=41"></script>
-<script src="wordmatch.js?v=41"></script>
-<script src="editor.js?v=41"></script>
-<script src="streak.js?v=41"></script>
-<script src="treeviewer.js?v=41"></script>
-<script src="app.js?v=41"></script>
+<script src="sound.js?v=42"></script>
+<script src="data.js?v=42"></script>
+<script src="shapes.js?v=42"></script>
+<script src="canvas.js?v=42"></script>
+<script src="wordmatch.js?v=42"></script>
+<script src="editor.js?v=42"></script>
+<script src="streak.js?v=42"></script>
+<script src="treeviewer.js?v=42"></script>
+<script src="app.js?v=42"></script>
 <script>
   // Plain webpage, not an installable app -- clean up any service worker
   // and caches left over from when it registered one, so nobody's stuck

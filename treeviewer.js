@@ -53,6 +53,17 @@ class TreeViewer {
     paintStaticTree(contentLayer, this.root, { r: s.r, reveal: true, xOffset: this.xOffset, fontScale: 0.62 });
   }
 
+  // The tree's bounding box in content coordinates, for the "Fit" button.
+  contentBounds() {
+    if (!this.root) return null;
+    return {
+      minX: this.xOffset,
+      minY: this.yOffset,
+      maxX: this.xOffset + this.treeWidth,
+      maxY: this.yOffset + this.treeHeight,
+    };
+  }
+
   // Unlike TreeEditor/WordMatchEditor (where precise dragging onto small
   // targets makes an overly-shrunk view a problem), this canvas is pure
   // reference material -- there's nothing to click inside it -- so it
