@@ -78,7 +78,12 @@ class WordMatchEditor {
     };
     collect(root);
 
-    this.queue = this.slotNodes.map(n => n.word);
+    // One chip per slot, carrying whether it's the pronounced copy or the
+    // crossed-out one left behind. "did the cat chase the mouse" hands you
+    // a plain "did" and a struck-through "did" -- not two identical chips
+    // -- so placing them is a claim about which position each belongs in,
+    // rather than a coin flip between two indistinguishable options.
+    this.queue = this.slotNodes.map(n => ({ word: n.word, isTrace: !!n.isTrace }));
     for (let i = this.queue.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [this.queue[i], this.queue[j]] = [this.queue[j], this.queue[i]];
@@ -121,10 +126,11 @@ class WordMatchEditor {
     // the word in your hand, not about the sentence as a whole.
     this.wrongForCurrentWord = 0;
     this.hintNode = null;
-    const word = this.queue.shift();
-    if (word === undefined) { this.currentChip = null; this.chipEl.classList.add('hidden'); return; }
-    this.currentChip = { word };
-    this.chipEl.textContent = word;
+    const chip = this.queue.shift();
+    if (chip === undefined) { this.currentChip = null; this.chipEl.classList.add('hidden'); return; }
+    this.currentChip = chip;
+    this.chipEl.textContent = chip.word;
+    this.chipEl.classList.toggle('trace', chip.isTrace);
     this.chipEl.classList.remove('hidden');
     this._resetChipPosition();
   }
@@ -164,6 +170,10 @@ class WordMatchEditor {
     // scale rather than sharing the size tuned for Level 1's bare numbers.
     paintStaticTree(treeLayer, this.root, { r: s.r, reveal: true, xOffset: this.xOffset, fontScale: 0.62 });
 
+    // Movement sits UNDER the slots so an arrow can never obscure a word.
+    const moveLayer = svgEl('g', { class: 'wm-moves' });
+    contentLayer.appendChild(moveLayer);
+
     const overlayLayer = svgEl('g', { class: 'wm-overlay' });
     contentLayer.appendChild(overlayLayer);
     const walk = (node) => {
@@ -173,6 +183,97 @@ class WordMatchEditor {
       node.children.forEach(walk);
     };
     walk(this.root);
+
+    for (const mv of this._readyMovements()) moveLayer.appendChild(this._buildMovement(mv));
+  }
+
+  // ---- movement ----------------------------------------------------------
+  // Both ends of a movement are tagged in the data with a shared id
+  // (`traceOf` on the gap, `moved` on the landing site), so finding them is
+  // a lookup rather than a guess about tree shape. That is what makes this
+  // work unchanged in both formats: the same nodes carry the tags either
+  // way, and the bar level only adds nodes in between that nothing here
+  // looks at.
+  _movements() {
+    const origins = new Map(), landings = new Map();
+    (function walk(n) {
+      if (n.traceOf) origins.set(n.traceOf, n);
+      if (n.moved) landings.set(n.moved, n);
+      n.children.forEach(walk);
+    })(this.root);
+    const out = [];
+    for (const [id, from] of origins) {
+      const to = landings.get(id);
+      if (to) out.push({ id, from, to, isPhrase: from.children.length > 0 });
+    }
+    return out;
+  }
+
+  // Only drawn once every word inside BOTH ends is placed -- the movement
+  // is the payoff for having worked out where the copies go, so revealing
+  // it early would give away the answer.
+  _readyMovements() {
+    const filled = (node) => {
+      let ok = true;
+      (function walk(n) { if (n.word && !n._filled) ok = false; n.children.forEach(walk); })(node);
+      return ok;
+    };
+    return this._movements().filter(mv => filled(mv.from) && filled(mv.to));
+  }
+
+  // Bounding box of a node's whole subtree, in the same coordinates the
+  // slots are drawn in, padded to enclose the word boxes hanging below it.
+  _subtreeBox(node) {
+    const s = this.sizing;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    (function walk(n) {
+      minX = Math.min(minX, n._x); maxX = Math.max(maxX, n._x);
+      minY = Math.min(minY, n._y); maxY = Math.max(maxY, n._y);
+      n.children.forEach(walk);
+    })(node);
+    return {
+      minX: minX + this.xOffset - s.chipW / 2 - 8,
+      maxX: maxX + this.xOffset + s.chipW / 2 + 8,
+      minY: minY - s.r - 8,
+      maxY: maxY + s.r + s.slotGapY + s.chipH / 2 + 8,
+    };
+  }
+
+  _buildMovement(mv) {
+    const g = svgEl('g', { class: 'wm-move' });
+    const from = this._subtreeBox(mv.from);
+    const to = this._subtreeBox(mv.to);
+
+    // What moved was a whole phrase, so ring both ends to show what the
+    // arrow is actually carrying. A head moving on its own needs no ring:
+    // the arrow already points at exactly one box on each end.
+    if (mv.isPhrase) {
+      for (const b of [from, to]) {
+        g.appendChild(svgEl('rect', {
+          class: 'wm-move-ring',
+          x: b.minX, y: b.minY, width: b.maxX - b.minX, height: b.maxY - b.minY,
+          rx: 22, fill: 'none',
+        }));
+      }
+    }
+
+    // Arrow from the gap up to the landing site, dipping below both so it
+    // never crosses the tree itself -- the way movement is drawn on paper.
+    const fx = (from.minX + from.maxX) / 2, tx = (to.minX + to.maxX) / 2;
+    const dip = Math.max(from.maxY, to.maxY) + 46;
+    const fy = from.maxY + 4, ty = to.maxY + 4;
+    g.appendChild(svgEl('path', {
+      class: 'wm-move-arrow',
+      d: `M ${fx} ${fy} C ${fx} ${dip}, ${tx} ${dip}, ${tx} ${ty}`,
+      fill: 'none',
+    }));
+    // The curve arrives travelling straight up (its last control point sits
+    // directly below the end), so a fixed upward head is always correct.
+    g.appendChild(svgEl('polygon', {
+      class: 'wm-move-head',
+      points: `${tx},${ty - 2} ${tx - 7},${ty + 11} ${tx + 7},${ty + 11}`,
+    }));
+    return g;
   }
 
   _buildSlot(node, x, y) {
@@ -182,18 +283,33 @@ class WordMatchEditor {
     node._slotEl = g;
     const filled = !!node._filled;
 
-    // A filled trace reveals itself as a struck-through "ghost" of the
-    // word -- no colored box -- so it still reads as "this word moved
-    // away from here" even though the student had to actively place it.
+    const cat = CATEGORIES[node.shape];
+
+    // A filled trace gets the SAME box and the SAME text size as every
+    // other word -- it used to be bare grey italic text with no box, which
+    // read as an afterthought a third the size of its neighbours. It's a
+    // word the student had to identify and place like any other, so it
+    // should look like one. What marks it out is the treatment, not the
+    // scale: a pale box in the category's colour with the word struck
+    // through, rather than the solid colour a pronounced word gets.
     if (filled && node.isTrace) {
+      g.appendChild(svgEl('rect', {
+        x: -s.chipW / 2, y: -s.chipH / 2, width: s.chipW, height: s.chipH, rx: 10,
+        fill: '#fffdf9', stroke: cat.color, 'stroke-width': 2.5,
+      }));
       const t = svgEl('text', { x: 0, y: 1 });
       t.textContent = node.word;
-      t.style.cssText = `font-size:${s.fontSize}px; font-style:italic; text-decoration:line-through; fill:#9a9284; text-anchor:middle; dominant-baseline:middle; user-select:none;`;
+      t.style.cssText = `font-size:${s.fontSize}px; font-weight:700; fill:${cat.color}; ` +
+        'text-anchor:middle; dominant-baseline:middle; pointer-events:none; user-select:none;';
       g.appendChild(t);
+      // An explicit strike rather than text-decoration: its length is then
+      // tied to the box, not to however the browser measures the glyphs.
+      g.appendChild(svgEl('line', {
+        x1: -s.chipW / 2 + 10, y1: 1, x2: s.chipW / 2 - 10, y2: 1,
+        stroke: cat.color, 'stroke-width': 2.5, 'stroke-linecap': 'round',
+      }));
       return g;
     }
-
-    const cat = CATEGORIES[node.shape];
     // A hinted slot gets a solid amber outline (plus a CSS pulse on the
     // group) so it reads as "this one" against the dashed grey of every
     // other empty slot.
@@ -360,8 +476,10 @@ class WordMatchEditor {
     return {
       minX: this.xOffset,
       minY: this.yOffset,
+      // Room for a movement arrow's dip below the deepest word slot, so
+      // "Fit" frames the arrows too once they appear.
       maxX: this.xOffset + this.treeWidth,
-      maxY: this.yOffset + this.treeHeight,
+      maxY: this.yOffset + this.treeHeight + 70,
     };
   }
 
@@ -371,7 +489,7 @@ class WordMatchEditor {
   // Clear, which throws away everything already placed.
   skipCurrentWord() {
     if (!this.currentChip || !this.queue.length) return false;
-    this.queue.push(this.currentChip.word);
+    this.queue.push(this.currentChip);
     this._nextChip();
     return true;
   }
@@ -387,13 +505,39 @@ class WordMatchEditor {
     this._rejectTimer = setTimeout(() => this.chipEl.classList.remove('rejected'), 500);
   }
 
+  // A chip fits a slot only if the word matches AND they agree about
+  // whether this is where the word is pronounced. Matching on the word
+  // alone made the two "did"s interchangeable, so the question "which of
+  // these positions is the pronounced one?" was never actually asked.
+  _chipFits(node) {
+    return normalizeAnswer(this.currentChip.word) === normalizeAnswer(node.word)
+      && !!node.isTrace === !!this.currentChip.isTrace;
+  }
+
   _attemptPlace(node) {
     if (node._filled) {
       this._rejectChip();
       if (this.onReject) this.onReject('That piece already has its word.');
       return;
     }
-    if (normalizeAnswer(this.currentChip.word) === normalizeAnswer(node.word)) {
+    // Right word, wrong copy -- worth its own explanation, since it's the
+    // whole point of the exercise rather than a random miss.
+    if (normalizeAnswer(this.currentChip.word) === normalizeAnswer(node.word) && !this._chipFits(node)) {
+      this._rejectChip();
+      this.wrongForCurrentWord++;
+      if (this.wrongForCurrentWord >= HINT_AFTER_ATTEMPTS) {
+        this.hintNode = this.slotNodes.find(n => !n._filled && this._chipFits(n)) || null;
+      }
+      this.render();
+      if (this.onReject) {
+        this.onReject(this.currentChip.isTrace
+          ? `That's the crossed-out "${this.currentChip.word}" — it goes where the word moved FROM, not where you say it.`
+          : `That's the "${this.currentChip.word}" you actually say — the crossed-out copy goes in the empty spot.`,
+          this.hintNode ? 'hint' : undefined);
+      }
+      return;
+    }
+    if (this._chipFits(node)) {
       node._filled = true;
       playClickSound();
       this._nextChip();
@@ -408,7 +552,7 @@ class WordMatchEditor {
       // belongs on -- but leave the placing to the student, so the move is
       // still theirs to make.
       if (this.wrongForCurrentWord >= HINT_AFTER_ATTEMPTS) {
-        this.hintNode = this.slotNodes.find(n => !n._filled && normalizeAnswer(n.word) === normalizeAnswer(this.currentChip.word)) || null;
+        this.hintNode = this.slotNodes.find(n => !n._filled && this._chipFits(n)) || null;
       }
       this.render();
       if (this.onReject) {

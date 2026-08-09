@@ -334,6 +334,22 @@ const PREX_LEVEL1 = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Movement is marked by tagging BOTH ends with the same id: `traceOf` on
+// the position it moved out of, `moved` on the position it ended up in.
+// Once every word inside both ends has been placed, Level 2 draws the
+// movement -- an arrow from the gap to the landing site, plus an outline
+// around each end when what moved was a whole phrase.
+//
+// Tagging the ends explicitly (rather than working them out from the shape
+// of the tree) is what makes this identical in both formats: the things
+// that move are the same nodes either way -- the C and T heads, the two
+// DPs -- and X-bar merely inserts intermediate C′/T′/D′ nodes in between,
+// which movement doesn't touch.
+// ---------------------------------------------------------------------------
+function movedTo(node, id) { node.moved = id; return node; }
+function traceFor(node, id) { node.traceOf = id; return node; }
+
 // A flat DP ("the cat"): the determiner head and a noun phrase, side by
 // side under the phrase itself. `opts.detTrace`/`opts.nounTrace` mark a
 // word as a moved-away trace rather than something pronounced here.
@@ -378,10 +394,10 @@ const PREX_LEVEL2 = [
     hint: 'For a yes/no question, Tense hops up into Complementizer, and leaves a crossed-out copy of itself behind in T.',
     root: {
       shape: 'C', number: 1, children: [
-        { shape: 'C', number: 2, children: [], word: 'did', pos: 1 },
+        movedTo({ shape: 'C', number: 2, children: [], word: 'did', pos: 1 }, 'aux'),
         { shape: 'T', number: 1, children: [
           pxWmDP('the', 2, 'cat', 3),
-          { shape: 'T', number: 2, children: [], word: 'did', isTrace: true },
+          traceFor({ shape: 'T', number: 2, children: [], word: 'did', isTrace: true }, 'aux'),
           { shape: 'V', number: 1, children: [
             { shape: 'V', number: 2, children: [], word: 'chase', pos: 4 },
             pxWmDP('the', 5, 'mouse', 6),
@@ -398,14 +414,14 @@ const PREX_LEVEL2 = [
     streakTarget: 5,
     root: {
       shape: 'C', number: 1, children: [
-        pxWmDP('which', 1, 'mouse', 2),
-        { shape: 'C', number: 2, children: [], word: 'did', pos: 3 },
+        movedTo(pxWmDP('which', 1, 'mouse', 2), 'wh'),
+        movedTo({ shape: 'C', number: 2, children: [], word: 'did', pos: 3 }, 'aux'),
         { shape: 'T', number: 1, children: [
           pxWmDP('the', 4, 'cat', 5),
-          { shape: 'T', number: 2, children: [], word: 'did', isTrace: true },
+          traceFor({ shape: 'T', number: 2, children: [], word: 'did', isTrace: true }, 'aux'),
           { shape: 'V', number: 1, children: [
             { shape: 'V', number: 2, children: [], word: 'chase', pos: 6 },
-            pxWmDP('which', null, 'mouse', null, { detTrace: true, nounTrace: true }),
+            traceFor(pxWmDP('which', null, 'mouse', null, { detTrace: true, nounTrace: true }), 'wh'),
           ] },
         ] },
       ],
@@ -584,11 +600,11 @@ const XBAR_LEVEL2 = [
     root: {
       shape: 'C', number: 1, children: [
         { shape: 'C', number: 2, children: [
-          { shape: 'C', number: 3, children: [], word: 'did', pos: 1 },
+          movedTo({ shape: 'C', number: 3, children: [], word: 'did', pos: 1 }, 'aux'),
           { shape: 'T', number: 1, children: [
             wmDP('the', 2, 'cat', 3),
             { shape: 'T', number: 2, children: [
-              { shape: 'T', number: 3, children: [], word: 'did', isTrace: true },
+              traceFor({ shape: 'T', number: 3, children: [], word: 'did', isTrace: true }, 'aux'),
               { shape: 'V', number: 1, children: [
                 { shape: 'V', number: 2, children: [
                   { shape: 'V', number: 3, children: [], word: 'chase', pos: 4 },
@@ -609,17 +625,17 @@ const XBAR_LEVEL2 = [
     streakTarget: 5,
     root: {
       shape: 'C', number: 1, children: [
-        wmDP('which', 1, 'mouse', 2),
+        movedTo(wmDP('which', 1, 'mouse', 2), 'wh'),
         { shape: 'C', number: 2, children: [
-          { shape: 'C', number: 3, children: [], word: 'did', pos: 3 },
+          movedTo({ shape: 'C', number: 3, children: [], word: 'did', pos: 3 }, 'aux'),
           { shape: 'T', number: 1, children: [
             wmDP('the', 4, 'cat', 5),
             { shape: 'T', number: 2, children: [
-              { shape: 'T', number: 3, children: [], word: 'did', isTrace: true },
+              traceFor({ shape: 'T', number: 3, children: [], word: 'did', isTrace: true }, 'aux'),
               { shape: 'V', number: 1, children: [
                 { shape: 'V', number: 2, children: [
                   { shape: 'V', number: 3, children: [], word: 'chase', pos: 6 },
-                  wmDP('which', null, 'mouse', null, { detTrace: true, nounTrace: true }),
+                  traceFor(wmDP('which', null, 'mouse', null, { detTrace: true, nounTrace: true }), 'wh'),
                 ] },
               ] },
             ] },
