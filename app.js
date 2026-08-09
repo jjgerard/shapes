@@ -133,30 +133,93 @@ function showScreen(id) {
 
 function gotoLevels() { renderLevelSelect(); showScreen('levels'); }
 
-// Which version of the game this page is: read once, from the URL. Two
-// URLs rather than an in-app chooser, because a chooser has to describe
-// the versions to be useful and the descriptions ("phrase", "head",
-// "bar", DP/D′/D⁰) are precisely the Mystery Level's answers.
-//   index.html              -> Tree Basics
-//   index.html?mode=xbar    -> X-bar
-// Both live on the same origin, so a student's saved points and progress
-// follow them across both without anything extra.
-function modeIdFromUrl() {
-  const requested = new URLSearchParams(location.search).get('mode');
-  return MODE_IDS.includes(requested) ? requested : DEFAULT_MODE_ID;
-}
-function urlForMode(id) {
-  return location.pathname + (id === DEFAULT_MODE_ID ? '' : '?mode=' + id);
+// Which level number is currently open, for headings on the reveal screen
+// and for returning to the right list.
+let currentLevel = null;
+
+// ---------------------------------------------------------------------------
+// The whole game, in order. Levels 1-4 run the flat basic phase and 5-8 the
+// X-bar phase; `phase` is which set of shapes, rules and sentences a level
+// draws on, and each level activates its own before rendering.
+//
+// The switch at Level 5 is the point of the whole thing: it is where a
+// syntax course stops using flat phrase-structure rules and starts using
+// X-bar, so the game does the same, on trees the student has already built
+// once. It is not a separate version to choose between, and there is no
+// picker -- picking would mean describing both, and describing them gives
+// away answers Level 1 spends its whole time withholding.
+//
+// `kind` says which of the four activities a level is, and so which screen
+// and which progress list it uses. Each activity appears twice, once per
+// phase, which is deliberate: by Level 6 the task is already familiar, so
+// the only new thing to take in is the structure.
+// ---------------------------------------------------------------------------
+const GAME_LEVELS = [
+  { n: 1, phase: 'prex', kind: 'build', title: 'Shapes',
+    blurb: 'Combine a set inventory of pieces into a single connected shape. No shortcuts allowed.' },
+  { n: 2, phase: 'prex', kind: 'words', title: 'Words',
+    blurb: 'Drag real English words onto the pieces of an already-labeled sentence tree.' },
+  { n: 3, phase: 'prex', kind: 'constituents', title: 'Constituents',
+    blurb: 'Is this string of words a constituent? Prove it with a run of correct answers.' },
+  { n: 4, phase: 'prex', kind: 'categories', title: 'Categories',
+    blurb: 'Click the category sticker that matches the highlighted constituent.' },
+  // Careful with this wording: describing what the new pieces ARE would
+  // hand over the answer to this level's own Mystery Level.
+  { n: 5, phase: 'xbar', kind: 'build', title: 'Back to Shapes and Numbers',
+    blurb: 'The same puzzle as Level 1, but the pieces have changed — and there is a fresh Mystery Level to work out what changed.' },
+  { n: 6, phase: 'xbar', kind: 'words', title: 'Words Again',
+    blurb: 'Words onto trees, now with the middle layer — and sentences where a word moves and leaves a copy behind.' },
+  { n: 7, phase: 'xbar', kind: 'constituents', title: 'Constituents Again',
+    blurb: 'The same question, on the bigger trees.' },
+  { n: 8, phase: 'xbar', kind: 'categories', title: 'Categories Again',
+    blurb: 'The same stickers, on the bigger trees.' },
+];
+
+const ACTIVITY_SCREEN = { build: 'level1', words: 'level2', constituents: 'level3', categories: 'level4' };
+
+function levelByNumber(n) { return GAME_LEVELS.find(l => l.n === n); }
+
+// Progress for a phase, read without disturbing whichever one is active --
+// the level select has to report on both at once.
+function phaseProgress(phase) {
+  if (!state.modes[phase]) state.modes[phase] = defaultModeProgress();
+  return state.modes[phase];
 }
 
-// Completions, locked-level explanations and the like. These used to be a
-// separate pill pinned near the top of the screen; now that the finished
-// state gives the Done button its own row in the modal header, that pill
-// landed squarely on top of it — covering the one control that has to be
-// reachable, at exactly the moment it appears. Everything the game says
-// goes to the mascot bar, which reserves its own strip and so can never
-// cover anything. Held a little longer than an ordinary reaction, since
-// these carry points.
+// Whether a level is finished, judged against its own phase's data rather
+// than whatever happens to be loaded.
+function isLevelComplete(level) {
+  const mode = MODES[level.phase];
+  const p = phaseProgress(level.phase);
+  if (level.kind === 'build') {
+    return mode.level1.every(sub => sub.kind === 'reveal'
+      ? mode.categories.every(k => p.revealSolved.shapes[k]) && mode.numbers.every(n => p.revealSolved.numbers[n])
+      : p.trees.includes(sub.id));
+  }
+  if (level.kind === 'words') return mode.level2.every(sub => p.sentences.includes(sub.id));
+  if (level.kind === 'constituents') return mode.quizConstituency.every(sub => p.constituency.includes(sub.id));
+  return mode.quiz.every(sub => p.categoryid.includes(sub.id));
+}
+
+// How far through a level, for the card's footer line.
+function levelProgressLabel(level) {
+  const mode = MODES[level.phase];
+  const p = phaseProgress(level.phase);
+  if (level.kind === 'build') {
+    const done = mode.level1.filter(sub => sub.kind === 'reveal'
+      ? mode.categories.every(k => p.revealSolved.shapes[k]) && mode.numbers.every(n => p.revealSolved.numbers[n])
+      : p.trees.includes(sub.id)).length;
+    return `${done} / ${mode.level1.length} sub-levels done`;
+  }
+  if (level.kind === 'words') {
+    return `${mode.level2.filter(s => p.sentences.includes(s.id)).length} / ${mode.level2.length} sentences done`;
+  }
+  if (level.kind === 'constituents') {
+    return `${mode.quizConstituency.filter(s => p.constituency.includes(s.id)).length} / ${mode.quizConstituency.length} sub-levels done`;
+  }
+  return `${mode.quiz.filter(s => p.categoryid.includes(s.id)).length} / ${mode.quiz.length} sub-levels done`;
+}
+
 function toast(msg) {
   flashMascotSpeech(msg, 3800);
 }
@@ -444,94 +507,53 @@ function isSubComplete(sub) {
   return sub.kind === 'reveal' ? revealEverSolved() : prog().trees.includes(sub.id);
 }
 
-// ---------------- the other version ----------------
-// Nothing about the other version is mentioned until the Mystery Level in
-// THIS one has been solved. Before that, saying "there's also a version
-// with a bar level in it" would hand over two of the answers; after it,
-// the category system is common knowledge and pointing at the next step
-// is just useful. Rendered as a real link so it can be bookmarked, copied
-// and handed out by a teacher.
-function renderModeSwitch() {
-  const wrap = document.getElementById('levels-switch');
-  wrap.innerHTML = '';
-  const otherId = MODE_IDS.find(id => id !== MODE.id);
-  if (!otherId || !revealEverSolved()) { wrap.classList.add('hidden'); return; }
-  wrap.classList.remove('hidden');
-
-  const other = MODES[otherId];
-  const p = state.modes[otherId] || defaultModeProgress();
-  const started = p.trees.length || p.sentences.length ||
-    Object.keys(p.revealSolved.shapes).length;
-
-  const heading = document.createElement('h2');
-  heading.textContent = 'Another version to try';
-  wrap.appendChild(heading);
-
-  const link = document.createElement('a');
-  link.className = 'mode-switch-card';
-  link.href = urlForMode(otherId);
-  link.innerHTML =
-    `<div class="level-num">${other.tagline}</div>` +
-    `<div class="level-title">${other.name}</div>` +
-    `<p>${other.blurb}</p>` +
-    `<div class="level-progress">${started ? 'In progress — your points come with you' : 'Not started yet'}</div>`;
-  wrap.appendChild(link);
-
-  const note = document.createElement('p');
-  note.className = 'muted small';
-  note.textContent = `You're playing ${MODE.name}. Progress in each version is kept separately; your points are shared.`;
-  wrap.appendChild(note);
-}
-
 // ---------------- level select ----------------
-// Level 2 assumes the category system Level 1 teaches, so its card stays a
-// blank "🔒 Locked" tile (same as the greyed-out roadmap ahead of it) --
-// title and description included -- until every Level 1 sub-level is done.
+// One chain of eight: each unlocks when the one before it is finished. A
+// locked card shows nothing but its number -- its title and description
+// would otherwise name things a later level exists to teach.
 function renderLevelSelect() {
-  const doneCount = LEVEL1_SUBLEVELS.filter(isSubComplete).length;
-  document.getElementById('progress-1').textContent = `${doneCount} / ${LEVEL1_SUBLEVELS.length} sub-levels done`;
+  const grid = document.getElementById('level-grid');
+  grid.innerHTML = '';
 
-  const level2Card = document.getElementById('level2-card');
-  const level2Unlocked = LEVEL1_SUBLEVELS.every(isSubComplete);
-  level2Card.classList.toggle('locked', !level2Unlocked);
-  if (level2Unlocked) {
-    const doneCount2 = LEVEL2_SUBLEVELS.filter(isL2SubComplete).length;
-    level2Card.innerHTML =
-      '<div class="level-num">Level 2</div>' +
-      '<div class="level-title">Words</div>' +
-      '<p>Drag real English words onto the pieces of an already-labeled sentence tree.</p>' +
-      `<div class="level-progress">${doneCount2} / ${LEVEL2_SUBLEVELS.length} sentences done</div>`;
-  } else {
-    level2Card.innerHTML = '<div class="level-num">Level 2</div><div class="lock-badge">🔒 Locked</div>';
-  }
+  GAME_LEVELS.forEach((level, i) => {
+    const locked = i > 0 && !isLevelComplete(GAME_LEVELS[i - 1]);
+    const done = !locked && isLevelComplete(level);
+    const card = document.createElement('button');
+    card.className = 'level-card' + (locked ? ' locked' : '') + (done ? ' level-done' : '');
+    card.dataset.level = level.n;
 
-  const level3Card = document.getElementById('level3-card');
-  const level3Unlocked = level2Unlocked && LEVEL2_SUBLEVELS.every(isL2SubComplete);
-  level3Card.classList.toggle('locked', !level3Unlocked);
-  if (level3Unlocked) {
-    const doneCount3 = QUIZ_CONSTITUENCY_SUBLEVELS.filter(isL3SubComplete).length;
-    level3Card.innerHTML =
-      '<div class="level-num">Level 3</div>' +
-      '<div class="level-title">Constituents</div>' +
-      '<p>Is this string of words a constituent? Prove it with a run of correct answers.</p>' +
-      `<div class="level-progress">${doneCount3} / ${QUIZ_CONSTITUENCY_SUBLEVELS.length} sub-levels done</div>`;
-  } else {
-    level3Card.innerHTML = '<div class="level-num">Level 3</div><div class="lock-badge">🔒 Locked</div>';
-  }
+    const num = document.createElement('div');
+    num.className = 'level-num';
+    num.textContent = `Level ${level.n}`;
+    card.appendChild(num);
 
-  const level4Card = document.getElementById('level4-card');
-  const level4Unlocked = level3Unlocked && QUIZ_CONSTITUENCY_SUBLEVELS.every(isL3SubComplete);
-  level4Card.classList.toggle('locked', !level4Unlocked);
-  if (level4Unlocked) {
-    const doneCount4 = QUIZ_SUBLEVELS.filter(isL4SubComplete).length;
-    level4Card.innerHTML =
-      '<div class="level-num">Level 4</div>' +
-      '<div class="level-title">Categories</div>' +
-      '<p>Click the category sticker that matches the highlighted constituent.</p>' +
-      `<div class="level-progress">${doneCount4} / ${QUIZ_SUBLEVELS.length} sub-levels done</div>`;
-  } else {
-    level4Card.innerHTML = '<div class="level-num">Level 4</div><div class="lock-badge">🔒 Locked</div>';
-  }
+    if (locked) {
+      const lock = document.createElement('div');
+      lock.className = 'lock-badge';
+      lock.textContent = '🔒 Locked';
+      card.appendChild(lock);
+    } else {
+      const title = document.createElement('div');
+      title.className = 'level-title';
+      title.textContent = (done ? '✓ ' : '') + level.title;
+      card.appendChild(title);
+
+      const blurb = document.createElement('p');
+      blurb.textContent = level.blurb;
+      card.appendChild(blurb);
+
+      const prog = document.createElement('div');
+      prog.className = 'level-progress';
+      prog.textContent = levelProgressLabel(level);
+      card.appendChild(prog);
+    }
+
+    card.addEventListener('click', () => {
+      if (locked) { toast(lockedLevelReason(level)); return; }
+      openLevel(level);
+    });
+    grid.appendChild(card);
+  });
 
   const roadmap = document.getElementById('roadmap');
   roadmap.innerHTML = '';
@@ -540,7 +562,7 @@ function renderLevelSelect() {
     card.className = 'level-card locked';
     const num = document.createElement('div');
     num.className = 'level-num';
-    num.textContent = `Level ${i + 5}`;
+    num.textContent = `Level ${GAME_LEVELS.length + i + 1}`;
     card.appendChild(num);
     const lock = document.createElement('div');
     lock.className = 'lock-badge';
@@ -548,17 +570,32 @@ function renderLevelSelect() {
     card.appendChild(lock);
     roadmap.appendChild(card);
   });
+}
 
-  renderModeSwitch();
+// Entering a level switches the game over to that level's phase first --
+// everything downstream (which pieces exist, which sentences, how many
+// projection levels there are) reads from whichever phase is active.
+function openLevel(level) {
+  currentLevel = level;
+  setMode(level.phase);
+  const screen = ACTIVITY_SCREEN[level.kind];
+  document.getElementById(`${screen}-heading`).textContent = `Level ${level.n} — ${level.title}`;
+  pushNav(gotoLevels);
+  if (level.kind === 'build') { renderTargetGrid(); showScreen('level1'); }
+  else if (level.kind === 'words') { renderLevel2Grid(); showScreen('level2'); }
+  else if (level.kind === 'constituents') { renderConstituencyGrid(); showScreen('level3'); }
+  else { renderCategoryIdGrid(); showScreen('level4'); }
 }
 
 // What a locked level is waiting for -- said out loud, because a tap that
 // does literally nothing reads as a broken button.
 function lockedLevelReason(level) {
-  if (level === 2) return 'Level 2 unlocks when all of Level 1 is done — including the Mystery Level.';
-  if (level === 3) return 'Level 3 unlocks when every Level 2 sentence is done.';
-  if (level === 4) return 'Level 4 unlocks when every Level 3 sub-level is done.';
-  return 'Finish the previous level first.';
+  const prev = levelByNumber(level.n - 1);
+  if (!prev) return 'Finish the previous level first.';
+  if (prev.kind === 'build') {
+    return `Level ${level.n} unlocks when all of Level ${prev.n} is done — including the Mystery Level.`;
+  }
+  return `Level ${level.n} unlocks when every part of Level ${prev.n} is done.`;
 }
 
 // ---------------- shared editor modal ----------------
@@ -1594,19 +1631,6 @@ document.getElementById('btn-redo-reveal').addEventListener('click', async () =>
   renderReveal();
 });
 
-document.querySelectorAll('.level-card[data-level]').forEach(card => {
-  card.addEventListener('click', () => {
-    const level = Number(card.dataset.level);
-    // A locked card used to swallow the tap in silence. Say what it's
-    // waiting for instead.
-    if (card.classList.contains('locked')) { toast(lockedLevelReason(level)); return; }
-    pushNav(gotoLevels);
-    if (level === 2) { renderLevel2Grid(); showScreen('level2'); }
-    else if (level === 3) { renderConstituencyGrid(); showScreen('level3'); }
-    else if (level === 4) { renderCategoryIdGrid(); showScreen('level4'); }
-    else { renderTargetGrid(); showScreen('level1'); }
-  });
-});
 document.querySelectorAll('[data-back]').forEach(btn => {
   btn.addEventListener('click', navBack);
 });
@@ -1615,7 +1639,7 @@ document.querySelectorAll('[data-back]').forEach(btn => {
 (function boot() {
   history.replaceState({ depth: 0 }, '');
   renderSoundButton();
-  setMode(modeIdFromUrl());
+  setMode(GAME_LEVELS[0].phase);
 
   // Wire the on-canvas zoom/fit controls once. The getters are lazy, so
   // it's fine that none of the view objects exist yet.

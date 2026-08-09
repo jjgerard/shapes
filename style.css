@@ -155,6 +155,7 @@ button { font-family: inherit; cursor: pointer; }
 .level-card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
 .level-progress { margin-top: 12px; font-size: 0.85rem; font-weight: 600; color: var(--ink); }
 
+.level-card.level-done { border-color: var(--accent); background: #eef6f2; }
 .level-card.locked {
   cursor: default;
   background: #f1efe7;
@@ -578,26 +579,6 @@ button { font-family: inherit; cursor: pointer; }
 .dialog-body li:last-child { margin-bottom: 0; }
 .dialog-body .dialog-note { color: var(--muted); font-size: 0.88rem; margin-top: 14px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
-
-/* ---- the other version (shown only after the Mystery Level) ---- */
-.mode-switch { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 22px; }
-.mode-switch h2 { margin: 0 0 12px; font-size: 1.1rem; }
-.mode-switch-card {
-  display: block;
-  max-width: 420px;
-  text-decoration: none;
-  color: inherit;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 20px;
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-.mode-switch-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
-.mode-switch-card .level-title { font-size: 1.2rem; font-weight: 700; margin: 4px 0 8px; }
-.mode-switch-card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
-.mode-switch-card .level-progress { margin-top: 12px; font-size: 0.85rem; font-weight: 600; }
-.mode-switch > .small { margin: 12px 0 0; }
 
 
 @media (max-width: 640px) {

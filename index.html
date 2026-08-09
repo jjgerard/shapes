@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shapes</title>
-<link rel="stylesheet" href="style.css?v=49">
-<link rel="icon" href="icon.svg?v=49" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=51">
+<link rel="icon" href="icon.svg?v=51" type="image/svg+xml">
 <meta name="theme-color" content="#2f6f5e">
 </head>
 <body>
@@ -46,45 +46,21 @@
     </section>
 
     <!-- ============ LEVEL SELECT ============ -->
-    <!-- Which version is running comes from the URL (?mode=xbar), not from
-         an in-app picker. A picker on the way in had to describe both
-         versions to be useful, and describing them gives away the answers
-         to the Mystery Level -- "phrase", "head", "bar" and the DP/D′/D⁰
-         labels are exactly what Level 1 spends its whole time withholding. -->
+    <!-- One progression of eight. Levels 1-4 run the flat basic phase and
+         5-8 the X-bar phase, but a student is never asked to pick between
+         them: the switch happens where the syllabus puts it, at Level 5.
+         Locked cards show nothing but their number, so the vocabulary a
+         later level teaches can't leak backwards. -->
     <section id="screen-levels" class="screen hidden">
       <h1>Choose a level</h1>
-      <p class="muted hidden" id="levels-mode-note"></p>
-      <div class="level-grid">
-        <button class="level-card" data-level="1">
-          <div class="level-num">Level 1</div>
-          <div class="level-title">Shapes</div>
-          <p>Combine a set inventory of pieces into a single connected shape. No shortcuts allowed.</p>
-          <div class="level-progress" id="progress-1"></div>
-        </button>
-        <button class="level-card locked" data-level="2" id="level2-card">
-          <div class="level-num">Level 2</div>
-          <div class="lock-badge">🔒 Locked</div>
-        </button>
-        <button class="level-card locked" data-level="3" id="level3-card">
-          <div class="level-num">Level 3</div>
-          <div class="lock-badge">🔒 Locked</div>
-        </button>
-        <button class="level-card locked" data-level="4" id="level4-card">
-          <div class="level-num">Level 4</div>
-          <div class="lock-badge">🔒 Locked</div>
-        </button>
-      </div>
+      <div class="level-grid" id="level-grid"></div>
       <div class="level-grid roadmap-grid" id="roadmap"></div>
-      <!-- Filled in (and unhidden) only once the Mystery Level has been
-           solved in this version, i.e. once the category system is no
-           longer a secret worth keeping. -->
-      <div id="levels-switch" class="mode-switch hidden"></div>
     </section>
 
     <!-- ============ LEVEL 1 (sub-levels) ============ -->
     <section id="screen-level1" class="screen hidden">
       <button class="link-btn back-btn" data-back>&larr; Levels</button>
-      <h1>Level 1 &mdash; Shapes</h1>
+      <h1 id="level1-heading">Level 1 &mdash; Shapes</h1>
       <p class="muted">Each sub-level gives you a fixed set of pieces &mdash; use every one of them, connected into a single shape, with no shortcuts. Finish one to unlock the next.</p>
       <div class="target-grid" id="target-grid"></div>
     </section>
@@ -92,7 +68,7 @@
     <!-- ============ LEVEL 2 (sentences) ============ -->
     <section id="screen-level2" class="screen hidden">
       <button class="link-btn back-btn" data-back>&larr; Levels</button>
-      <h1>Level 2 &mdash; Words</h1>
+      <h1 id="level2-heading">Level 2 &mdash; Words</h1>
       <p class="muted">Every piece is already labeled &mdash; drag each word from the bank onto the piece it belongs to. Finish one sentence to unlock the next.</p>
       <div class="target-grid" id="wordmatch-grid"></div>
     </section>
@@ -100,7 +76,7 @@
     <!-- ============ LEVEL 3 (constituency yes/no) ============ -->
     <section id="screen-level3" class="screen hidden">
       <button class="link-btn back-btn" data-back>&larr; Levels</button>
-      <h1>Level 3 &mdash; Constituents</h1>
+      <h1 id="level3-heading">Level 3 &mdash; Constituents</h1>
       <p class="muted">A string of words from the sentence is highlighted below the tree &mdash; is it a constituent (the whole yield of some single piece) or not? Get a run of correct answers to finish.</p>
       <div class="target-grid" id="constituency-grid"></div>
     </section>
@@ -108,7 +84,7 @@
     <!-- ============ LEVEL 4 (category ID) ============ -->
     <section id="screen-level4" class="screen hidden">
       <button class="link-btn back-btn" data-back>&larr; Levels</button>
-      <h1>Level 4 &mdash; Categories</h1>
+      <h1 id="level4-heading">Level 4 &mdash; Categories</h1>
       <p class="muted">A constituent from the sentence is highlighted below the tree &mdash; click the matching category sticker. Get a run of correct answers to finish.</p>
       <div class="target-grid" id="categoryid-grid"></div>
     </section>
@@ -278,15 +254,15 @@
   </div>
 </div>
 
-<script src="sound.js?v=49"></script>
-<script src="data.js?v=49"></script>
-<script src="shapes.js?v=49"></script>
-<script src="canvas.js?v=49"></script>
-<script src="wordmatch.js?v=49"></script>
-<script src="editor.js?v=49"></script>
-<script src="streak.js?v=49"></script>
-<script src="treeviewer.js?v=49"></script>
-<script src="app.js?v=49"></script>
+<script src="sound.js?v=51"></script>
+<script src="data.js?v=51"></script>
+<script src="shapes.js?v=51"></script>
+<script src="canvas.js?v=51"></script>
+<script src="wordmatch.js?v=51"></script>
+<script src="editor.js?v=51"></script>
+<script src="streak.js?v=51"></script>
+<script src="treeviewer.js?v=51"></script>
+<script src="app.js?v=51"></script>
 <script>
   // Plain webpage, not an installable app -- clean up any service worker
   // and caches left over from when it registered one, so nobody's stuck
