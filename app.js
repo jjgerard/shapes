@@ -584,6 +584,7 @@ let constituencyViewer = null;
 let currentL3Sub = null;
 let l3Game = null;
 let l3CurrentQuestion = null; // {span: {start,end}, isConstituent}
+let l3AdvanceTimer = null;    // pending "load next question" timeout
 
 function ensureConstituencyViewer() {
   if (!constituencyViewer) constituencyViewer = new TreeViewer(document.getElementById('constituency-canvas'));
@@ -627,9 +628,20 @@ function nextConstituencyQuestion() {
   feedback.className = 'quiz-feedback';
 }
 
+// Feedback (text + sound + mascot) needs to actually be visible for a beat
+// before the next question replaces it -- it used to get loaded synchronously
+// in the same tick, so the "Correct!"/"Not quite" message and its point
+// delta were overwritten before the browser ever painted them, and a wrong
+// answer had no signal at all (no sound, no mascot, and -- because of that
+// bug -- no visible text either).
+const QUIZ_FEEDBACK_DELAY_MS = { correct: 900, wrong: 1500 };
+
 function answerConstituencyQuestion(saidYes) {
   if (!l3CurrentQuestion) return;
-  const correct = saidYes === l3CurrentQuestion.isConstituent;
+  clearTimeout(l3AdvanceTimer);
+  const question = l3CurrentQuestion;
+  l3CurrentQuestion = null; // blocks re-answering the same question during the feedback delay
+  const correct = saidYes === question.isConstituent;
   const result = l3Game.answer(correct);
   state.points = Math.max(0, state.points + result.pointsDelta);
   saveState(); updateHeader();
@@ -642,16 +654,16 @@ function answerConstituencyQuestion(saidYes) {
     playCorrectSound();
     if (!result.complete) celebrateCorrect();
   } else {
-    feedback.textContent = `Not quite — that ${l3CurrentQuestion.isConstituent ? 'IS' : "isn't"} a constituent. ${result.pointsDelta} pts`;
+    feedback.textContent = `Not quite — that ${question.isConstituent ? 'IS' : "isn't"} a constituent. ${result.pointsDelta} pts`;
     feedback.className = 'quiz-feedback err';
+    playWrongSound();
   }
 
   if (result.complete) {
-    l3CurrentQuestion = null;
     markL3SubDone(currentL3Sub);
     return;
   }
-  nextConstituencyQuestion();
+  l3AdvanceTimer = setTimeout(nextConstituencyQuestion, correct ? QUIZ_FEEDBACK_DELAY_MS.correct : QUIZ_FEEDBACK_DELAY_MS.wrong);
 }
 
 function openConstituencyQuiz(sub) {
@@ -669,6 +681,7 @@ function openConstituencyQuiz(sub) {
 }
 
 function closeConstituencyQuiz() {
+  clearTimeout(l3AdvanceTimer);
   document.getElementById('constituency-overlay').classList.add('hidden');
   currentL3Sub = null;
   l3CurrentQuestion = null;
@@ -739,6 +752,7 @@ let categoryViewer = null;
 let currentL4Sub = null;
 let l4Game = null;
 let l4CurrentQuestion = null; // {span: {start,end,shape}, shape}
+let l4AdvanceTimer = null;    // pending "load next question" timeout
 
 function ensureCategoryViewer() {
   if (!categoryViewer) categoryViewer = new TreeViewer(document.getElementById('categoryid-canvas'));
@@ -786,30 +800,33 @@ function nextCategoryQuestion() {
 
 function answerCategoryQuestion(chosenShape, chosenIsHead) {
   if (!l4CurrentQuestion) return;
-  const correct = chosenShape === l4CurrentQuestion.shape && chosenIsHead === l4CurrentQuestion.isHead;
+  clearTimeout(l4AdvanceTimer);
+  const question = l4CurrentQuestion;
+  l4CurrentQuestion = null; // blocks re-answering the same question during the feedback delay
+  const correct = chosenShape === question.shape && chosenIsHead === question.isHead;
   const result = l4Game.answer(correct);
   state.points = Math.max(0, state.points + result.pointsDelta);
   saveState(); updateHeader();
   renderStreakBar('categoryid', l4Game);
 
   const feedback = document.getElementById('categoryid-feedback');
-  const answerLabel = xbarLabel(l4CurrentQuestion.shape, l4CurrentQuestion.isHead ? 3 : 1);
+  const answerLabel = xbarLabel(question.shape, question.isHead ? 3 : 1);
   if (correct) {
     feedback.textContent = `Correct! ${result.pointsDelta >= 0 ? '+' : ''}${result.pointsDelta} pts`;
     feedback.className = 'quiz-feedback ok';
     playCorrectSound();
     if (!result.complete) celebrateCorrect();
   } else {
-    feedback.textContent = `Not quite — that's ${CATEGORIES[l4CurrentQuestion.shape].name} (${answerLabel}). ${result.pointsDelta} pts`;
+    feedback.textContent = `Not quite — that's ${CATEGORIES[question.shape].name} (${answerLabel}). ${result.pointsDelta} pts`;
     feedback.className = 'quiz-feedback err';
+    playWrongSound();
   }
 
   if (result.complete) {
-    l4CurrentQuestion = null;
     markL4SubDone(currentL4Sub);
     return;
   }
-  nextCategoryQuestion();
+  l4AdvanceTimer = setTimeout(nextCategoryQuestion, correct ? QUIZ_FEEDBACK_DELAY_MS.correct : QUIZ_FEEDBACK_DELAY_MS.wrong);
 }
 
 function openCategoryQuiz(sub) {
@@ -828,6 +845,7 @@ function openCategoryQuiz(sub) {
 }
 
 function closeCategoryQuiz() {
+  clearTimeout(l4AdvanceTimer);
   document.getElementById('categoryid-overlay').classList.add('hidden');
   currentL4Sub = null;
   l4CurrentQuestion = null;

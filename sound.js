@@ -71,3 +71,12 @@ function playCorrectSound() {
   playTone(784, now, 0.12, { type: 'triangle', peakGain: 0.2 });
   playTone(1046.5, now + 0.1, 0.22, { type: 'triangle', peakGain: 0.2 });
 }
+
+// A wrong guess (Level 3/4 quizzes) -- a short two-note descending "buzz",
+// low and dull, so it reads as clearly distinct from playCorrectSound's
+// bright ascending ding rather than just a quieter version of it.
+function playWrongSound() {
+  const now = getAudioCtx().currentTime;
+  playTone(220, now, 0.16, { type: 'sawtooth', peakGain: 0.15 });
+  playTone(174.6, now + 0.09, 0.22, { type: 'sawtooth', peakGain: 0.15 });
+}
