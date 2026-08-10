@@ -1015,15 +1015,11 @@ class CombineEditor {
   // moving it, and deserves neither a complaint nor a tick on the counter.
   _reportFailedDrop(rootId) {
     const root = this.node(rootId);
-    const reach = this.snapDistance * 2;
-    let near = null, bestDist = Infinity;
-    for (const slot of this.emptySlots()) {
-      if (this.rootOf(slot.id).id === rootId) continue;
-      const d = Math.hypot(root._x - slot._x, root._y - slot._y);
-      if (d < reach && d < bestDist) { bestDist = d; near = slot; }
-    }
-    // Dropped in open space -- that's just moving a piece around, and in a
-    // strict round it must not count as a mistake either.
+    const near = this._slotDroppedOn(rootId);
+    // Dropped anywhere but on a box. Shuffling pieces around the canvas to
+    // get at them is ordinary handling, not a guess at an answer, so it
+    // draws no comment, doesn't tick the hint counter, and above all costs
+    // nothing where there is an allowance to spend.
     if (!near) { this.setFeedback(''); return; }
 
     // Naming the piece and the position, but never what the slot wants:
@@ -1058,6 +1054,27 @@ class CombineEditor {
     if (this.onLivesChange) this.onLivesChange();
     if (spent && this.onLivesOut) this.onLivesOut();
     return !spent;
+  }
+
+  // Which empty box, if any, a piece was actually dropped ON. Deliberately
+  // stricter than the snap radius that CONNECTS two pieces: it is right to
+  // be generous about what counts as a successful aim, and wrong to be
+  // generous about what counts as a wrong answer. The test is the box's own
+  // outline plus a little tolerance around the edges, so landing on it
+  // counts and landing beside it doesn't.
+  _slotDroppedOn(rootId) {
+    const root = this.node(rootId);
+    const halfW = this.slotW / 2 + 14;
+    const halfH = this.r * 0.85 + 14;
+    let best = null, bestDist = Infinity;
+    for (const slot of this.emptySlots()) {
+      if (this.rootOf(slot.id).id === rootId) continue;
+      const dx = Math.abs(root._x - slot._x), dy = Math.abs(root._y - slot._y);
+      if (dx > halfW || dy > halfH) continue;
+      const d = dx + dy;
+      if (d < bestDist) { bestDist = d; best = slot; }
+    }
+    return best;
   }
 
   // The landing site nearest the finger. Measured from the pointer, not
