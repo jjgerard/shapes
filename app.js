@@ -452,6 +452,33 @@ const CANVAS_HELP = `
   <li>Drag the <em>empty space</em> between pieces to move the whole canvas around.
       Use <strong>−</strong> and <strong>+</strong> to zoom.</li>`;
 const HELP = {
+  // Openable from the welcome screen, before anything has been played, so
+  // it is written for someone who has no idea what this is yet -- and it
+  // gives away nothing about what the shapes turn out to stand for. That
+  // belongs to the Mystery Level, and a student who reads it here first has
+  // had the best part of the game handed to them.
+  about: {
+    title: 'About Shapes and Language',
+    html: `<ul>
+      <li>This is a puzzle game about <strong>structure</strong> &mdash; how small things
+          combine into bigger things, and how the bigger things behave as units.
+          It happens to be about language, and by the end you'll have built the same
+          diagrams a linguist draws.</li>
+      <li>It goes with a syntax course rather than replacing one. Everything in it is
+          something you'll also meet in class, in the same order; the game is where you
+          get to <strong>do</strong> it enough times for it to stick.</li>
+      <li>There are <strong>twelve levels</strong>. The early ones give you pieces that
+          are already made and ask you to fit them together. The last ones give you
+          nothing but single pieces and a sentence, and you build the whole thing.</li>
+      <li><strong>Nothing here is graded and nothing is watched.</strong> Your points live
+          on this device and nowhere else &mdash; nobody, including your teacher, can see
+          them unless you show them. Get things wrong as often as you like.</li>
+      <li>There's no account, no email and no password. The class code just keeps your
+          points separate from someone else's on a shared computer.</li>
+      <li>It's free and the code is open, at
+          <strong>github.com/jjgerard/shapes</strong>.</li>
+    </ul>`,
+  },
   general: {
     title: 'How Shapes and Language works',
     html: `<ul>
@@ -629,6 +656,10 @@ document.getElementById('menu-sound').addEventListener('click', () => {
 document.getElementById('menu-help').addEventListener('click', () => {
   closeMenu();
   openHelp('general');
+});
+document.getElementById('menu-about').addEventListener('click', () => {
+  closeMenu();
+  openHelp('about');
 });
 
 // ---------------- sub-level completion ----------------
