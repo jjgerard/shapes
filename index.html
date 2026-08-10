@@ -7,6 +7,18 @@
 <link rel="stylesheet" href="style.css?v=70">
 <link rel="icon" href="icon.svg?v=70" type="image/svg+xml">
 <meta name="theme-color" content="#2f6f5e">
+<!-- Enough to be added to a home screen and open without browser bars, on
+     both platforms. Deliberately NO service worker: this stays a plain page
+     that fetches fresh every time, so nobody is ever stuck on a cached
+     version with no way to know it's out of date (see the cleanup at the
+     bottom of this file, which removes any left over from when there was
+     one). The cost is that it needs a connection, which for a page this
+     size is a fair trade for never lying about what it's showing. -->
+<link rel="manifest" href="manifest.webmanifest?v=70">
+<link rel="apple-touch-icon" href="icon-180.png?v=70">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Shapes">
 </head>
 <body>
 <div id="app">

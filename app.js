@@ -475,8 +475,11 @@ const HELP = {
           them unless you show them. Get things wrong as often as you like.</li>
       <li>There's no account, no email and no password. The class code just keeps your
           points separate from someone else's on a shared computer.</li>
-      <li>It's free and the code is open, at
-          <strong>github.com/jjgerard/shapes</strong>.</li>
+      <li>You can <strong>add it to your home screen</strong> and it'll open like an app,
+          without the browser bars. On iPhone: Share, then <em>Add to Home Screen</em>.
+          On Android: the ⋮ menu, then <em>Install app</em> or <em>Add to Home screen</em>.</li>
+      <li>It's free, and the code is open for anyone to read or reuse:
+          <a href="https://github.com/jjgerard/shapes" target="_blank" rel="noopener">github.com/jjgerard/shapes</a>.</li>
     </ul>`,
   },
   general: {

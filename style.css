@@ -186,6 +186,10 @@ button { font-family: inherit; cursor: pointer; }
   padding: 0;
 }
 .link-btn:hover { text-decoration: underline; }
+/* The only real links in the app are in the About panel. Underlined and in
+   the accent colour, because "it looks like a link" is the whole of how
+   anyone knows to tap it. */
+.dialog a { color: var(--accent); font-weight: 600; }
 .back-btn { display: block; margin-bottom: 12px; }
 
 /* ---- level select ---- */
