@@ -191,9 +191,9 @@ const GAME_LEVELS = [
   // The last thing taken away: no ready-made phrases at all, and no room
   // for error either.
   { n: 11, phase: 'xbar', kind: 'nodes', title: 'One at a Time',
-    blurb: 'Every node on its own. Build a phrase from scratch, with no wrong joins allowed.' },
+    blurb: 'Every node on its own. Build a phrase from scratch, with nothing joined up for you.' },
   { n: 12, phase: 'xbar', kind: 'fulltree', title: 'The Whole Thing',
-    blurb: 'The sentences you started with, built node by node — adjectives, adverbs and all.' },
+    blurb: 'The sentences you started with, built node by node — adjectives, adverbs and all. Only so many tries.' },
 ];
 
 const ACTIVITY_SCREEN = {
@@ -216,11 +216,11 @@ const COMBINE_KINDS = {
   },
   nodes: {
     modeKey: 'level11', help: 'nodes',
-    intro: 'No ready-made phrases this time: every node arrives on its own. Build the whole phrase from the bottom up — and these have to be done without a single wrong join.',
+    intro: 'No ready-made phrases this time: every node arrives on its own. Build the whole phrase from the bottom up. Put something in the wrong place and you\'ll be told why, and nothing is lost.',
   },
   fulltree: {
     modeKey: 'level12', help: 'nodes',
-    intro: 'The sentences you built right at the start, drawn the way you draw them now, one node at a time. Still no wrong joins allowed.',
+    intro: 'The sentences you built right at the start, drawn the way you draw them now, one node at a time. This time you have a set number of tries — use them all and the pieces are laid out again.',
   },
 };
 
@@ -556,9 +556,13 @@ const HELP = {
           under them. Some have one.</li>
       <li>Build from the <strong>bottom up</strong>: find the node each box is asking for,
           and drag it in. Whole groups move together once they're joined.</li>
-      <li><strong>These have to be done with no wrong joins.</strong> If you put something
-          where it doesn't go, you'll be told why and the pieces are laid out again.
-          Nothing else is lost &mdash; points you've already earned are safe.</li>
+      <li>In <strong>Level 11</strong> a wrong join just doesn't happen: you'll be told why,
+          and nothing is lost. Stuck for three tries in a row and a pair that fits
+          starts glowing.</li>
+      <li>In <strong>Level 12</strong> you get a set number of tries, shown as
+          <strong>♥</strong> hearts at the top. Use them all up and the pieces are laid out
+          again from the start &mdash; but points you've already earned are always safe,
+          and you can have as many goes as you like.</li>
       <li>Nothing new is being taught here. Every rule you need you have already
           used, so take it slowly and check before you drop.</li>
       ${CANVAS_HELP}
@@ -1564,7 +1568,8 @@ function openCombine(sub) {
     document.getElementById('combine-snip').classList.toggle('active', on);
     setMascotSpeech(on ? COMBINE_SNIP_HINT : currentCombineRound().hint, { interrupt: on });
   };
-  combineEditor.onStrictFail = failCombineRound;
+  combineEditor.onLivesOut = failCombineRound;
+  combineEditor.onLivesChange = renderCombineLives;
   clearMascotFlash();
   setModalDoneState(document.getElementById('combine-close'), false);
   // Shown BEFORE the round is dealt: the opening zoom is measured against
@@ -1610,14 +1615,34 @@ function loadCombineRound() {
   setMascotSpeech(round.hint);
   combineEditor.load(round.pieces.map(cloneSpec), {
     silentNote: combineSub.silentNote || '',
-    strict: !!combineSub.strict,
+    lives: combineSub.lives || 0,
   });
+  renderCombineLives();
 }
 
-// A wrong join in a no-mistakes round. The explanation of what was wrong is
-// already in the mascot bar, so it gets a beat to be read before the pieces
-// are dealt again -- restarting in the same tick would look like the app
-// had simply thrown the work away without saying why.
+// How many wrong joins this round has left, as hearts. Shown only where
+// there is a limit -- on the levels that simply correct you, a counter that
+// never moves is just something else to worry about.
+function renderCombineLives() {
+  const el = document.getElementById('combine-lives');
+  const total = combineSub && combineSub.lives ? combineSub.lives : 0;
+  el.classList.toggle('hidden', !total);
+  if (!total) return;
+  const left = combineEditor.livesLeft;
+  el.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const h = document.createElement('span');
+    h.className = 'cb-life' + (i < left ? '' : ' spent');
+    h.textContent = '♥';
+    el.appendChild(h);
+  }
+  el.setAttribute('aria-label', `${left} of ${total} tries left`);
+}
+
+// The allowance is spent. What went wrong is already in the mascot bar, so
+// it gets a beat to be read before the pieces are dealt again -- re-dealing
+// in the same tick would look like the app had thrown the work away without
+// saying why.
 let combineFailTimer = null;
 function failCombineRound() {
   clearTimeout(combineFailTimer);
@@ -1625,8 +1650,8 @@ function failCombineRound() {
   combineFailTimer = setTimeout(() => {
     if (!combineSub) return;
     loadCombineRound();
-    setMascotSpeech(`${said} This one has to be done without mistakes, so it's laid out again — have another go.`);
-  }, 1500);
+    setMascotSpeech(`${said} Here it is again, with a full set of tries — nothing you've already earned is lost.`);
+  }, 1800);
 }
 
 // Each round is re-materialised from a fresh copy, so replaying a sub-level
@@ -1664,10 +1689,11 @@ function checkCombineRound() {
       // because "that's wrong" here teaches nothing and this does. In a
       // no-mistakes round every join was legal, so this is the only place
       // it can be caught, and it costs the round like any other error.
-      combineEditor.setFeedback(
-        `That's a real tree, but it says “${titleCase(built)}”.` +
-        (combineSub.strict ? '' : ' Use the scissors and swap two pieces around.'), 'err');
-      if (combineSub.strict) failCombineRound();
+      // A tree every join of which was legal, spelling out the wrong
+      // sentence. It costs a try like any other wrong move, and if there
+      // are tries left the scissors are the way back.
+      combineEditor.spendLife(
+        `That's a real tree, but it says “${titleCase(built)}”. Use the scissors and swap two pieces around.`);
       return;
     }
   }

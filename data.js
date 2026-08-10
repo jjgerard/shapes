@@ -857,10 +857,18 @@ const XBAR_LEVEL9 = [
 // is the same tree the student has been building since Level 5 rather than
 // that tree plus a scattering of positions left permanently empty.
 //
-// And they are no-mistake rounds: one wrong join deals the round again. By
-// this point nothing is being introduced -- every rule in play has been
-// used for six levels -- so the question has stopped being "can you work
-// it out" and become "do you know it".
+// The two levels differ in what a wrong join costs, and that is the ramp.
+// Level 11 only ever CORRECTS: a wrong join is refused and explained, and
+// three in a row still light up a pair that fits, exactly as everywhere
+// else. It is a hard enough level already -- being handed loose nodes for
+// the first time is the new thing, and a penalty on top would be punishing
+// someone for the wrong reason.
+//
+// Level 12 has an ALLOWANCE. Nothing is being introduced there: every rule
+// in play has been used for six levels, so the question has stopped being
+// "can you work it out" and become "do you know it". Run the allowance out
+// and the round is dealt again. The allowance grows with the tree, since a
+// wrong join is a fixed cost and a thirty-node sentence is not.
 // ===========================================================================
 
 // Which position a daughter occupies, worked out from the shapes rather
@@ -1056,9 +1064,8 @@ const XBAR_LEVEL11 = [
   {
     id: 'nodes-dp',
     name: 'One Phrase',
-    description: 'Every node on its own. Build one phrase, with no wrong joins.',
+    description: 'Every node on its own. Build one phrase from the bottom up.',
     goal: 'connect',
-    strict: true,
     rounds: [ { hint: 'Start at the bottom: find the node each empty position is asking for.',
                 pieces: explodeNodes(DP_()) } ],
   },
@@ -1067,7 +1074,6 @@ const XBAR_LEVEL11 = [
     name: 'A Phrase Inside a Phrase',
     description: 'The same again, with one whole phrase sitting inside another.',
     goal: 'connect',
-    strict: true,
     rounds: [ { hint: 'One of these phrases ends up entirely inside the other. Build the inside one first.',
                 pieces: explodeNodes(PP_()) } ],
   },
@@ -1076,7 +1082,6 @@ const XBAR_LEVEL11 = [
     name: 'A Whole Clause',
     description: 'A subject, a tense and a verb — every node separate.',
     goal: 'connect',
-    strict: true,
     rounds: [ { hint: 'Three phrases to build, and then to put together. Take the small ones first.',
                 pieces: explodeNodes(TP_({ shape: 'V', number: 1, children: [
                   { shape: 'V', number: 1.5, children: [ { shape: 'V', number: 2, children: [] } ] },
@@ -1141,9 +1146,9 @@ const XBAR_LEVEL12 = [
   {
     id: 'tree-chased',
     name: 'The Full Sentence',
-    description: 'A sentence you have built before, now one node at a time.',
+    description: 'A sentence you have built before, now one node at a time. Three tries.',
     goal: 'sentence',
-    strict: true,
+    lives: 3,
     rounds: [ {
       sentence: 'the cat chased the mouse',
       hint: 'Nothing new here — just more of it, and no wrong joins allowed.',
@@ -1155,9 +1160,9 @@ const XBAR_LEVEL12 = [
   {
     id: 'tree-fluffy',
     name: 'With an Adjective',
-    description: 'An adjective joins in. It needs a phrase of its own.',
+    description: 'An adjective joins in. It needs a phrase of its own. Three tries.',
     goal: 'sentence',
-    strict: true,
+    lives: 3,
     rounds: [ {
       sentence: 'the fluffy cat will jump',
       hint: 'The adjective is a whole phrase, and it hangs off the noun\'s bar level rather than sitting beside the noun.',
@@ -1169,9 +1174,9 @@ const XBAR_LEVEL12 = [
   {
     id: 'tree-quickly',
     name: 'Everything At Once',
-    description: 'An adjective, an adverb and a preposition, in the longest sentence in the game.',
+    description: 'An adjective, an adverb and a preposition, in the longest sentence in the game. Five tries.',
     goal: 'sentence',
-    strict: true,
+    lives: 5,
     rounds: [ {
       sentence: 'the fluffy cat quickly jumped on the table',
       hint: 'The adjective describes the cat, so it goes inside the subject. The adverb and the prepositional phrase describe the jumping, so they go inside the verb phrase.',
