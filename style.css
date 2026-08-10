@@ -394,6 +394,32 @@ button { font-family: inherit; cursor: pointer; }
 .cb-slot.hinted .cb-slot-box { stroke: #e8b400; stroke-dasharray: none; animation: hint-pulse 1.2s ease-in-out infinite; }
 .cb-slot.snip-disabled { opacity: 0.45; }
 
+/* ---- level 10 movement ---- */
+/* A crossed-out copy of something pronounced elsewhere. Faded rather than
+   recoloured, so it stays recognisably the same shape it was before it
+   moved -- which is the point of drawing it at all. */
+.cb-trace { opacity: 0.45; }
+.cb-trace .node-shape { stroke-dasharray: 4 3; }
+.cb-silent { fill: #b7b0a2; }
+/* "This can move now." It appears the moment the tree is built far enough
+   for there to be somewhere to move to, so it teaches the order of the
+   steps without a word of instruction. */
+.cb-movable .node-shape { stroke: #3b3a55; stroke-width: 3.5; stroke-dasharray: 3 2.5; }
+/* A silent head waiting for a word. Solid, not dashed -- it isn't going
+   anywhere yet, it's asking to be tapped. */
+.cb-insertable .node-shape { stroke: #3b3a55; stroke-width: 3.5; }
+.cb-insertable + .cb-silent, .cb-insertable .cb-silent { fill: #3b3a55; }
+/* What the finger is carrying. Deliberately see-through: the real node is
+   still in the tree underneath, and pretending otherwise would suggest the
+   word had already left. */
+.cb-ghost { opacity: 0.62; pointer-events: none; }
+.cb-ghost .node-shape { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
+/* Same ink as Level 2's movement arrows, so a student who met one there
+   recognises this as the same thing. */
+.cb-move-arrow { stroke: #3b3a55; stroke-width: 2.5; stroke-linecap: round; }
+.cb-move-head { fill: #3b3a55; }
+.cb-move-ring { stroke: #3b3a55; stroke-width: 2.5; stroke-dasharray: 9 6; opacity: 0.85; }
+
 /* .editor-body is a row by default (the quiz modals put their question
    panel beside the tree); this one stacks, so the status strip sits above a
    full-width canvas rather than beside a squeezed one. */
@@ -753,7 +779,11 @@ button { font-family: inherit; cursor: pointer; }
      the sentence is the one that can wrap without losing anything -- so it
      takes a whole line of its own above the dots and the Next button. */
   .cb-statusbar { padding: 8px 12px; gap: 8px; }
-  .cb-sentence { flex: 1 1 100%; font-size: 0.98rem; }
+  /* The sentence takes a line of its own, but LAST -- left in source order
+     it forces a wrap on both sides of itself and the strip becomes three
+     rows deep, all of it taken off the canvas. Sent to the end, the round
+     dots and the Next button share the first row and it costs two. */
+  .cb-sentence { flex: 1 1 100%; order: 3; font-size: 0.98rem; }
   .cb-round-dot { width: 24px; height: 24px; font-size: 0.75rem; }
   /* Sized to its content, not the whole screen -- a two-line "are you
      sure?" blown up to full-bleed reads as something far more serious than

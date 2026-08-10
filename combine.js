@@ -49,7 +49,7 @@ const CB_SIZING = {
 // this level is where the two terms are introduced, and an abbreviation of
 // a word you have never seen is not a shorter version of it, it is a
 // different unknown.
-const SLOT_LABEL = { spec: 'Specifier', comp: 'Complement' };
+const SLOT_LABEL = { spec: 'Specifier', comp: 'Complement', head: 'Head' };
 
 class CombineEditor {
   constructor(svg) {
@@ -57,8 +57,10 @@ class CombineEditor {
     this.nodes = new Map();   // id -> node record (see _addTree)
     this.nextId = 1;
     this.seams = new Map();   // nodeId -> {parentId, index, role, accepts} -- what filling a slot consumed
-    this.drag = null;         // {rootId, grabX, grabY}
+    this.drag = null;         // {rootId, grabX, grabY} -- moving a whole piece around
+    this.moveDrag = null;     // {id, x, y} -- carrying a node already IN the tree to a landing site
     this.snapTarget = null;   // {pieceId, slotId} currently in range
+    this.silentNote = '';     // what to say when a silent head is tapped and there's no word to add
     this.snipMode = false;
     this.connectCount = 0;
     this.detachCount = 0;
@@ -113,15 +115,19 @@ class CombineEditor {
   // `pieces` is a list of {shape, number, children} trees, where a child may
   // instead be {slot:'spec'|'comp', accepts:['T1', ...]}. Each becomes one
   // freestanding component.
-  load(pieces) {
+  load(pieces, { silentNote = '' } = {}) {
     this.nodes = new Map();
     this.seams = new Map();
     this.nextId = 1;
     this.drag = null;
+    this.moveDrag = null;
+    this.silentNote = silentNote;
     this.snapTarget = null;
     this.snipMode = false;
     this.connectCount = 0;
     this.detachCount = 0;
+    this.moveCount = 0;
+    this.insertCount = 0;
     this.failedAttempts = 0;
     this.hintIds = null;
     // Words need much wider columns than bare numbers, and a sub-level
@@ -148,7 +154,13 @@ class CombineEditor {
       ? { id, slot: true, role: spec.slot, accepts: spec.accepts, parentId, childIds: [], x: 0, y: 0 }
       : {
           id, slot: false, catKey: spec.shape, number: spec.number,
-          word: spec.word, silent: spec.silent,
+          word: spec.word, silent: spec.silent, isTrace: spec.isTrace,
+          // Level 10 only. `movable` is what may be carried to a landing
+          // site, `mustMove` is what the round is not finished without, and
+          // `insertable` is a silent head that can have a word put into it
+          // (do-support). Absent everywhere in Level 9, which has no
+          // movement at all.
+          movable: spec.movable, mustMove: spec.mustMove, insertable: spec.insertable,
           parentId, childIds: [], x: 0, y: 0,
         };
     this.nodes.set(id, node);
@@ -376,6 +388,112 @@ class CombineEditor {
       : `${label} is now the complement of ${parentLabel}.`;
   }
 
+  // ---- movement (Level 10) ----
+  // Moving is the same gesture as connecting -- drag a thing into an empty
+  // position -- with one difference that is the entire point of the topic:
+  // what moved leaves a crossed-out copy of itself behind, so the tree
+  // still records where it started out.
+  //
+  // Landing sites are ordinary slots with an `accepts` list, so nothing
+  // here knows what a question is. A movement is legal when the slot takes
+  // this category AND sits in the same tree -- you cannot move something
+  // out of one piece into another that hasn't been joined on yet, which is
+  // what makes "build it first, then move" the only possible order.
+  fitsMove(nodeId, slotId) {
+    const node = this.node(nodeId), slot = this.node(slotId);
+    if (!node || !slot || !slot.slot || !node.movable || node.moved) return false;
+    if (node.parentId === null) return false;
+    if (this.rootOf(nodeId).id !== this.rootOf(slotId).id) return false;
+    if (this.subtree(nodeId).some(n => n.id === slotId)) return false;
+    return slot.accepts.includes(this.nodeKey(node));
+  }
+
+  landingSlotsFor(nodeId) {
+    return this.emptySlots().filter(s => this.fitsMove(nodeId, s.id));
+  }
+
+  // A deep copy of a subtree, marked all the way down as a trace: same
+  // shapes, same words, but pronounced nowhere.
+  _copyAsTrace(id) {
+    const src = this.node(id);
+    const copyId = this.nextId++;
+    const copy = {
+      id: copyId, slot: false, catKey: src.catKey, number: src.number,
+      word: src.word, silent: src.silent, isTrace: true,
+      parentId: null, childIds: [], x: 0, y: 0,
+    };
+    this.nodes.set(copyId, copy);
+    for (const cid of src.childIds) {
+      const childCopy = this._copyAsTrace(cid);
+      childCopy.parentId = copyId;
+      copy.childIds.push(childCopy.id);
+    }
+    return copy;
+  }
+
+  moveTo(nodeId, slotId) {
+    const node = this.node(nodeId), slot = this.node(slotId);
+    const home = this.node(node.parentId);
+    const homeIndex = home.childIds.indexOf(nodeId);
+    const landing = this.node(slot.parentId);
+    const landingIndex = landing.childIds.indexOf(slotId);
+
+    const trace = this._copyAsTrace(nodeId);
+    trace.parentId = home.id;
+    home.childIds[homeIndex] = trace.id;
+
+    landing.childIds[landingIndex] = nodeId;
+    node.parentId = landing.id;
+    node.moved = true;
+    node.traceId = trace.id;
+    this.nodes.delete(slotId);
+
+    this.seams.set(nodeId, {
+      kind: 'move', parentId: landing.id, index: landingIndex,
+      role: slot.role, accepts: slot.accepts,
+      traceId: trace.id, homeParentId: home.id, homeIndex,
+    });
+
+    this.moveCount = (this.moveCount || 0) + 1;
+    this.failedAttempts = 0;
+    this.hintIds = null;
+    this._layout();
+    const label = nodeLabel(node.catKey, node.number);
+    this.setFeedback(`${label} moved up, and left a crossed-out copy behind where it started.`, 'ok');
+    playClickSound();
+    if (this.onConnect) this.onConnect();
+    if (this.onChange) this.onChange();
+  }
+
+  // Put a silent head's word in. Do-support in everything but name: it only
+  // ever exists on a head the round has marked `insertable`, which is how
+  // the one place it is legal stays a property of the sentence rather than
+  // a rule in here. Adding `do` also takes the tense off the verb --
+  // "chased" becomes "chase" -- which is the whole reason it is needed.
+  insertWord(nodeId) {
+    const node = this.node(nodeId);
+    const spec = node.insertable;
+    if (!spec) return false;
+    node.word = spec.word;
+    node.silent = false;
+    node.movable = true;
+    node.insertable = null;
+    let note = `“${spec.word}” goes into the empty ${nodeLabel(node.catKey, node.number)}.`;
+    if (spec.verb) {
+      const verb = [...this.nodes.values()].find(n => n.catKey === 'V' && n.number === 2 && !n.isTrace);
+      if (verb) {
+        note += ` The tense goes with it, so “${verb.word}” drops back to “${spec.verb}”.`;
+        verb.word = spec.verb;
+      }
+    }
+    this.insertCount = (this.insertCount || 0) + 1;
+    this.setFeedback(note, 'ok');
+    playClickSound();
+    if (this.onConnect) this.onConnect();
+    if (this.onChange) this.onChange();
+    return true;
+  }
+
   hasSeam(id) { return this.seams.has(id); }
 
   // Put a connected piece back on the table, restoring the empty slot it
@@ -387,6 +505,10 @@ class CombineEditor {
       this.setFeedback('Nothing is plugged in there — tap a piece outlined in red.', 'err');
       return false;
     }
+    // Undoing a movement is not the same as pulling a piece off: what moved
+    // goes back where it came from and the crossed-out copy disappears,
+    // rather than the moved thing being left loose on the canvas.
+    if (seam.kind === 'move') return this._undoMove(id, seam);
     const slotId = this.nextId++;
     this.nodes.set(slotId, {
       id: slotId, slot: true, role: seam.role, accepts: seam.accepts,
@@ -408,8 +530,39 @@ class CombineEditor {
     return true;
   }
 
+  _undoMove(id, seam) {
+    const node = this.node(id);
+    // The landing site becomes an empty position again...
+    const slotId = this.nextId++;
+    this.nodes.set(slotId, {
+      id: slotId, slot: true, role: seam.role, accepts: seam.accepts,
+      parentId: seam.parentId, childIds: [], x: 0, y: 0,
+    });
+    this.node(seam.parentId).childIds[seam.index] = slotId;
+
+    // ...and the trace standing in for it is replaced by the real thing.
+    for (const n of this.subtree(seam.traceId)) this.nodes.delete(n.id);
+    this.node(seam.homeParentId).childIds[seam.homeIndex] = id;
+    node.parentId = seam.homeParentId;
+    node.moved = false;
+    node.traceId = null;
+
+    this.seams.delete(id);
+    this.moveCount = Math.max(0, (this.moveCount || 0) - 1);
+    this.failedAttempts = 0;
+    this.hintIds = null;
+    this._layout();
+    this.setFeedback('Moved back to where it started.', 'ok');
+    if (this.onChange) this.onChange();
+    return true;
+  }
+
   // ---- state the host asks about ----
   isOneTree() { return this.roots().length === 1; }
+  // Everything the round says has to move has moved.
+  allMoved() {
+    return [...this.nodes.values()].every(n => !n.mustMove || n.moved);
+  }
   isFullyFilled() { return this.emptySlots().length === 0; }
 
   // What the assembled tree actually spells out, left to right. Silent
@@ -422,7 +575,10 @@ class CombineEditor {
     if (roots.length !== 1) return [];
     const out = [];
     const walk = (n) => {
-      if (n.word && !n.silent) out.push(n.word);
+      // A trace is a copy of something pronounced somewhere else, so it
+      // contributes nothing here -- that is what makes moving a word
+      // change the sentence rather than duplicate a word in it.
+      if (n.word && !n.silent && !n.isTrace) out.push(n.word);
       n.childIds.forEach(cid => walk(this.node(cid)));
     };
     walk(roots[0]);
@@ -455,12 +611,73 @@ class CombineEditor {
       }
     }
 
+    // Movement sits UNDER the nodes, the way it's drawn on paper: the
+    // arrow dips below the tree so it never crosses a shape or a word.
+    for (const n of this.nodes.values()) {
+      if (n.moved && n.traceId && this.node(n.traceId)) edgeLayer.appendChild(this._buildMovement(this.node(n.traceId), n));
+    }
+
     for (const n of this.nodes.values()) {
       nodeLayer.appendChild(n.slot ? this._buildSlot(n) : this._buildNode(n));
     }
+    if (this.moveDrag) nodeLayer.appendChild(this._buildGhost());
 
     fitShapeLabels(nodeLayer);
     this._fitSlotLabels(nodeLayer);
+  }
+
+  _subtreeBox(id) {
+    const ns = this.subtree(id);
+    return {
+      minX: Math.min(...ns.map(n => n._x - this._halfWidth(n))) - 8,
+      maxX: Math.max(...ns.map(n => n._x + this._halfWidth(n))) + 8,
+      minY: Math.min(...ns.map(n => n._y)) - this.r - 8,
+      maxY: Math.max(...ns.map(n => n._y + this._bottom(n))) + 8,
+    };
+  }
+
+  // An arrow from the gap up to the landing site, dipping below both ends.
+  // Same drawing as Level 2 uses for the movement in its ready-made trees,
+  // so a student who has seen one recognises the other -- the difference is
+  // only that here they drew it themselves.
+  _buildMovement(trace, moved) {
+    const g = svgEl('g', { class: 'cb-move' });
+    const from = this._subtreeBox(trace.id);
+    const to = this._subtreeBox(moved.id);
+    // Ring both ends when a whole phrase moved, so it's clear what the
+    // arrow is carrying. A lone head needs no ring -- the arrow already
+    // points at exactly one shape at each end.
+    if (this.subtree(moved.id).length > 1) {
+      for (const b of [from, to]) {
+        g.appendChild(svgEl('rect', {
+          class: 'cb-move-ring', x: b.minX, y: b.minY,
+          width: b.maxX - b.minX, height: b.maxY - b.minY, rx: 22, fill: 'none',
+        }));
+      }
+    }
+    const fx = (from.minX + from.maxX) / 2, tx = (to.minX + to.maxX) / 2;
+    const dip = Math.max(from.maxY, to.maxY) + 54;
+    const fy = from.maxY + 4, ty = to.maxY + 4;
+    g.appendChild(svgEl('path', {
+      class: 'cb-move-arrow', fill: 'none',
+      d: `M ${fx} ${fy} C ${fx} ${dip}, ${tx} ${dip}, ${tx} ${ty}`,
+    }));
+    g.appendChild(svgEl('polygon', {
+      class: 'cb-move-head',
+      points: `${tx},${ty - 2} ${tx - 8},${ty + 12} ${tx + 8},${ty + 12}`,
+    }));
+    return g;
+  }
+
+  // What the finger is carrying during a move: just the shape, not the
+  // whole subtree. The tree itself stays put and laid out underneath, so
+  // there's always something to aim at.
+  _buildGhost() {
+    const n = this.node(this.moveDrag.id);
+    const g = buildShapeGroup(n.catKey, nodeLabel(n.catKey, n.number), this.r, 0.56);
+    g.setAttribute('class', 'tree-node cb-ghost');
+    g.setAttribute('transform', `translate(${this.moveDrag.x},${this.moveDrag.y})`);
+    return g;
   }
 
   _buildNode(n) {
@@ -469,9 +686,16 @@ class CombineEditor {
     // T") is unusable if the pieces are still called 1 and 1.5.
     const g = buildShapeGroup(n.catKey, nodeLabel(n.catKey, n.number), this.r, 0.56);
     const dragging = this.drag && this.rootOf(n.id).id === this.drag.rootId;
-    const hinted = !!this.hintIds && this.hintIds[0] === this.rootOf(n.id).id;
+    const hinted = !!this.hintIds && (this.hintIds[0] === n.id || this.hintIds[0] === this.rootOf(n.id).id);
     const snippable = this.snipMode && this.seams.has(n.id);
+    // Marked only once there is somewhere for it to go, so the halo doubles
+    // as "the tree is now built enough for this to move" -- which is the
+    // step order Level 10 depends on and would otherwise have to nag about.
+    const canMove = !this.snipMode && !n.moved && this.landingSlotsFor(n.id).length > 0;
     let cls = 'tree-node';
+    if (n.isTrace) cls += ' cb-trace';
+    if (n.insertable) cls += ' cb-insertable';
+    if (canMove) cls += ' cb-movable';
     if (dragging) cls += ' dragging';
     if (hinted) cls += ' hinted';
     if (this.snipMode) cls += snippable ? ' snippable' : ' snip-disabled';
@@ -489,24 +713,39 @@ class CombineEditor {
   // shows ∅, exactly as it does there.
   _buildWord(n) {
     const y = this.r + 12 + this.chipH / 2;
+    const cat = CATEGORIES[n.catKey];
     if (n.silent) {
-      const t = svgEl('text', { x: 0, y: y + 1 });
+      const t = svgEl('text', { x: 0, y: y + 1, class: 'cb-silent' });
       t.textContent = '∅';
-      t.style.cssText = `font-size:${this.wordFont}px; fill:#b7b0a2; text-anchor:middle; ` +
+      t.style.cssText = `font-size:${this.wordFont}px; text-anchor:middle; ` +
         'dominant-baseline:middle; pointer-events:none; user-select:none;';
       return t;
     }
     const g = svgEl('g', { transform: `translate(0,${y})` });
+    // A trace keeps the same box and the same text size as any other word
+    // -- it is the same word, said somewhere else -- but hollow and struck
+    // through rather than solid. Exactly Level 2's treatment, so the two
+    // levels agree about what a crossed-out copy looks like.
     g.appendChild(svgEl('rect', {
-      x: -this.chipW / 2, y: -this.chipH / 2, width: this.chipW, height: this.chipH,
-      rx: 10, fill: CATEGORIES[n.catKey].color,
+      x: -this.chipW / 2, y: -this.chipH / 2, width: this.chipW, height: this.chipH, rx: 10,
+      fill: n.isTrace ? '#fffdf9' : cat.color,
+      stroke: n.isTrace ? cat.color : 'none', 'stroke-width': n.isTrace ? 2.5 : 0,
     }));
     const t = svgEl('text', { x: 0, y: 1, class: 'cb-word-text' });
     t.textContent = n.word;
     t.dataset.room = this.chipW - 16;
-    t.style.cssText = `font-size:${this.wordFont}px; font-weight:700; fill:#fff; text-anchor:middle; ` +
+    t.style.cssText = `font-size:${this.wordFont}px; font-weight:700; ` +
+      `fill:${n.isTrace ? cat.color : '#fff'}; text-anchor:middle; ` +
       'dominant-baseline:middle; pointer-events:none; user-select:none;';
     g.appendChild(t);
+    if (n.isTrace) {
+      // An explicit line rather than text-decoration, so its length is tied
+      // to the box instead of to however the browser measures the glyphs.
+      g.appendChild(svgEl('line', {
+        x1: -this.chipW / 2 + 10, y1: 1, x2: this.chipW / 2 - 10, y2: 1,
+        stroke: cat.color, 'stroke-width': 2.5, 'stroke-linecap': 'round',
+      }));
+    }
     return g;
   }
 
@@ -623,6 +862,16 @@ class CombineEditor {
         }
         return;
       }
+      if (this.moveDrag) {
+        ev.preventDefault();
+        const p = this.toSvgPoint(ev.clientX, ev.clientY);
+        this.moveDrag.x = p.x;
+        this.moveDrag.y = p.y;
+        const slotId = this._landingUnder(this.moveDrag.id, p);
+        this.snapTarget = slotId ? { rootId: this.moveDrag.id, slotId } : null;
+        this.render();
+        return;
+      }
       if (!this.drag) return;
       ev.preventDefault();
       const p = this.toSvgPoint(ev.clientX, ev.clientY);
@@ -638,6 +887,16 @@ class CombineEditor {
 
     const releaseBg = (ev) => { if (this.bgPointers.delete(ev.pointerId)) this._restartBgGesture(); };
     const endDrag = () => {
+      if (this.moveDrag) {
+        const { id, x, y } = this.moveDrag;
+        this.moveDrag = null;
+        const slotId = this._landingUnder(id, { x, y });
+        if (slotId) this.moveTo(id, slotId);
+        else this._reportFailedMove(id);
+        this.snapTarget = null;
+        this.render();
+        return;
+      }
       if (!this.drag) return;
       const rootId = this.drag.rootId;
       this.drag = null;
@@ -679,6 +938,34 @@ class CombineEditor {
     if (this.failedAttempts >= HINT_AFTER_ATTEMPTS) this._offerHint();
   }
 
+  // The landing site nearest the finger. Measured from the pointer, not
+  // from the node being carried: during a move the node itself never leaves
+  // its place in the tree, so its own coordinates say nothing about where
+  // the student is aiming.
+  _landingUnder(nodeId, p) {
+    let best = null, bestDist = Infinity;
+    for (const slot of this.landingSlotsFor(nodeId)) {
+      const d = Math.hypot(p.x - slot._x, p.y - slot._y);
+      if (d < this.snapDistance && d < bestDist) { bestDist = d; best = slot.id; }
+    }
+    return best;
+  }
+
+  _reportFailedMove(id) {
+    const node = this.node(id);
+    const label = nodeLabel(node.catKey, node.number);
+    this.setFeedback(`${label} didn't land anywhere — drop it right on an empty position.`, 'err');
+    this.failedAttempts++;
+    if (this.failedAttempts >= HINT_AFTER_ATTEMPTS) {
+      const slots = this.landingSlotsFor(id);
+      if (slots.length) {
+        this.hintIds = [id, slots[0].id];
+        this.failedAttempts = 0;
+        this.setFeedback('That one goes in the glowing position — drop it right on top.', 'hint');
+      }
+    }
+  }
+
   _offerHint() {
     for (const root of this.roots()) {
       for (const slot of this.emptySlots()) {
@@ -700,10 +987,34 @@ class CombineEditor {
       if (this.detachAt(id)) this.setSnipMode(false, { keepFeedback: true });
       return;
     }
+    const n = this.node(id);
+
+    // A silent head that can take a word: tapping it puts the word in.
+    // That this comes before the drag is what enforces the real order --
+    // `do` is inserted in T and raised from there, never dropped straight
+    // into C, because until it has a word there is nothing to carry.
+    if (n.insertable && n.silent) { this.insertWord(id); return; }
+
+    // A silent head with no word to add. Saying nothing here would read as
+    // a broken tap on the one node a student is most likely to try, and in
+    // a subject question the reason is the lesson.
+    if (n.silent && this.silentNote) { this.setFeedback(this.silentNote, 'hint'); return; }
+
+    const p = this.toSvgPoint(ev.clientX, ev.clientY);
+
+    // Something that can move, and somewhere for it to go: carry it. If
+    // there is nowhere yet -- the piece it would land in hasn't been joined
+    // on -- this falls through and drags the whole piece instead, which is
+    // what the same press means everywhere else in the game.
+    if (this.landingSlotsFor(id).length) {
+      this.moveDrag = { id, x: p.x, y: p.y };
+      this.render();
+      return;
+    }
+
     // Whole pieces move, never a branch out of the middle of one -- taking
     // something apart is the scissors' job, and only the scissors'.
     const root = this.rootOf(id);
-    const p = this.toSvgPoint(ev.clientX, ev.clientY);
     this.drag = { rootId: root.id, grabX: p.x - root.x, grabY: p.y - root.y };
     this.render();
   }
