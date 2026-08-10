@@ -49,16 +49,25 @@ const CB_SIZING = {
 };
 
 // What a slot says on it. Kept as whole words rather than "Spec"/"Comp":
-// this level is where the two terms are introduced, and an abbreviation of
-// a word you have never seen is not a shorter version of it, it is a
-// different unknown.
+// Level 9 is where the terms are introduced, and an abbreviation of a word
+// you have never seen is not a shorter version of it, it is a different
+// unknown.
+//
+// Levels 11 and 12 run with `blankSlots`, where none of this is shown and
+// every empty position is an unmarked grey box -- by then, working out what
+// a position wants IS the exercise, and a label on it is the answer. The
+// text still exists for the one place it is still worth saying: the hint,
+// which writes it onto a single box after three wrong tries in a row.
+// How far a round is allowed to zoom out just to fit on opening. Below
+// this the shapes stop being tellable apart, and a view you cannot read is
+// not a view of anything.
+const CB_MIN_OPEN_ZOOM = 0.34;
+
 const SLOT_LABEL = {
   spec: 'Specifier', comp: 'Complement', head: 'Head',
-  // Levels 11-12 only, where a node arrives with nothing under it at all.
-  // "Bar level" is the layer the student has been calling 1.5 since Level
-  // 5; "Adjunct" is the one genuinely new term, and it arrives on the level
-  // whose whole job is putting adjectives, adverbs and prepositions in.
   bar: 'Bar level', adjunct: 'Adjunct',
+  // A head's own word, which in Levels 11-12 arrives as a separate piece.
+  word: 'Word',
 };
 
 class CombineEditor {
@@ -133,9 +142,10 @@ class CombineEditor {
   // behaves. Set, that safety net comes off, because a hint that rescues
   // you costs nothing and the whole point of a limit is that it costs
   // something.
-  load(pieces, { silentNote = '', lives = 0 } = {}) {
+  load(pieces, { silentNote = '', lives = 0, blankSlots = false } = {}) {
     this.lives = lives;
     this.livesLeft = lives;
+    this.blankSlots = blankSlots;
     this.nodes = new Map();
     this.seams = new Map();
     this.nextId = 1;
@@ -170,6 +180,14 @@ class CombineEditor {
   // Recursively materialise a spec tree into node records. Returns the id.
   _addTree(spec, parentId, index) {
     const id = this.nextId++;
+    // A bare word, with no category of its own: Levels 11 and 12 hand the
+    // words out as separate pieces, so that knowing "the" is a determiner
+    // is its own step rather than something the board has already done.
+    if (spec.word && !spec.shape) {
+      const w = { id, slot: false, isWord: true, word: spec.word, parentId, childIds: [], x: 0, y: 0 };
+      this.nodes.set(id, w);
+      return id;
+    }
     const node = spec.slot
       ? { id, slot: true, role: spec.slot, accepts: spec.accepts, parentId, childIds: [], x: 0, y: 0 }
       : {
@@ -237,19 +255,25 @@ class CombineEditor {
   // word has one hanging below it.
   _halfWidth(n) {
     if (n.slot) return this.slotW / 2;
+    if (n.isWord) return this.chipW / 2;
     if (n.word || n.silent) return Math.max(this.r, this.chipW / 2);
     return this.r;
   }
+  // A word piece is a chip centred on its own position; everything else is
+  // a shape of radius r, possibly with a word hanging under it.
+  _top(n) { return n.isWord ? this.chipH / 2 : this.r; }
   _bottom(n) {
+    if (n.isWord) return this.chipH / 2;
     return (n.word || n.silent) ? this.r + this.chipH + 14 : this.r;
   }
+  _edgeRadius(n) { return n.isWord ? this.chipH / 2 : this.r; }
 
   _componentBounds(rootId) {
     const ns = this.subtree(rootId);
     return {
       minX: Math.min(...ns.map(n => n._x - this._halfWidth(n))),
       maxX: Math.max(...ns.map(n => n._x + this._halfWidth(n))),
-      minY: Math.min(...ns.map(n => n._y - this.r)),
+      minY: Math.min(...ns.map(n => n._y - this._top(n))),
       maxY: Math.max(...ns.map(n => n._y + this._bottom(n))),
     };
   }
@@ -338,21 +362,35 @@ class CombineEditor {
       // piece dealt underneath them can be seen but not picked up, which on
       // a 30-node round means the puzzle simply cannot be finished.
       fitBoundsInView(this, this.contentBounds());
-      // A round small enough to fit twice over shouldn't open blown up past
-      // full size; re-centre by hand after capping, since the fit's own
-      // scroll was worked out for the bigger zoom.
-      if (this.zoom > 1) {
-        this.zoom = 1;
-        this.render();
-        const b = this.contentBounds();
-        wrap.scrollLeft = Math.max(0, b.minX - (wrap.clientWidth - (b.maxX - b.minX)) / 2);
-        wrap.scrollTop = Math.max(0, b.minY - (wrap.clientHeight - (b.maxY - b.minY)) / 2);
-      }
+      // Two ends to clamp. A round small enough to fit twice over shouldn't
+      // open blown up past full size. And a forty-piece round on a phone
+      // fits at about 13%, where a determiner phrase and a bar level are
+      // the same grey smudge -- "you can see all of it" stops being worth
+      // anything long before that, so below the floor it opens at the floor
+      // and on the top-left corner of the board instead, and the Fit button
+      // is there for whenever the whole thing is wanted.
+      const framed = Math.min(1, Math.max(CB_MIN_OPEN_ZOOM, this.zoom));
+      if (framed === this.zoom) return;
+      this.zoom = framed;
+      this.render();
+      const b = this.contentBounds();
+      const pad = 30;
+      const contentW = (b.maxX - b.minX) * this.zoom, contentH = (b.maxY - b.minY) * this.zoom;
+      wrap.scrollLeft = Math.max(0, contentW <= wrap.clientWidth
+        ? b.minX * this.zoom - (wrap.clientWidth - contentW) / 2
+        : (b.minX - pad) * this.zoom);
+      wrap.scrollTop = Math.max(0, contentH <= wrap.clientHeight
+        ? b.minY * this.zoom - (wrap.clientHeight - contentH) / 2
+        : (b.minY - pad) * this.zoom);
     });
   }
 
   // ---- connecting ----
-  nodeKey(n) { return `${n.catKey}${n.number}`; }
+  nodeKey(n) { return n.isWord ? `w:${n.word}` : `${n.catKey}${n.number}`; }
+
+  // What to call a piece in a message. A word is quoted; anything else gets
+  // the label it is wearing.
+  _pieceLabel(n) { return n.isWord ? `“${n.word}”` : nodeLabel(n.catKey, n.number); }
 
   // Can this freestanding piece fill this slot? Selection lives entirely in
   // the slot's own `accepts` list -- no grammar is hardcoded here.
@@ -401,11 +439,15 @@ class CombineEditor {
   // the thing being learned, so it is worth saying out loud every time.
   _connectMessage(rootId, role) {
     const root = this.node(rootId);
-    const parentLabel = nodeLabel(this.node(root.parentId).catKey, this.node(root.parentId).number);
-    const label = nodeLabel(root.catKey, root.number);
-    return role === 'spec'
-      ? `${label} is now the specifier of ${parentLabel}.`
-      : `${label} is now the complement of ${parentLabel}.`;
+    const parent = this.node(root.parentId);
+    const parentLabel = this._pieceLabel(parent);
+    const label = this._pieceLabel(root);
+    if (role === 'word') return `${label} is the word for ${parentLabel}.`;
+    if (role === 'spec') return `${label} is now the specifier of ${parentLabel}.`;
+    if (role === 'head') return `${label} is now the head of ${parentLabel}.`;
+    if (role === 'bar') return `${label} sits under ${parentLabel}.`;
+    if (role === 'adjunct') return `${label} is now an adjunct on ${parentLabel}.`;
+    return `${label} is now the complement of ${parentLabel}.`;
   }
 
   // ---- movement (Level 10) ----
@@ -626,7 +668,7 @@ class CombineEditor {
         const seam = this.snipMode && this.seams.has(cid);
         edgeLayer.appendChild(svgEl('path', {
           class: 'tree-edge' + (seam ? ' seam' : ''),
-          d: `M ${n._x} ${n._y + this.r} C ${n._x} ${(n._y + c._y) / 2}, ${c._x} ${(n._y + c._y) / 2}, ${c._x} ${c._y - this.r}`,
+          d: `M ${n._x} ${n._y + this._edgeRadius(n)} C ${n._x} ${(n._y + c._y) / 2}, ${c._x} ${(n._y + c._y) / 2}, ${c._x} ${c._y - this._edgeRadius(c)}`,
         }));
       }
     }
@@ -638,7 +680,7 @@ class CombineEditor {
     }
 
     for (const n of this.nodes.values()) {
-      nodeLayer.appendChild(n.slot ? this._buildSlot(n) : this._buildNode(n));
+      nodeLayer.appendChild(n.slot ? this._buildSlot(n) : n.isWord ? this._buildWordPiece(n) : this._buildNode(n));
     }
     if (this.moveDrag) nodeLayer.appendChild(this._buildGhost());
 
@@ -651,7 +693,7 @@ class CombineEditor {
     return {
       minX: Math.min(...ns.map(n => n._x - this._halfWidth(n))) - 8,
       maxX: Math.max(...ns.map(n => n._x + this._halfWidth(n))) + 8,
-      minY: Math.min(...ns.map(n => n._y)) - this.r - 8,
+      minY: Math.min(...ns.map(n => n._y - this._top(n))) - 8,
       maxY: Math.max(...ns.map(n => n._y + this._bottom(n))) + 8,
     };
   }
@@ -728,8 +770,41 @@ class CombineEditor {
     return g;
   }
 
+  // A word handed out as a piece of its own (Levels 11-12). Loose, it is a
+  // plain tile in the ink colour -- deliberately saying nothing about which
+  // category it belongs to, since that is the thing being asked. Dropped
+  // onto its head it takes that category's colour, which is the same
+  // "right answer" signal Level 2 gives.
+  _buildWordPiece(n) {
+    const parent = n.parentId === null ? null : this.node(n.parentId);
+    const colour = parent && parent.catKey ? CATEGORIES[parent.catKey].color : null;
+    const dragging = this.drag && this.rootOf(n.id).id === this.drag.rootId;
+    const hinted = !!this.hintIds && this.hintIds[0] === this.rootOf(n.id).id;
+    const g = svgEl('g', {
+      class: 'tree-node cb-word-piece' + (dragging ? ' dragging' : '') + (hinted ? ' hinted' : '') +
+        (this.snipMode ? (this.seams.has(n.id) ? ' snippable' : ' snip-disabled') : ''),
+      transform: `translate(${n._x},${n._y})`,
+    });
+    g.dataset.id = n.id;
+    g.appendChild(svgEl('rect', {
+      class: 'cb-word-box',
+      x: -this.chipW / 2, y: -this.chipH / 2, width: this.chipW, height: this.chipH, rx: 10,
+      fill: colour || '#fffdf9', stroke: colour || '#8a8375', 'stroke-width': colour ? 0 : 2.5,
+    }));
+    const t = svgEl('text', { x: 0, y: 1, class: 'cb-word-text' });
+    t.textContent = n.word;
+    t.dataset.room = this.chipW - 16;
+    t.style.cssText = `font-size:${this.wordFont}px; font-weight:700; ` +
+      `fill:${colour ? '#fff' : '#3b3a55'}; text-anchor:middle; ` +
+      'dominant-baseline:middle; pointer-events:none; user-select:none;';
+    g.appendChild(t);
+    g.addEventListener('pointerdown', (ev) => this._onNodePointerDown(ev, n.id));
+    return g;
+  }
+
   // The word a head is pronounced as, in the same box Level 2 uses so the
-  // two levels read as the same tree drawn twice. A tense with no auxiliary
+  // two levels read as the same tree drawn twice. Levels 9 and 10 only --
+  // there the word is part of the piece it came on. A tense with no auxiliary
   // shows ∅, exactly as it does there.
   _buildWord(n) {
     const y = this.r + 12 + this.chipH / 2;
@@ -782,11 +857,16 @@ class CombineEditor {
       class: 'cb-slot-box',
       x: -w / 2, y: -h / 2, width: w, height: h, rx: 12,
     }));
-    const t = svgEl('text', { x: 0, y: 1, class: 'cb-slot-text' });
-    t.textContent = SLOT_LABEL[n.role] || n.role;
-    t.dataset.room = w - 18;
-    t.style.fontSize = `${Math.round(this.r * 0.62)}px`;
-    g.appendChild(t);
+    // Blank unless this is the box the hint is pointing at. Writing the
+    // label onto exactly one box is the whole hint: it doesn't say which
+    // piece to bring, only what this position is waiting for.
+    if (!this.blankSlots || hinted) {
+      const t = svgEl('text', { x: 0, y: 1, class: 'cb-slot-text' });
+      t.textContent = SLOT_LABEL[n.role] || n.role;
+      t.dataset.room = w - 18;
+      t.style.fontSize = `${Math.round(this.r * 0.62)}px`;
+      g.appendChild(t);
+    }
     return g;
   }
 
@@ -948,10 +1028,17 @@ class CombineEditor {
 
     // Naming the piece and the position, but never what the slot wants:
     // working out what fits where is the entire level.
-    const label = nodeLabel(root.catKey, root.number);
-    const owner = nodeLabel(this.node(near.parentId).catKey, this.node(near.parentId).number);
-    const what = near.role === 'spec' ? 'the specifier of' : near.role === 'head' ? 'the head of' : 'the complement of';
-    if (!this.spendLife(`A ${label} can't be ${what} ${owner}.`)) return;
+    const label = this._pieceLabel(root);
+    const owner = this._pieceLabel(this.node(near.parentId));
+    let why;
+    if (near.role === 'word') why = `${label} isn't the word that goes on ${owner}.`;
+    else if (root.isWord) why = `${label} is a word — it goes on a piece, not into a branch.`;
+    else if (near.role === 'spec') why = `A ${label} can't be the specifier of ${owner}.`;
+    else if (near.role === 'head') why = `A ${label} can't be the head of ${owner}.`;
+    else if (near.role === 'bar') why = `A ${label} can't sit under ${owner}.`;
+    else if (near.role === 'adjunct') why = `A ${label} can't be an adjunct on ${owner}.`;
+    else why = `A ${label} can't be the complement of ${owner}.`;
+    if (!this.spendLife(why)) return;
 
     this.failedAttempts++;
     if (this.failedAttempts >= HINT_AFTER_ATTEMPTS) this._offerHint();
@@ -1005,9 +1092,16 @@ class CombineEditor {
     for (const root of this.roots()) {
       for (const slot of this.emptySlots()) {
         if (!this.fits(root.id, slot.id)) continue;
-        this.hintIds = [root.id, slot.id];
         this.failedAttempts = 0;
-        this.setFeedback('This one fits — drag the glowing piece into the glowing slot.', 'hint');
+        // Where the boxes are blank, the hint fills ONE of them in and
+        // leaves the piece alone: it says what that position is waiting
+        // for, and finding the thing that answers to that is still the
+        // student's job. Glowing the piece as well would just be the
+        // answer.
+        this.hintIds = this.blankSlots ? [null, slot.id] : [root.id, slot.id];
+        this.setFeedback(this.blankSlots
+          ? 'One of the empty boxes is now showing what it\'s waiting for.'
+          : 'This one fits — drag the glowing piece into the glowing slot.', 'hint');
         return true;
       }
     }
