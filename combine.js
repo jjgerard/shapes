@@ -84,7 +84,8 @@ class CombineEditor {
     this.onFeedback = null;
     this.onConnect = null;
     this.onSnipModeChange = null;
-    this.onStrictFail = null;   // a wrong join in a no-mistakes round
+    this.onLivesOut = null;     // the round's allowance of wrong joins is spent
+    this.onLivesChange = null;  // one has just been used up
 
     this._applySizing();
     this._bindGlobalPointerEvents();
@@ -126,12 +127,15 @@ class CombineEditor {
   // `pieces` is a list of {shape, number, children} trees, where a child may
   // instead be {slot:'spec'|'comp', accepts:['T1', ...]}. Each becomes one
   // freestanding component.
-  // `strict` is Levels 11 and 12: a round has to be done without a single
-  // wrong join, so the first illegal drop ends it and the host restarts.
-  // Hints are switched off with it -- they exist to rescue someone who has
-  // failed three times in a row, which can no longer happen.
-  load(pieces, { silentNote = '', strict = false } = {}) {
-    this.strict = strict;
+  // `lives` caps how many wrong joins a round survives. Left unset, wrong
+  // joins are simply corrected: refused, explained, and after three in a
+  // row a pair that fits starts glowing -- the way every level up to here
+  // behaves. Set, that safety net comes off, because a hint that rescues
+  // you costs nothing and the whole point of a limit is that it costs
+  // something.
+  load(pieces, { silentNote = '', lives = 0 } = {}) {
+    this.lives = lives;
+    this.livesLeft = lives;
     this.nodes = new Map();
     this.seams = new Map();
     this.nextId = 1;
@@ -145,7 +149,6 @@ class CombineEditor {
     this.moveCount = 0;
     this.insertCount = 0;
     this.failedAttempts = 0;
-    this.strictFailed = false;
     this.hintIds = null;
     // Words need much wider columns than bare numbers, and a sub-level
     // either has them throughout or not at all, so this is decided once for
@@ -948,19 +951,26 @@ class CombineEditor {
     const label = nodeLabel(root.catKey, root.number);
     const owner = nodeLabel(this.node(near.parentId).catKey, this.node(near.parentId).number);
     const what = near.role === 'spec' ? 'the specifier of' : near.role === 'head' ? 'the head of' : 'the complement of';
-    this.setFeedback(`A ${label} can't be ${what} ${owner}.`, 'err');
+    if (!this.spendLife(`A ${label} can't be ${what} ${owner}.`)) return;
 
-    if (this.strict) { this._failStrict(); return; }
     this.failedAttempts++;
     if (this.failedAttempts >= HINT_AFTER_ATTEMPTS) this._offerHint();
   }
 
-  // One wrong join ends a strict round. The host hears about it through
-  // onStrictFail and deals it again; saying what was wrong first, and only
-  // then restarting, is what keeps it from feeling arbitrary.
-  _failStrict() {
-    this.strictFailed = true;
-    if (this.onStrictFail) this.onStrictFail();
+  // Charge a wrong move against the round's allowance and say what it cost.
+  // Returns false once they've run out, so callers stop there. With no
+  // allowance set this is just "say what was wrong", which is what the
+  // earlier levels do.
+  spendLife(message) {
+    if (!this.lives) { this.setFeedback(message, 'err'); return true; }
+    this.livesLeft = Math.max(0, this.livesLeft - 1);
+    const spent = this.livesLeft === 0;
+    this.setFeedback(spent
+      ? `${message} That was the last try.`
+      : `${message} ${this.livesLeft} ${this.livesLeft === 1 ? 'try' : 'tries'} left.`, 'err');
+    if (this.onLivesChange) this.onLivesChange();
+    if (spent && this.onLivesOut) this.onLivesOut();
+    return !spent;
   }
 
   // The landing site nearest the finger. Measured from the pointer, not
