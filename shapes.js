@@ -75,11 +75,33 @@ const SHAPE_TEXT_ROOM = {
   star: 0.42, heart: 0.70, pentagon: 0.76, diamond: 0.68,
 };
 
+// How far a shape's outermost points sit from its centre, and where that
+// centre actually is, as fractions of r. Used for the invisible grab disc
+// below -- so it is the shape's own reach, not a guess.
+const SHAPE_REACH = {
+  triangle: { r: 1.15, cy: 0.08 }, star: { r: 1.15, cy: 0 },
+  pentagon: { r: 1.12, cy: 0.06 }, diamond: { r: 1.2, cy: 0 },
+  rectangle: { r: 1.35, cy: 0 }, square: { r: 1.05, cy: 0 },
+  circle: { r: 1.0, cy: 0 }, heart: { r: 1.0, cy: 0 },
+};
+
 function buildShapeGroup(categoryKey, number, r = 26, fontScale = 0.5) {
   const cat = CATEGORIES[categoryKey];
   const g = svgEl('g');
   g.dataset.shape = cat.shape;
   g.dataset.r = r;
+  // An invisible disc reaching out to the shape's own points, sitting under
+  // the silhouette and catching presses for it. A triangle is the reason:
+  // a third of its bounding box is actual triangle, and the two bottom
+  // corners of that box -- a good half of where a finger lands when aiming
+  // at "the blue one" -- are empty canvas, so the press panned the board
+  // instead of picking the node up. Stars have the same problem worse.
+  // Drawn first so the real shape still paints over it.
+  const reach = SHAPE_REACH[cat.shape] || { r: 1.1, cy: 0 };
+  g.appendChild(svgEl('circle', {
+    class: 'node-hit', cx: 0, cy: r * reach.cy, r: r * reach.r,
+    fill: 'transparent', stroke: 'none',
+  }));
   const shapeEl = SHAPE_FACTORY[cat.shape](r);
   shapeEl.setAttribute('class', 'node-shape');
   shapeEl.setAttribute('fill', cat.color);

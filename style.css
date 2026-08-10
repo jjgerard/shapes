@@ -368,6 +368,10 @@ button { font-family: inherit; cursor: pointer; }
 
 /* svg node styling */
 .tree-node { cursor: grab; touch-action: none; }
+/* The invisible grab disc built into every node group (buildShapeGroup in
+   shapes.js). `all` rather than relying on a transparent fill being treated
+   as painted, which is exactly the kind of thing browsers disagree about. */
+.node-hit { pointer-events: all; }
 .tree-node .node-shape { stroke: rgba(0,0,0,0.25); stroke-width: 1.5; transition: stroke .1s, stroke-width .1s, filter .1s; }
 .tree-node.dragging { cursor: grabbing; }
 .tree-node.dragging .node-shape { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25)); }
