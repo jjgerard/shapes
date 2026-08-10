@@ -58,17 +58,17 @@ const CB_SIZING = {
 // a position wants IS the exercise, and a label on it is the answer. The
 // text still exists for the one place it is still worth saying: the hint,
 // which writes it onto a single box after three wrong tries in a row.
-// How far a round is allowed to zoom out just to fit on opening. Below
-// this the shapes stop being tellable apart, and a view you cannot read is
-// not a view of anything.
-const CB_MIN_OPEN_ZOOM = 0.34;
-
 const SLOT_LABEL = {
   spec: 'Specifier', comp: 'Complement', head: 'Head',
   bar: 'Bar level', adjunct: 'Adjunct',
   // A head's own word, which in Levels 11-12 arrives as a separate piece.
   word: 'Word',
 };
+
+// How far a round is allowed to zoom out just to fit on opening. Below this
+// the shapes stop being tellable apart, and a view you cannot read is not a
+// view of anything.
+const CB_MIN_OPEN_ZOOM = 0.34;
 
 class CombineEditor {
   constructor(svg) {
@@ -474,6 +474,23 @@ class CombineEditor {
     return this.emptySlots().filter(s => this.fitsMove(nodeId, s.id));
   }
 
+  // The thing a press at this node would move: the node itself if it can
+  // move, otherwise the nearest thing above it that can.
+  //
+  // This is what makes "drag the constituent" true rather than "drag the
+  // one node at the top of the constituent". A wh-phrase is a DP with five
+  // nodes and two words under it, and the obvious thing to take hold of is
+  // the word, or the noun -- not the DP label three rows up. Grabbing any
+  // of them now picks up the whole phrase.
+  movingPieceFor(nodeId) {
+    let n = this.node(nodeId);
+    while (n) {
+      if (n.movable && !n.moved && this.landingSlotsFor(n.id).length) return n;
+      n = n.parentId === null ? null : this.node(n.parentId);
+    }
+    return null;
+  }
+
   // A deep copy of a subtree, marked all the way down as a trace: same
   // shapes, same words, but pronounced nowhere.
   _copyAsTrace(id) {
@@ -731,14 +748,35 @@ class CombineEditor {
     return g;
   }
 
-  // What the finger is carrying during a move: just the shape, not the
-  // whole subtree. The tree itself stays put and laid out underneath, so
-  // there's always something to aim at.
+  // What the finger is carrying during a move: the WHOLE constituent, drawn
+  // as a see-through copy following the hand. Carrying only the top node
+  // was the root of the problem -- a wh-phrase is five nodes and two words,
+  // and a lone circle floating off the top of it does not read as "this
+  // phrase is moving". The tree itself stays put and laid out underneath,
+  // so there is always something to aim at.
   _buildGhost() {
-    const n = this.node(this.moveDrag.id);
-    const g = buildShapeGroup(n.catKey, nodeLabel(n.catKey, n.number), this.r, 0.56);
-    g.setAttribute('class', 'tree-node cb-ghost');
-    g.setAttribute('transform', `translate(${this.moveDrag.x},${this.moveDrag.y})`);
+    const src = this.node(this.moveDrag.id);
+    const dx = this.moveDrag.x - src._x, dy = this.moveDrag.y - src._y;
+    const g = svgEl('g', { class: 'cb-ghost' });
+    const kids = this.subtree(src.id);
+
+    for (const n of kids) {
+      for (const cid of n.childIds) {
+        const c = this.node(cid);
+        g.appendChild(svgEl('path', {
+          class: 'tree-edge',
+          d: `M ${n._x + dx} ${n._y + dy + this._edgeRadius(n)} C ${n._x + dx} ${(n._y + c._y) / 2 + dy}, ` +
+             `${c._x + dx} ${(n._y + c._y) / 2 + dy}, ${c._x + dx} ${c._y + dy - this._edgeRadius(c)}`,
+        }));
+      }
+    }
+    for (const n of kids) {
+      if (n.slot) continue;   // an empty position travels as a gap, not a box
+      const el = n.isWord ? this._buildWordPiece(n) : this._buildNode(n);
+      el.setAttribute('transform', `translate(${n._x + dx},${n._y + dy})`);
+      el.removeAttribute('data-id');
+      g.appendChild(el);
+    }
     return g;
   }
 
@@ -753,7 +791,9 @@ class CombineEditor {
     // Marked only once there is somewhere for it to go, so the halo doubles
     // as "the tree is now built enough for this to move" -- which is the
     // step order Level 10 depends on and would otherwise have to nag about.
-    const canMove = !this.snipMode && !n.moved && this.landingSlotsFor(n.id).length > 0;
+    // Every node in the constituent wears it, not just the one at the top,
+    // because every one of them can now be grabbed to move the whole thing.
+    const canMove = !this.snipMode && !n.moved && !!this.movingPieceFor(n.id);
     let cls = 'tree-node';
     if (n.isTrace) cls += ' cb-trace';
     if (n.insertable) cls += ' cb-insertable';
@@ -965,9 +1005,11 @@ class CombineEditor {
       if (this.moveDrag) {
         ev.preventDefault();
         const p = this.toSvgPoint(ev.clientX, ev.clientY);
-        this.moveDrag.x = p.x;
-        this.moveDrag.y = p.y;
-        const slotId = this._landingUnder(this.moveDrag.id, p);
+        this.moveDrag.px = p.x;
+        this.moveDrag.py = p.y;
+        this.moveDrag.x = p.x - this.moveDrag.grabX;
+        this.moveDrag.y = p.y - this.moveDrag.grabY;
+        const slotId = this._landingUnder(this.moveDrag.id, this.moveDrag);
         this.snapTarget = slotId ? { rootId: this.moveDrag.id, slotId } : null;
         this.render();
         return;
@@ -988,9 +1030,10 @@ class CombineEditor {
     const releaseBg = (ev) => { if (this.bgPointers.delete(ev.pointerId)) this._restartBgGesture(); };
     const endDrag = () => {
       if (this.moveDrag) {
-        const { id, x, y } = this.moveDrag;
+        const drag = this.moveDrag;
+        const id = drag.id;
         this.moveDrag = null;
-        const slotId = this._landingUnder(id, { x, y });
+        const slotId = this._landingUnder(id, drag);
         if (slotId) this.moveTo(id, slotId);
         else this._reportFailedMove(id);
         this.snapTarget = null;
@@ -1077,15 +1120,19 @@ class CombineEditor {
     return best;
   }
 
-  // The landing site nearest the finger. Measured from the pointer, not
-  // from the node being carried: during a move the node itself never leaves
-  // its place in the tree, so its own coordinates say nothing about where
-  // the student is aiming.
-  _landingUnder(nodeId, p) {
+  // The landing site being aimed at. Two things count as aiming, because
+  // two mental models are both reasonable with a whole phrase in hand: the
+  // finger over the empty position, and the phrase itself lined up on it.
+  // Whichever is closer wins, and the reach is wider than a plain
+  // connection's because what is being aimed IS bigger.
+  _landingUnder(nodeId, drag) {
+    const reach = this.snapDistance * 1.4;
     let best = null, bestDist = Infinity;
     for (const slot of this.landingSlotsFor(nodeId)) {
-      const d = Math.hypot(p.x - slot._x, p.y - slot._y);
-      if (d < this.snapDistance && d < bestDist) { bestDist = d; best = slot.id; }
+      const d = Math.min(
+        Math.hypot(drag.x - slot._x, drag.y - slot._y),
+        Math.hypot((drag.px ?? drag.x) - slot._x, (drag.py ?? drag.y) - slot._y));
+      if (d < reach && d < bestDist) { bestDist = d; best = slot.id; }
     }
     return best;
   }
@@ -1152,8 +1199,13 @@ class CombineEditor {
     // there is nowhere yet -- the piece it would land in hasn't been joined
     // on -- this falls through and drags the whole piece instead, which is
     // what the same press means everywhere else in the game.
-    if (this.landingSlotsFor(id).length) {
-      this.moveDrag = { id, x: p.x, y: p.y };
+    const mover = this.movingPieceFor(id);
+    if (mover) {
+      // The constituent comes away under the finger where it was grabbed,
+      // rather than snapping its top node to the pointer -- picking a
+      // phrase up by its noun shouldn't make it jump.
+      this.moveDrag = { id: mover.id, x: mover._x, y: mover._y, px: p.x, py: p.y,
+                        grabX: p.x - mover._x, grabY: p.y - mover._y };
       this.render();
       return;
     }
