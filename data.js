@@ -935,20 +935,24 @@ function explodeNodes(root) {
 //
 // A SUBJECT question has no do-support and no auxiliary in C: it is "Who
 // chased the mouse?", never "*Who did chase the mouse?" -- so the rounds in
-// `Subject Questions` leave T silent and non-insertable, and C empty. An
-// OBJECT question has both. That contrast is the most valuable thing in the
-// level, so tapping the silent T in a subject question says why nothing
-// happens instead of doing nothing (see `silentNote`): `do` is a last
-// resort, and it appears only when something has to move past the subject.
+// `Subject Questions` leave T silent, with no word offered anywhere on the
+// board to put in it, and C empty. An OBJECT question has both. That
+// contrast is the most valuable thing in the level, so tapping the silent T
+// in a subject question says why nothing happens instead of doing nothing
+// (see `silentNote`): `do` is a last resort, and it turns up only when
+// something has to move past the subject.
 // ===========================================================================
 
-// The CP that turns a statement into a question: an empty specifier for a
-// wh-phrase to front into, an empty head for an auxiliary to raise into,
-// and a complement waiting for the statement itself.
-function mvCP() {
+// The CP that turns a statement into a question, with the statement already
+// sitting in its complement. Joining those two was a Level 9 move and this
+// is not Level 9: making it the first step of every round here spent a drag
+// on the one thing the student had already proved. What is left open is
+// what this level is about -- an empty specifier for a wh-phrase to front
+// into, and an empty head for an auxiliary to raise into.
+function mvCP(tp) {
   return { shape: 'C', number: 1, children: [
     SPEC(['D1']),
-    { shape: 'C', number: 1.5, children: [ HEAD(['T2']), COMP(['T1']) ] },
+    { shape: 'C', number: 1.5, children: [ HEAD(['T2']), tp ] },
   ] };
 }
 
@@ -969,10 +973,16 @@ function mvTP({ t0, subject, verb, object }) {
   ] };
 }
 
-// A tense with no auxiliary of its own, which CAN take `do` -- and, when it
-// does, takes the tense off the verb with it ("chased" becomes "chase").
-const mvSilentT = (word, verb) =>
-  ({ shape: 'T', number: 2, children: [], silent: true, mustMove: true, insertable: { word, verb } });
+// A tense with no auxiliary of its own, standing open. The word that fills
+// it is loose on the board -- see mvDoWord -- exactly as Level 2 hands its
+// words out, and until it is in there is nothing to raise, which is the
+// whole reason do-support exists.
+const mvDoT = (word) =>
+  ({ shape: 'T', number: 2, children: [ { slot: 'word', accepts: [`w:${word}`] } ],
+     mustMove: true, movableWhenFilled: true });
+// ...and the word itself, which takes the tense off the verb as it lands:
+// "chased" drops back to "chase" the moment "did" turns up to carry it.
+const mvDoWord = (word, verb) => ({ word, retense: verb });
 // A tense with no auxiliary that stays silent and stays put: a subject
 // question has nothing for `do` to do.
 const mvBareT = () => ({ shape: 'T', number: 2, children: [], silent: true });
@@ -991,24 +1001,29 @@ const XBAR_LEVEL10 = [
   {
     id: 'move-yesno',
     name: 'Yes/No Questions',
-    description: 'Put a CP on top of a statement, and raise the tense into it.',
+    description: 'Raise the tense into the empty head at the top.',
     goal: 'question',
     rounds: [
       {
         sentence: 'did the cat chase the mouse',
-        hint: 'Join the two pieces first. Then tap the empty tense to give it a word, and carry that word up into the empty head above it.',
-        pieces: [ mvCP(), mvTP({
-          t0: mvSilentT('did', 'chase'),
+        hint: 'The tense has no word of its own, and one is waiting on the board. Drag it in, then carry the tense up into the empty head above it.',
+        // The loose word is dealt FIRST so it lands at the top-left of the
+        // board. A round this size opens panned rather than fully framed,
+        // and the opening view anchors on that corner -- dealt last, the one
+        // piece the student is being told to go and find was the one piece
+        // off the edge of the screen.
+        pieces: [ mvDoWord('did', 'chase'), mvCP(mvTP({
+          t0: mvDoT('did'),
           subject: cbDP('the', 'cat'), verb: 'chased', object: cbDP('the', 'mouse'),
-        }) ],
+        })) ],
       },
       {
         sentence: 'will the dog chase the cat',
-        hint: 'This one already has an auxiliary, so there is nothing to add — it just has to get up to the top.',
-        pieces: [ mvCP(), mvTP({
+        hint: 'This one already has an auxiliary, so there is no word to add — it just has to get up to the top.',
+        pieces: [ mvCP(mvTP({
           t0: mvAux('will', { moves: true }),
           subject: cbDP('the', 'dog'), verb: 'chase', object: cbDP('the', 'cat'),
-        }) ],
+        })) ],
       },
     ],
   },
@@ -1021,21 +1036,21 @@ const XBAR_LEVEL10 = [
     rounds: [
       {
         sentence: 'which cat chased the mouse',
-        hint: 'Join the pieces, then carry the subject up into the empty specifier. The tense stays exactly where it is.',
-        pieces: [ mvCP(), mvTP({
+        hint: 'Carry the subject up into the empty specifier. The tense stays exactly where it is.',
+        pieces: [ mvCP(mvTP({
           t0: mvBareT(),
           subject: cbDP('which', 'cat', { movable: true, mustMove: true }),
           verb: 'chased', object: cbDP('the', 'mouse'),
-        }) ],
+        })) ],
       },
       {
         sentence: 'which dog will chase the cat',
         hint: 'There is an auxiliary this time, and it still does not move. Only the subject does.',
-        pieces: [ mvCP(), mvTP({
+        pieces: [ mvCP(mvTP({
           t0: mvAux('will'),
           subject: cbDP('which', 'dog', { movable: true, mustMove: true }),
           verb: 'chase', object: cbDP('the', 'cat'),
-        }) ],
+        })) ],
       },
     ],
   },
@@ -1047,21 +1062,21 @@ const XBAR_LEVEL10 = [
     rounds: [
       {
         sentence: 'which mouse did the cat chase',
-        hint: 'Two moves this time: the object has to get to the front, and the tense has to get past the subject — which is exactly when “do” is needed.',
-        pieces: [ mvCP(), mvTP({
-          t0: mvSilentT('did', 'chase'),
+        hint: 'Two moves this time: the object has to get to the front, and the tense has to get past the subject — which is exactly when the loose word is needed.',
+        pieces: [ mvDoWord('did', 'chase'), mvCP(mvTP({
+          t0: mvDoT('did'),
           subject: cbDP('the', 'cat'), verb: 'chased',
           object: cbDP('which', 'mouse', { movable: true, mustMove: true }),
-        }) ],
+        })) ],
       },
       {
         sentence: 'which cat will the dog chase',
         hint: 'Same two moves, but the auxiliary is already there, so nothing needs adding.',
-        pieces: [ mvCP(), mvTP({
+        pieces: [ mvCP(mvTP({
           t0: mvAux('will', { moves: true }),
           subject: cbDP('the', 'dog'), verb: 'chase',
           object: cbDP('which', 'cat', { movable: true, mustMove: true }),
-        }) ],
+        })) ],
       },
     ],
   },

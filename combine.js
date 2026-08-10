@@ -157,7 +157,6 @@ class CombineEditor {
     this.connectCount = 0;
     this.detachCount = 0;
     this.moveCount = 0;
-    this.insertCount = 0;
     this.failedAttempts = 0;
     this.hintIds = null;
     // Words need much wider columns than bare numbers, and a sub-level
@@ -184,7 +183,8 @@ class CombineEditor {
     // words out as separate pieces, so that knowing "the" is a determiner
     // is its own step rather than something the board has already done.
     if (spec.word && !spec.shape) {
-      const w = { id, slot: false, isWord: true, word: spec.word, parentId, childIds: [], x: 0, y: 0 };
+      const w = { id, slot: false, isWord: true, word: spec.word, retense: spec.retense,
+                  parentId, childIds: [], x: 0, y: 0 };
       this.nodes.set(id, w);
       return id;
     }
@@ -194,11 +194,13 @@ class CombineEditor {
           id, slot: false, catKey: spec.shape, number: spec.number,
           word: spec.word, silent: spec.silent, isTrace: spec.isTrace,
           // Level 10 only. `movable` is what may be carried to a landing
-          // site, `mustMove` is what the round is not finished without, and
-          // `insertable` is a silent head that can have a word put into it
-          // (do-support). Absent everywhere in Level 9, which has no
-          // movement at all.
-          movable: spec.movable, mustMove: spec.mustMove, insertable: spec.insertable,
+          // site and `mustMove` is what the round is not finished without.
+          // Absent in Level 9, which has no movement at all.
+          movable: spec.movable, mustMove: spec.mustMove,
+          // A head that can only move once it has a word in it (see mvDoT
+          // in data.js): raising an empty tense is precisely the thing
+          // English can't do, which is why do-support exists.
+          movableWhenFilled: spec.movableWhenFilled,
           parentId, childIds: [], x: 0, y: 0,
         };
     this.nodes.set(id, node);
@@ -424,11 +426,27 @@ class CombineEditor {
     this.node(rootId).parentId = parent.id;
     this.nodes.delete(slotId);
 
+    let extra = '';
+    if (slot.role === 'word') {
+      // A head that was waiting for a word can move now that it has one.
+      if (parent.movableWhenFilled) parent.movable = true;
+      // And the word takes the tense off the verb as it lands: "chased"
+      // drops back to "chase" the moment "did" turns up to carry it.
+      const root = this.node(rootId);
+      if (root.retense) {
+        const verb = [...this.nodes.values()].find(n => n.catKey === 'V' && n.number === 2 && !n.isTrace);
+        if (verb && verb.word !== root.retense) {
+          extra = ` The tense goes with it, so “${verb.word}” drops back to “${root.retense}”.`;
+          verb.word = root.retense;
+        }
+      }
+    }
+
     this.connectCount++;
     this.failedAttempts = 0;
     this.hintIds = null;
     this._layout();
-    this.setFeedback(this._connectMessage(rootId, slot.role), 'ok');
+    this.setFeedback(this._connectMessage(rootId, slot.role) + extra, 'ok');
     playClickSound();
     if (this.onConnect) this.onConnect();
     if (this.onChange) this.onChange();
@@ -498,7 +516,7 @@ class CombineEditor {
     const copyId = this.nextId++;
     const copy = {
       id: copyId, slot: false, catKey: src.catKey, number: src.number,
-      word: src.word, silent: src.silent, isTrace: true,
+      word: src.word, silent: src.silent, isWord: src.isWord, isTrace: true,
       parentId: null, childIds: [], x: 0, y: 0,
     };
     this.nodes.set(copyId, copy);
@@ -542,35 +560,6 @@ class CombineEditor {
     playClickSound();
     if (this.onConnect) this.onConnect();
     if (this.onChange) this.onChange();
-  }
-
-  // Put a silent head's word in. Do-support in everything but name: it only
-  // ever exists on a head the round has marked `insertable`, which is how
-  // the one place it is legal stays a property of the sentence rather than
-  // a rule in here. Adding `do` also takes the tense off the verb --
-  // "chased" becomes "chase" -- which is the whole reason it is needed.
-  insertWord(nodeId) {
-    const node = this.node(nodeId);
-    const spec = node.insertable;
-    if (!spec) return false;
-    node.word = spec.word;
-    node.silent = false;
-    node.movable = true;
-    node.insertable = null;
-    let note = `“${spec.word}” goes into the empty ${nodeLabel(node.catKey, node.number)}.`;
-    if (spec.verb) {
-      const verb = [...this.nodes.values()].find(n => n.catKey === 'V' && n.number === 2 && !n.isTrace);
-      if (verb) {
-        note += ` The tense goes with it, so “${verb.word}” drops back to “${spec.verb}”.`;
-        verb.word = spec.verb;
-      }
-    }
-    this.insertCount = (this.insertCount || 0) + 1;
-    this.setFeedback(note, 'ok');
-    playClickSound();
-    if (this.onConnect) this.onConnect();
-    if (this.onChange) this.onChange();
-    return true;
   }
 
   hasSeam(id) { return this.seams.has(id); }
@@ -723,10 +712,12 @@ class CombineEditor {
     const g = svgEl('g', { class: 'cb-move' });
     const from = this._subtreeBox(trace.id);
     const to = this._subtreeBox(moved.id);
-    // Ring both ends when a whole phrase moved, so it's clear what the
-    // arrow is carrying. A lone head needs no ring -- the arrow already
-    // points at exactly one shape at each end.
-    if (this.subtree(moved.id).length > 1) {
+    // Ring both ends when a whole PHRASE moved, so it's clear what the
+    // arrow is carrying. A head needs no ring even though it travels with
+    // its word: the arrow already points at exactly one shape at each end,
+    // and ringing that too would say a head and a phrase are the same kind
+    // of thing to move.
+    if (moved.number === PHRASE_NUMBER) {
       for (const b of [from, to]) {
         g.appendChild(svgEl('rect', {
           class: 'cb-move-ring', x: b.minX, y: b.minY,
@@ -796,7 +787,7 @@ class CombineEditor {
     const canMove = !this.snipMode && !n.moved && !!this.movingPieceFor(n.id);
     let cls = 'tree-node';
     if (n.isTrace) cls += ' cb-trace';
-    if (n.insertable) cls += ' cb-insertable';
+    if (n.movableWhenFilled && !n.movable) cls += ' cb-insertable';
     if (canMove) cls += ' cb-movable';
     if (dragging) cls += ' dragging';
     if (hinted) cls += ' hinted';
@@ -1182,11 +1173,14 @@ class CombineEditor {
     }
     const n = this.node(id);
 
-    // A silent head that can take a word: tapping it puts the word in.
-    // That this comes before the drag is what enforces the real order --
-    // `do` is inserted in T and raised from there, never dropped straight
-    // into C, because until it has a word there is nothing to carry.
-    if (n.insertable && n.silent) { this.insertWord(id); return; }
+    // A head still waiting for its word. Saying so is what keeps the order
+    // right without a rule enforcing it: the word goes into T and is raised
+    // from there, never dropped straight into C, because until T has a word
+    // there is nothing to carry.
+    if (n.movableWhenFilled && !n.movable) {
+      this.setFeedback(`${this._pieceLabel(n)} has no word in it yet — there's nothing to carry up.`, 'hint');
+      return;
+    }
 
     // A silent head with no word to add. Saying nothing here would read as
     // a broken tap on the one node a student is most likely to try, and in

@@ -218,7 +218,7 @@ const COMBINE_KINDS = {
   },
   movement: {
     modeKey: 'level10', help: 'movement',
-    intro: 'Each round starts as a statement with an empty piece to go on top of it. Build it, then move pieces up the tree to turn it into a question — what moves leaves a crossed-out copy behind.',
+    intro: 'Each round starts as a finished statement with an empty piece already on top of it. Move things up the tree to turn it into a question — what moves leaves a crossed-out copy behind where it started.',
   },
   nodes: {
     modeKey: 'level11', help: 'nodes', blankSlots: true,
@@ -538,16 +538,21 @@ const HELP = {
   movement: {
     title: 'Level 10 — Moving',
     html: `<ul>
-      <li>Each round starts as a <strong>statement</strong> plus one empty piece to go on
-          top of it. Join them together first &mdash; until you do, there's nowhere for
-          anything to move to.</li>
+      <li>Each round starts as a finished <strong>statement</strong> with an empty piece
+          already on top of it. Your job is to move things up into that piece until it
+          reads as a question.</li>
       <li>A piece with a <strong>dashed outline</strong> can move. Drag it onto an empty
           position higher up the tree.</li>
       <li>What moves <strong>leaves a crossed-out copy behind</strong>, and an arrow shows
           where it came from. That copy isn't said out loud &mdash; it's just the record of
           where the piece started.</li>
-      <li>A piece marked <strong>∅</strong> is a word slot with nothing in it. If it has a
-          solid outline, <strong>tap it</strong> to put a word in.</li>
+      <li>You can take hold of a phrase <strong>anywhere inside it</strong> &mdash; a word,
+          a piece near the bottom, anywhere. The whole phrase comes with you.</li>
+      <li>Sometimes a <strong>loose word</strong> is waiting on the board and a piece has an
+          empty box under it. Drag the word in first &mdash; a piece with nothing in it has
+          nothing to carry upwards.</li>
+      <li>A piece marked <strong>∅</strong> has no word at all and never will. Tap it and
+          it'll tell you why.</li>
       <li>Changed your mind? Tap the <strong>✂️ scissors</strong>, then tap a piece outlined
           in red to send it back where it came from.</li>
       ${CANVAS_HELP}
