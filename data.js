@@ -72,17 +72,12 @@ const SHAPE_HINTS = {
   Adv: 'Describes how, when or where something happens -- "quickly," "yesterday."',
 };
 
-// Roadmap shown (greyed out) on the level-select screen so the growth path
-// is visible past the levels that are live. Only the COUNT is rendered --
-// each entry becomes one locked, numbered card, with no title, since a
-// title would name what a later level exists to teach. Levels 9 and 10 got
-// the student from pre-built phrases to building and moving them; what is
-// left is doing the same from single categories, with no phrase handed over
-// ready-made.
-const ROADMAP = [
-  'Building a phrase out of single categories',
-  'Building a whole tree out of single categories',
-];
+// Locked, numbered cards shown after the last live level, so the growth
+// path stays visible. Only the COUNT is rendered -- a title would name what
+// a later level exists to teach. Empty now that the twelve levels run all
+// the way from a first pair of shapes to a full X-bar tree built one node
+// at a time; add entries here when there is more to come.
+const ROADMAP = [];
 
 function normalizeAnswer(s) {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -317,6 +312,8 @@ function buildMode(spec) {
   // neither. The default keeps every phase-agnostic caller honest.
   mode.level9 = spec.level9 || [];
   mode.level10 = spec.level10 || [];
+  mode.level11 = spec.level11 || [];
+  mode.level12 = spec.level12 || [];
 
   mode.numbers = Object.keys(mode.levels).map(Number).sort((a, b) => a - b);
   mode.phraseNumber = mode.numbers[0];
@@ -845,6 +842,63 @@ const XBAR_LEVEL9 = [
 ];
 
 // ===========================================================================
+// LEVELS 11 AND 12 -- one node at a time.
+//
+// Level 9 hands over ready-made phrases and asks which goes where. These
+// two take the last thing away: every node arrives on its own, holding
+// nothing but its own empty positions, and the phrase has to be built from
+// the bottom up. Pieces are generated exactly as Level 9's are -- from a
+// finished tree -- just broken all the way down instead of down to phrases.
+//
+// Most nodes come with two empty positions, because most nodes in an X-bar
+// tree have two daughters: XP takes a specifier and a bar level, X' takes a
+// head and a complement, and an adjunction takes a bar level and its
+// adjunct. The ones that don't branch get one, so that a finished tree here
+// is the same tree the student has been building since Level 5 rather than
+// that tree plus a scattering of positions left permanently empty.
+//
+// And they are no-mistake rounds: one wrong join deals the round again. By
+// this point nothing is being introduced -- every rule in play has been
+// used for six levels -- so the question has stopped being "can you work
+// it out" and become "do you know it".
+// ===========================================================================
+
+// Which position a daughter occupies, worked out from the shapes rather
+// than declared: a daughter of the same category is the projection itself
+// (the head under a bar level, the bar level under a phrase, or the inner
+// bar level of an adjunction), and anything else is named by what its
+// sibling is.
+const PHRASE_LEVEL = 1, HEAD_LEVEL = 2;
+function slotRoleFor(parent, child, siblings) {
+  if (child.shape === parent.shape) return child.number === HEAD_LEVEL ? 'head' : 'bar';
+  const projection = siblings.find(s => s !== child && s.shape === parent.shape);
+  if (!projection) return 'comp';
+  if (projection.number === HEAD_LEVEL) return 'comp';       // sibling of the head
+  return parent.number === PHRASE_LEVEL ? 'spec' : 'adjunct'; // sibling of a bar level
+}
+
+// Break a finished tree into one piece per node. Each piece keeps its own
+// word (if it has one) and one empty position per daughter, accepting
+// exactly the category that daughter is.
+function explodeNodes(root) {
+  const pieces = [];
+  (function walk(n) {
+    const piece = { shape: n.shape, number: n.number, children: [] };
+    if (n.word) piece.word = n.word;
+    if (n.silent) piece.silent = true;
+    for (const c of n.children) {
+      piece.children.push({
+        slot: slotRoleFor(n, c, n.children),
+        accepts: [`${c.shape}${c.number}`],
+      });
+    }
+    pieces.push(piece);
+    n.children.forEach(walk);
+  })(root);
+  return pieces;
+}
+
+// ===========================================================================
 // LEVEL 10 -- movement.
 //
 // The same canvas as Level 9 with one thing added: some nodes are marked
@@ -995,6 +1049,147 @@ const XBAR_LEVEL10 = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Level 11: one phrase at a time, built from nothing but single nodes.
+// ---------------------------------------------------------------------------
+const XBAR_LEVEL11 = [
+  {
+    id: 'nodes-dp',
+    name: 'One Phrase',
+    description: 'Every node on its own. Build one phrase, with no wrong joins.',
+    goal: 'connect',
+    strict: true,
+    rounds: [ { hint: 'Start at the bottom: find the node each empty position is asking for.',
+                pieces: explodeNodes(DP_()) } ],
+  },
+  {
+    id: 'nodes-pp',
+    name: 'A Phrase Inside a Phrase',
+    description: 'The same again, with one whole phrase sitting inside another.',
+    goal: 'connect',
+    strict: true,
+    rounds: [ { hint: 'One of these phrases ends up entirely inside the other. Build the inside one first.',
+                pieces: explodeNodes(PP_()) } ],
+  },
+  {
+    id: 'nodes-clause',
+    name: 'A Whole Clause',
+    description: 'A subject, a tense and a verb — every node separate.',
+    goal: 'connect',
+    strict: true,
+    rounds: [ { hint: 'Three phrases to build, and then to put together. Take the small ones first.',
+                pieces: explodeNodes(TP_({ shape: 'V', number: 1, children: [
+                  { shape: 'V', number: 1.5, children: [ { shape: 'V', number: 2, children: [] } ] },
+                ] })) } ],
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Level 12: the sentences from Level 2, as full X-bar trees.
+//
+// The same four sentences the student met at the very start, when a tree
+// was flat and a determiner lived inside NP -- now drawn the way they have
+// been drawing them since Level 5, and built one node at a time. This is
+// also where the three categories the X-bar levels have never used come
+// back: the adjective, the adverb and the preposition were all learned in
+// the first Mystery Level and have been waiting since.
+// ---------------------------------------------------------------------------
+const xHead = (shape, word) => {
+  const h = { shape, number: 2, children: [] };
+  if (word === null) h.silent = true;
+  else if (word) h.word = word;
+  return h;
+};
+// A phrase with nothing in its specifier: XP -> X' -> X0, plus whatever the
+// head takes as a complement.
+const xBare = (shape, word, comp) => ({
+  shape, number: 1, children: [
+    { shape, number: 1.5, children: comp ? [ xHead(shape, word), comp ] : [ xHead(shape, word) ] },
+  ],
+});
+const xAdjP = (word) => xBare('Adj', word);
+const xAdvP = (word) => xBare('Adv', word);
+const xPP = (prep, dp) => xBare('P', prep, dp);
+const xDP = (det, noun) => ({
+  shape: 'D', number: 1, children: [
+    { shape: 'D', number: 1.5, children: [ xHead('D', det), xBare('N', noun) ] },
+  ],
+});
+// "the fluffy cat": the adjective phrase adjoins to N', which is why the
+// noun keeps a bar level of its own underneath it.
+const xDPAdj = (det, adj, noun) => ({
+  shape: 'D', number: 1, children: [
+    { shape: 'D', number: 1.5, children: [
+      xHead('D', det),
+      { shape: 'N', number: 1, children: [
+        { shape: 'N', number: 1.5, children: [
+          xAdjP(adj),
+          { shape: 'N', number: 1.5, children: [ xHead('N', noun) ] },
+        ] },
+      ] },
+    ] },
+  ],
+});
+const xClause = (subject, tenseWord, vp) => ({
+  shape: 'T', number: 1, children: [
+    subject,
+    { shape: 'T', number: 1.5, children: [ xHead('T', tenseWord), vp ] },
+  ],
+});
+
+const XBAR_LEVEL12 = [
+  {
+    id: 'tree-chased',
+    name: 'The Full Sentence',
+    description: 'A sentence you have built before, now one node at a time.',
+    goal: 'sentence',
+    strict: true,
+    rounds: [ {
+      sentence: 'the cat chased the mouse',
+      hint: 'Nothing new here — just more of it, and no wrong joins allowed.',
+      pieces: explodeNodes(xClause(
+        xDP('the', 'cat'), null,
+        xBare('V', 'chased', xDP('the', 'mouse')))),
+    } ],
+  },
+  {
+    id: 'tree-fluffy',
+    name: 'With an Adjective',
+    description: 'An adjective joins in. It needs a phrase of its own.',
+    goal: 'sentence',
+    strict: true,
+    rounds: [ {
+      sentence: 'the fluffy cat will jump',
+      hint: 'The adjective is a whole phrase, and it hangs off the noun\'s bar level rather than sitting beside the noun.',
+      pieces: explodeNodes(xClause(
+        xDPAdj('the', 'fluffy', 'cat'), 'will',
+        xBare('V', 'jump'))),
+    } ],
+  },
+  {
+    id: 'tree-quickly',
+    name: 'Everything At Once',
+    description: 'An adjective, an adverb and a preposition, in the longest sentence in the game.',
+    goal: 'sentence',
+    strict: true,
+    rounds: [ {
+      sentence: 'the fluffy cat quickly jumped on the table',
+      hint: 'The adjective describes the cat, so it goes inside the subject. The adverb and the prepositional phrase describe the jumping, so they go inside the verb phrase.',
+      pieces: explodeNodes(xClause(
+        xDPAdj('the', 'fluffy', 'cat'), null,
+        { shape: 'V', number: 1, children: [
+          { shape: 'V', number: 1.5, children: [
+            xAdvP('quickly'),
+            { shape: 'V', number: 1.5, children: [
+              { shape: 'V', number: 1.5, children: [ xHead('V', 'jumped') ] },
+              xPP('on', xDP('the', 'table')),
+            ] },
+          ] },
+        ] })),
+    } ],
+  },
+];
+
 // ===========================================================================
 // The mode registry.
 // ===========================================================================
@@ -1041,6 +1236,8 @@ const MODES = {
     level2: XBAR_LEVEL2,
     level9: XBAR_LEVEL9,
     level10: XBAR_LEVEL10,
+    level11: XBAR_LEVEL11,
+    level12: XBAR_LEVEL12,
     levelAnswers: {
       1: ['xp', 'x-bar phrase', 'phrase', 'phrase level', 'maximal projection', 'maximal phrase'],
       1.5: ["x'", 'x bar', 'x-bar', 'xbar', 'bar level', 'bar', 'in between', 'middle'],
@@ -1076,6 +1273,8 @@ let QUIZ_SUBLEVELS = [];
 let QUIZ_CONSTITUENCY_SUBLEVELS = [];   // Level 3's subset (see skipConstituency)
 let LEVEL9_SUBLEVELS = [];              // combining phrases -- X-bar phase only
 let LEVEL10_SUBLEVELS = [];             // movement -- X-bar phase only
+let LEVEL11_SUBLEVELS = [];             // phrases from single nodes
+let LEVEL12_SUBLEVELS = [];             // whole sentences from single nodes
 let MODE_CATEGORIES = [];               // which categories this phase actually uses
 let MODE_PHRASE_CATEGORIES = new Set(); // ...and which of them head a phrase in it
 let PROJECTION_LEVELS = {};   // number -> {code, name}
@@ -1092,6 +1291,8 @@ function setMode(id) {
   QUIZ_CONSTITUENCY_SUBLEVELS = MODE.quizConstituency;
   LEVEL9_SUBLEVELS = MODE.level9;
   LEVEL10_SUBLEVELS = MODE.level10;
+  LEVEL11_SUBLEVELS = MODE.level11;
+  LEVEL12_SUBLEVELS = MODE.level12;
   MODE_CATEGORIES = MODE.categories;
   MODE_PHRASE_CATEGORIES = MODE.phraseCategories;
   PROJECTION_LEVELS = MODE.levels;
