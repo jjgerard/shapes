@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shapes and Language</title>
-<link rel="stylesheet" href="style.css?v=59">
-<link rel="icon" href="icon.svg?v=59" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=60">
+<link rel="icon" href="icon.svg?v=60" type="image/svg+xml">
 <meta name="theme-color" content="#2f6f5e">
 </head>
 <body>
@@ -13,7 +13,7 @@
 
   <header id="app-header">
     <div class="brand">
-      <img src="icon.svg?v=59" alt="" class="brand-logo">
+      <img src="icon.svg?v=60" alt="" class="brand-logo">
       <span class="brand-name">Shapes and Language</span>
     </div>
     <div class="header-right">
@@ -92,6 +92,14 @@
       <div class="target-grid" id="categoryid-grid"></div>
     </section>
 
+    <!-- ============ LEVEL 9 (combining phrases) ============ -->
+    <section id="screen-level9" class="screen hidden">
+      <button class="link-btn back-btn" data-back>&larr; Levels</button>
+      <h1 id="level9-heading">Level 9 &mdash; Building</h1>
+      <p class="muted">Every piece here is a whole phrase with its empty positions showing. Drag a phrase into a position it fits &mdash; each position only takes certain phrases. Finish one sub-level to unlock the next.</p>
+      <div class="target-grid" id="combine-grid"></div>
+    </section>
+
     <!-- ============ REVEAL (final sub-level: fill in the blanks) ============ -->
     <section id="screen-reveal" class="screen hidden">
       <button class="link-btn back-btn" data-back>&larr; Levels</button>
@@ -165,6 +173,39 @@
       <div class="canvas-stage">
         <div class="canvas-wrap">
           <svg id="wordmatch-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ COMBINE MODAL (Level 9) ============ -->
+<div id="combine-overlay" class="overlay hidden">
+  <div class="editor">
+    <div class="editor-header">
+      <div class="editor-header-text">
+        <div id="combine-title">Build it</div>
+      </div>
+      <div class="editor-actions">
+        <button class="btn-icon btn-icon-sm" data-help="combine" title="How to play" aria-label="How to play">?</button>
+        <button id="combine-snip" class="btn-icon" title="Pull a piece back out" aria-label="Pull a piece back out">&#9986;&#65039;</button>
+        <button id="combine-clear" class="btn-secondary">Start over</button>
+        <button id="combine-close" class="link-btn">&times; close</button>
+      </div>
+    </div>
+    <div class="editor-body cb-body">
+      <!-- Rounds, not one long puzzle: joining two phrases is a single drag,
+           and a sub-level that ends after one drag doesn't teach the pattern.
+           The next round is never sprung automatically -- the button waits,
+           so a finished tree can be looked at for as long as it's wanted. -->
+      <div class="cb-statusbar">
+        <div id="combine-rounds" class="cb-rounds"></div>
+        <div id="combine-sentence" class="cb-sentence hidden"></div>
+        <button id="combine-next" class="btn-primary btn-small hidden">Next round &rarr;</button>
+      </div>
+      <div class="canvas-stage">
+        <div class="canvas-wrap">
+          <svg id="combine-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
       </div>
     </div>
@@ -289,15 +330,16 @@
   </div>
 </div>
 
-<script src="sound.js?v=59"></script>
-<script src="data.js?v=59"></script>
-<script src="shapes.js?v=59"></script>
-<script src="canvas.js?v=59"></script>
-<script src="wordmatch.js?v=59"></script>
-<script src="editor.js?v=59"></script>
-<script src="streak.js?v=59"></script>
-<script src="treeviewer.js?v=59"></script>
-<script src="app.js?v=59"></script>
+<script src="sound.js?v=60"></script>
+<script src="data.js?v=60"></script>
+<script src="shapes.js?v=60"></script>
+<script src="canvas.js?v=60"></script>
+<script src="wordmatch.js?v=60"></script>
+<script src="editor.js?v=60"></script>
+<script src="combine.js?v=60"></script>
+<script src="streak.js?v=60"></script>
+<script src="treeviewer.js?v=60"></script>
+<script src="app.js?v=60"></script>
 <script>
   // Plain webpage, not an installable app -- clean up any service worker
   // and caches left over from when it registered one, so nobody's stuck

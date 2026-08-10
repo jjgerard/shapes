@@ -365,6 +365,59 @@ button { font-family: inherit; cursor: pointer; }
 .tree-edge { stroke: #8a8375; stroke-width: 2; fill: none; }
 .tree-edge.seam { stroke: var(--danger); stroke-width: 3; stroke-dasharray: 6 4; }
 
+/* ---- level 9 combining ---- */
+#combine-canvas {
+  flex-shrink: 0; display: block;
+  background: radial-gradient(circle, #eee9df 1px, transparent 1px) 0 0/16px 16px, #fffdf9;
+}
+/* An empty position, drawn as a dashed outline rather than a shape: it is
+   deliberately NOT one of the eight silhouettes, because what goes in it is
+   the question. It reads as a hole in the tree, which is exactly what it is.
+   Unlike a piece, a slot is never a pointer target -- you drag a phrase TO
+   it, never it to anything -- hence pointer-events:none. */
+.cb-slot { pointer-events: none; }
+.cb-slot-box {
+  fill: #f4f0e7; stroke: #b7b0a2; stroke-width: 2.5; stroke-dasharray: 7 5;
+  transition: fill .1s, stroke .1s, stroke-width .1s;
+}
+.cb-slot-text {
+  fill: #8a8375; font-weight: 700; text-anchor: middle; dominant-baseline: middle;
+  pointer-events: none; user-select: none;
+}
+/* Same green as .snap-ready on a piece, and it means the same thing: let go
+   now and this will drop in. */
+.cb-slot.ready .cb-slot-box {
+  fill: #e4f0ea; stroke: var(--accent); stroke-width: 4; stroke-dasharray: none;
+  filter: drop-shadow(0 0 8px rgba(47,111,94,0.55));
+}
+.cb-slot.ready .cb-slot-text { fill: var(--accent); }
+.cb-slot.hinted .cb-slot-box { stroke: #e8b400; stroke-dasharray: none; animation: hint-pulse 1.2s ease-in-out infinite; }
+.cb-slot.snip-disabled { opacity: 0.45; }
+
+/* .editor-body is a row by default (the quiz modals put their question
+   panel beside the tree); this one stacks, so the status strip sits above a
+   full-width canvas rather than beside a squeezed one. */
+.cb-body { flex-direction: column; }
+/* Round counter, target sentence and the Next button. Same shape as Level
+   2's status strip so the two modals feel like the same tool. */
+.cb-statusbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 16px; border-bottom: 1px solid var(--line); flex-shrink: 0;
+}
+.cb-rounds { display: flex; gap: 6px; }
+.cb-round-dot {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700;
+  background: var(--panel-2, #f4f0e7); color: var(--muted); border: 2px solid var(--line);
+}
+.cb-round-dot.done { background: var(--accent); color: #fff; border-color: var(--accent); }
+.cb-round-dot.current { border-color: var(--accent); color: var(--accent); }
+/* The sentence to build. Takes the leftover width so it never squeezes the
+   round dots or the Next button onto a second line before it has to. */
+.cb-sentence { flex: 1 1 160px; min-width: 0; font-weight: 700; font-size: 1.05rem; }
+.cb-statusbar #combine-next { margin-left: auto; }
+
 /* ---- level 2 word match ---- */
 .wm-body { flex-direction: column; }
 .wm-sentence {
@@ -696,6 +749,12 @@ button { font-family: inherit; cursor: pointer; }
   .canvas-controls { right: 10px; bottom: 10px; padding: 5px; gap: 5px; }
   .canvas-btn { min-width: 46px; height: 46px; }
   .wm-statusbar { padding: 8px 12px; }
+  /* The three items in Level 9's strip don't fit one phone-width line, and
+     the sentence is the one that can wrap without losing anything -- so it
+     takes a whole line of its own above the dots and the Next button. */
+  .cb-statusbar { padding: 8px 12px; gap: 8px; }
+  .cb-sentence { flex: 1 1 100%; font-size: 0.98rem; }
+  .cb-round-dot { width: 24px; height: 24px; font-size: 0.75rem; }
   /* Sized to its content, not the whole screen -- a two-line "are you
      sure?" blown up to full-bleed reads as something far more serious than
      it is. .overlay's mobile rule drops padding to 0 for the puzzle modals,

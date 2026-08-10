@@ -27,7 +27,7 @@ function storageKey(name, code) {
 }
 function defaultModeProgress() {
   return {
-    trees: [], sentences: [], constituency: [], categoryid: [],
+    trees: [], sentences: [], constituency: [], categoryid: [], combos: [],
     reveal: { shapes: {}, numbers: {} },
     revealSolved: { shapes: {}, numbers: {} },
   };
@@ -43,6 +43,7 @@ function normalizeModeProgress(src = {}) {
     sentences: Array.isArray(src.sentences) ? src.sentences : base.sentences,
     constituency: Array.isArray(src.constituency) ? src.constituency : base.constituency,
     categoryid: Array.isArray(src.categoryid) ? src.categoryid : base.categoryid,
+    combos: Array.isArray(src.combos) ? src.combos : base.combos,
     reveal: {
       shapes: { ...(src.reveal?.shapes || {}) },
       numbers: { ...(src.reveal?.numbers || {}) },
@@ -122,6 +123,7 @@ const SCREEN_SPEECH = {
   level2: 'Choose a sentence below!',
   level3: 'Choose a sub-level below!',
   level4: 'Choose a sub-level below!',
+  level9: 'Choose a sub-level below!',
   reveal: 'Type what you think each shape and number means!',
 };
 function showScreen(id) {
@@ -173,9 +175,17 @@ const GAME_LEVELS = [
     blurb: 'The same question, on the bigger trees.' },
   { n: 8, phase: 'xbar', kind: 'categories', title: 'Back to Categories',
     blurb: 'The same stickers, on the bigger trees.' },
+  // The first level that asks a student to DECIDE structure rather than
+  // reproduce it. Everything before this hands over pieces that already say
+  // what goes under what; here the pieces are whole phrases with empty
+  // positions, and which phrase fills which position is the question.
+  { n: 9, phase: 'xbar', kind: 'combine', title: 'Building',
+    blurb: 'Whole phrases, with their empty positions showing. Work out which one goes where.' },
 ];
 
-const ACTIVITY_SCREEN = { build: 'level1', words: 'level2', constituents: 'level3', categories: 'level4' };
+const ACTIVITY_SCREEN = {
+  build: 'level1', words: 'level2', constituents: 'level3', categories: 'level4', combine: 'level9',
+};
 
 function levelByNumber(n) { return GAME_LEVELS.find(l => l.n === n); }
 
@@ -198,6 +208,7 @@ function isLevelComplete(level) {
   }
   if (level.kind === 'words') return mode.level2.every(sub => p.sentences.includes(sub.id));
   if (level.kind === 'constituents') return mode.quizConstituency.every(sub => p.constituency.includes(sub.id));
+  if (level.kind === 'combine') return mode.level9.every(sub => p.combos.includes(sub.id));
   return mode.quiz.every(sub => p.categoryid.includes(sub.id));
 }
 
@@ -216,6 +227,9 @@ function levelProgressLabel(level) {
   }
   if (level.kind === 'constituents') {
     return `${mode.quizConstituency.filter(s => p.constituency.includes(s.id)).length} / ${mode.quizConstituency.length} sub-levels done`;
+  }
+  if (level.kind === 'combine') {
+    return `${mode.level9.filter(s => p.combos.includes(s.id)).length} / ${mode.level9.length} sub-levels done`;
   }
   return `${mode.quiz.filter(s => p.categoryid.includes(s.id)).length} / ${mode.quiz.length} sub-levels done`;
 }
@@ -452,6 +466,24 @@ const HELP = {
       ${CANVAS_HELP}
     </ul>`,
   },
+  combine: {
+    title: 'Level 9 — Building',
+    html: `<ul>
+      <li>Each piece is a <strong>whole phrase</strong>. The dashed boxes inside it are
+          <strong>empty positions</strong> waiting to be filled.</li>
+      <li>Drag a whole phrase onto a dashed box. If it belongs there the box glows green
+          just before it drops in, and the tree tidies itself up around it.</li>
+      <li>A position only takes certain phrases &mdash; that's the puzzle. If a drop doesn't
+          work, the message at the bottom of the screen says what you tried to do.</li>
+      <li><strong>Stuck?</strong> After three tries that don't work, a piece and a position
+          that do fit start glowing amber.</li>
+      <li>Pieces move whole. To take one back out, tap the <strong>✂️ scissors</strong>,
+          then tap a piece outlined in red.</li>
+      <li>Some rounds have <strong>more than one right answer</strong>. If what you built
+          counts, it counts.</li>
+      ${CANVAS_HELP}
+    </ul>`,
+  },
 };
 function openHelp(key) {
   const entry = HELP[key] || HELP.general;
@@ -596,6 +628,7 @@ function openLevel(level) {
   if (level.kind === 'build') { renderTargetGrid(); showScreen('level1'); }
   else if (level.kind === 'words') { renderLevel2Grid(); showScreen('level2'); }
   else if (level.kind === 'constituents') { renderConstituencyGrid(); showScreen('level3'); }
+  else if (level.kind === 'combine') { renderCombineGrid(); showScreen('level9'); }
   else { renderCategoryIdGrid(); showScreen('level4'); }
 }
 
@@ -1362,6 +1395,210 @@ function closeCategoryQuiz() {
 document.getElementById('categoryid-close').addEventListener('click', navBack);
 document.getElementById('categoryid-next').addEventListener('click', nextCategoryQuestion);
 
+// ================= LEVEL 9: combining phrases =================
+// A sub-level here is a short sequence of ROUNDS rather than one puzzle:
+// joining two phrases is a single drag, and a sub-level that ends after one
+// drag never shows the pattern it exists to teach. Rounds are only banked
+// when the whole sub-level is finished, which keeps the save format the
+// same shape as every other level's (a list of completed sub-level ids).
+let combineEditor = null;
+let combineSub = null;      // the sub-level currently open
+let combineRoundIx = 0;
+let combineRoundDone = false;
+
+function ensureCombineEditor() {
+  if (!combineEditor) combineEditor = new CombineEditor(document.getElementById('combine-canvas'));
+  return combineEditor;
+}
+
+function isCombineSubComplete(sub) {
+  return prog().combos.includes(sub.id);
+}
+
+function renderCombineGrid() {
+  const grid = document.getElementById('combine-grid');
+  grid.innerHTML = '';
+  LEVEL9_SUBLEVELS.forEach((sub, i) => {
+    const done = isCombineSubComplete(sub);
+    const locked = i > 0 && !isCombineSubComplete(LEVEL9_SUBLEVELS[i - 1]);
+    const card = document.createElement('div');
+    card.className = 'target-card' + (done ? ' done' : '') + (locked ? ' locked' : '');
+
+    const h3 = document.createElement('h3');
+    h3.textContent = locked ? `${i + 1}. Locked` : `${i + 1}. ${done ? '✓ ' : ''}${sub.name}`;
+    card.appendChild(h3);
+
+    if (locked) {
+      const note = document.createElement('p');
+      note.className = 'lock-note';
+      note.textContent = 'Locked — finish the previous sub-level first.';
+      card.appendChild(note);
+    } else {
+      const p = document.createElement('p');
+      p.textContent = sub.description;
+      card.appendChild(p);
+
+      const count = document.createElement('div');
+      count.className = 'frag-ids';
+      count.textContent = `${sub.rounds.length} rounds`;
+      card.appendChild(count);
+
+      const btn = document.createElement('button');
+      btn.className = 'btn-primary';
+      btn.textContent = done ? 'Play again' : 'Build this';
+      btn.addEventListener('click', () => openCombine(sub));
+      card.appendChild(btn);
+    }
+    grid.appendChild(card);
+  });
+}
+
+function openCombine(sub) {
+  ensureCombineEditor();
+  combineSub = sub;
+  combineRoundIx = 0;
+  const fit = fitCanvasSize(1600, 1000);
+  combineEditor.open(fit.w, fit.h);
+  combineEditor.onFeedback = relayFeedback;
+  combineEditor.onConnect = celebrateCorrect;
+  combineEditor.onChange = checkCombineRound;
+  combineEditor.onSnipModeChange = (on) => {
+    document.getElementById('combine-snip').classList.toggle('active', on);
+    setMascotSpeech(on ? COMBINE_SNIP_HINT : currentCombineRound().hint, { interrupt: on });
+  };
+  clearMascotFlash();
+  setModalDoneState(document.getElementById('combine-close'), false);
+  // Shown BEFORE the round is dealt: the opening zoom is measured against
+  // the canvas's real size, and slot captions and word boxes are fitted by
+  // measuring the text. Inside a hidden subtree every one of those
+  // measurements comes back 0 and the fit silently does nothing.
+  document.getElementById('combine-overlay').classList.remove('hidden');
+  loadCombineRound();
+  pushNav(closeCombine);
+}
+
+const COMBINE_SNIP_HINT = 'Scissors: tap a piece outlined in red to pull it back out. Tap empty canvas to cancel.';
+
+function currentCombineRound() { return combineSub.rounds[combineRoundIx]; }
+
+function loadCombineRound() {
+  const round = currentCombineRound();
+  combineRoundDone = false;
+  document.getElementById('combine-title').textContent =
+    `${combineSub.name} — round ${combineRoundIx + 1} of ${combineSub.rounds.length}`;
+  document.getElementById('combine-next').classList.add('hidden');
+  document.getElementById('combine-snip').classList.remove('active');
+
+  // The sentence is shown for the word rounds and only for those: with two
+  // DPs that both fit both positions, the tree alone doesn't say which way
+  // round they go, so withholding the sentence would make it a coin flip
+  // rather than a decision.
+  const sentenceEl = document.getElementById('combine-sentence');
+  sentenceEl.classList.toggle('hidden', !round.sentence);
+  if (round.sentence) sentenceEl.textContent = `Build: “${titleCase(round.sentence)}”`;
+
+  renderCombineRounds();
+  setMascotSpeech(round.hint);
+  combineEditor.load(round.pieces.map(cloneSpec));
+}
+
+// Each round is re-materialised from a fresh copy, so replaying a sub-level
+// can never inherit anything from the attempt before it.
+function cloneSpec(node) {
+  return JSON.parse(JSON.stringify(node));
+}
+
+function renderCombineRounds() {
+  const bar = document.getElementById('combine-rounds');
+  bar.innerHTML = '';
+  combineSub.rounds.forEach((_, i) => {
+    const dot = document.createElement('span');
+    dot.className = 'cb-round-dot' +
+      (i < combineRoundIx ? ' done' : '') + (i === combineRoundIx ? ' current' : '');
+    dot.textContent = i + 1;
+    bar.appendChild(dot);
+  });
+}
+
+// What finishes a round. See the `goal` note in data.js: the abstract rounds
+// ask only that every piece ends up in one tree, because several of them
+// have more than one correct answer and pinning them to a single target
+// would mark a real structure wrong.
+function checkCombineRound() {
+  if (!combineSub || combineRoundDone) return;
+  const round = currentCombineRound();
+  if (!combineEditor.isOneTree()) return;
+
+  if (combineSub.goal === 'sentence') {
+    if (!combineEditor.isFullyFilled()) return;
+    const built = combineEditor.yieldWords().join(' ');
+    if (built !== round.sentence) {
+      // A well-formed tree of the wrong sentence -- worth naming precisely,
+      // because "that's wrong" here teaches nothing and this does.
+      combineEditor.setFeedback(
+        `That's a real tree, but it says “${titleCase(built)}”. Use the scissors and swap two pieces around.`, 'err');
+      return;
+    }
+  }
+
+  combineRoundDone = true;
+  combineEditor.setFeedback(
+    combineRoundIx + 1 < combineSub.rounds.length
+      ? 'That works! Tap Next round when you\'re ready.'
+      : 'That works — and that\'s the last round.', 'ok');
+  celebrateCorrect();
+  if (combineRoundIx + 1 < combineSub.rounds.length) {
+    document.getElementById('combine-next').classList.remove('hidden');
+  } else {
+    markCombineSubDone(combineSub);
+  }
+}
+
+function markCombineSubDone(sub) {
+  const already = prog().combos.includes(sub.id);
+  if (!already) {
+    prog().combos.push(sub.id);
+    state.points += POINTS_TREE;
+    saveState();
+    toast(`✓ ${sub.name} complete — +${POINTS_TREE} pts`);
+  } else {
+    toast(`✓ ${sub.name} — already completed, nice practice!`);
+  }
+  celebrateComplete();
+  updateHeader();
+  renderCombineGrid();
+  setModalDoneState(document.getElementById('combine-close'), true);
+}
+
+function closeCombine() {
+  document.getElementById('combine-overlay').classList.add('hidden');
+  combineSub = null;
+  setMascotSpeech(SCREEN_SPEECH.level9);
+  clearMascotFlash();
+}
+
+document.getElementById('combine-close').addEventListener('click', navBack);
+document.getElementById('combine-next').addEventListener('click', () => {
+  if (!combineSub || combineRoundIx + 1 >= combineSub.rounds.length) return;
+  combineRoundIx++;
+  loadCombineRound();
+});
+document.getElementById('combine-snip').addEventListener('click', () => {
+  if (combineEditor) combineEditor.setSnipMode(!combineEditor.snipMode);
+});
+document.getElementById('combine-clear').addEventListener('click', async () => {
+  if (!combineEditor || !combineSub) return;
+  if (combineEditor.connectCount > 0) {
+    const ok = await askConfirm({
+      title: 'Start this round over?',
+      message: 'The pieces you\'ve joined will come apart and be laid out again. Your points are safe either way.',
+      okLabel: 'Yes, start over',
+    });
+    if (!ok) return;
+  }
+  loadCombineRound();
+});
+
 // ================= REVEAL: fill in what the shapes mean =================
 // Wrong guesses per slot, for this session only. The Mystery Level is the
 // one gate in the game with no way around it -- Level 2 stays locked until
@@ -1669,6 +1906,7 @@ document.querySelectorAll('[data-back]').forEach(btn => {
   attachCanvasControls(document.querySelector('#wordmatch-overlay .canvas-stage'), () => wordMatch);
   attachCanvasControls(document.querySelector('#constituency-overlay .canvas-stage'), () => constituencyViewer);
   attachCanvasControls(document.querySelector('#categoryid-overlay .canvas-stage'), () => categoryViewer);
+  attachCanvasControls(document.querySelector('#combine-overlay .canvas-stage'), () => combineEditor);
   attachCanvasControls(document.querySelector('#screen-reveal .canvas-stage'), () => revealViewer);
 
   const last = JSON.parse(localStorage.getItem('stb:lastPlayer') || 'null');

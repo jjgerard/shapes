@@ -310,6 +310,11 @@ function buildMode(spec) {
     if (s.number === 1) mode.phraseCategories.add(s.shape);
     for (const c of s.children) if (c.number === 1) mode.phraseCategories.add(c.shape);
   }
+  // Only the X-bar phase has a Level 9: combining phrases means choosing
+  // between a specifier and a complement, and the flat basic phase has
+  // neither. The default keeps every phase-agnostic caller honest.
+  mode.level9 = spec.level9 || [];
+
   mode.numbers = Object.keys(mode.levels).map(Number).sort((a, b) => a - b);
   mode.phraseNumber = mode.numbers[0];
   mode.headNumber = mode.numbers[mode.numbers.length - 1];
@@ -695,6 +700,139 @@ const XBAR_LEVEL2 = [
 ];
 
 // ===========================================================================
+// LEVEL 9 -- combining whole phrases.
+//
+// Every earlier level hands over pieces that already say what goes under
+// what. Here a piece is a whole phrase with its empty positions showing,
+// and the student decides which phrase fills which position.
+//
+// A `slot` child is one of those empty positions. `accepts` lists what may
+// fill it, keyed shape+number -- and that list IS the grammar of this level:
+// C′ selects a TP, T′ selects a VP, V′ and P′ select a DP, and a specifier
+// takes a DP. Nothing about selection is written into the editor, so the
+// only way to change what fits where is to change the data here.
+// ===========================================================================
+
+const SPEC = (accepts) => ({ slot: 'spec', accepts });
+const COMP = (accepts) => ({ slot: 'comp', accepts });
+
+// A complete DP -- "the cat", or the bare shape of one when no words are in
+// play. It has no slots of its own, which makes it the universal plug: the
+// only thing any specifier will take, and the only thing a verb or a
+// preposition will take as its complement.
+function cbDP(det, noun) {
+  const d = { shape: 'D', number: 2, children: [] };
+  const n = { shape: 'N', number: 2, children: [] };
+  if (det) d.word = det;
+  if (noun) n.word = noun;
+  return { shape: 'D', number: 1, children: [
+    { shape: 'D', number: 1.5, children: [
+      d,
+      { shape: 'N', number: 1, children: [ { shape: 'N', number: 1.5, children: [ n ] } ] },
+    ] },
+  ] };
+}
+function cbTP(t0 = { shape: 'T', number: 2, children: [] }) {
+  return { shape: 'T', number: 1, children: [
+    SPEC(['D1']),
+    { shape: 'T', number: 1.5, children: [ t0, COMP(['V1']) ] },
+  ] };
+}
+function cbCP(c0 = { shape: 'C', number: 2, children: [] }) {
+  return { shape: 'C', number: 1, children: [
+    SPEC(['D1']),
+    { shape: 'C', number: 1.5, children: [ c0, COMP(['T1']) ] },
+  ] };
+}
+function cbVP(word) {
+  const v = { shape: 'V', number: 2, children: [] };
+  if (word) v.word = word;
+  return { shape: 'V', number: 1, children: [
+    { shape: 'V', number: 1.5, children: [ v, COMP(['D1']) ] },
+  ] };
+}
+// An intransitive VP: no complement position at all, so it is complete as
+// it stands. Its job in Level 9 is to be something that can only ever go
+// INTO a slot, never receive one.
+function cbVPbare(word) {
+  const v = { shape: 'V', number: 2, children: [] };
+  if (word) v.word = word;
+  return { shape: 'V', number: 1, children: [
+    { shape: 'V', number: 1.5, children: [ v ] },
+  ] };
+}
+
+// `goal` is what finishes a round:
+//   'connect'   every piece joined into one tree. Leftover empty slots are
+//               fine -- you were not given a piece for them. This is the
+//               only honest test for the abstract rounds, several of which
+//               have more than one correct answer.
+//   'sentence'  one tree, no empty positions left, and the words come out
+//               in the right order. Reversing the two DPs in a transitive
+//               sentence builds a perfectly well-formed tree of the wrong
+//               sentence, and that is exactly the mistake worth catching.
+const XBAR_LEVEL9 = [
+  {
+    id: 'combine-two',
+    name: 'Two Pieces',
+    description: 'Two phrases at a time. Find the one position each fits.',
+    goal: 'connect',
+    rounds: [
+      { hint: 'Drag one phrase into the empty position it fits. Only one of them can move into the other.',
+        pieces: [ cbVP(), cbDP() ] },
+      { hint: 'Same DP, different piece. This one has two empty positions — only one of them takes a DP.',
+        pieces: [ cbTP(), cbDP() ] },
+      { hint: 'Neither of these is a DP, so the specifier stays empty this time.',
+        pieces: [ cbTP(), cbVPbare() ] },
+      { hint: 'One of these two goes inside the other. Which one is big enough to hold the other?',
+        pieces: [ cbCP(), cbTP() ] },
+    ],
+  },
+  {
+    id: 'combine-three',
+    name: 'Three Pieces',
+    description: 'Three phrases. Some of these have more than one right answer.',
+    goal: 'connect',
+    rounds: [
+      { hint: 'All three stack up in a chain — each one is the complement of the one above it.',
+        pieces: [ cbCP(), cbTP(), cbVPbare() ] },
+      { hint: 'The DP has two positions it could legally fill here. Either is a real structure — pick one.',
+        pieces: [ cbTP(), cbVP(), cbDP() ] },
+      { hint: 'No complement position here will take a DP, so it has to go to a specifier — but whose?',
+        pieces: [ cbCP(), cbTP(), cbDP() ] },
+    ],
+  },
+  {
+    id: 'combine-sentence',
+    name: 'A Whole Sentence',
+    description: 'Now the pieces carry words. Build the sentence you are shown.',
+    goal: 'sentence',
+    rounds: [
+      {
+        sentence: 'the cat chased the mouse',
+        hint: 'Both DPs fit both empty positions — the words are what tell you which goes where.',
+        pieces: [
+          cbTP({ shape: 'T', number: 2, children: [], silent: true }),
+          cbDP('the', 'cat'),
+          cbVP('chased'),
+          cbDP('the', 'mouse'),
+        ],
+      },
+      {
+        sentence: 'the dog will chase the cat',
+        hint: 'This one has a real auxiliary in T instead of a silent one. Everything else works the same.',
+        pieces: [
+          cbTP({ shape: 'T', number: 2, children: [], word: 'will' }),
+          cbDP('the', 'dog'),
+          cbVP('chase'),
+          cbDP('the', 'cat'),
+        ],
+      },
+    ],
+  },
+];
+
+// ===========================================================================
 // The mode registry.
 // ===========================================================================
 
@@ -738,6 +876,7 @@ const MODES = {
     structures: XBAR_STRUCTURES,
     level1: XBAR_LEVEL1,
     level2: XBAR_LEVEL2,
+    level9: XBAR_LEVEL9,
     levelAnswers: {
       1: ['xp', 'x-bar phrase', 'phrase', 'phrase level', 'maximal projection', 'maximal phrase'],
       1.5: ["x'", 'x bar', 'x-bar', 'xbar', 'bar level', 'bar', 'in between', 'middle'],
@@ -771,6 +910,7 @@ let LEVEL1_SUBLEVELS = [];
 let LEVEL2_SUBLEVELS = [];
 let QUIZ_SUBLEVELS = [];
 let QUIZ_CONSTITUENCY_SUBLEVELS = [];   // Level 3's subset (see skipConstituency)
+let LEVEL9_SUBLEVELS = [];              // combining phrases -- X-bar phase only
 let MODE_CATEGORIES = [];               // which categories this phase actually uses
 let MODE_PHRASE_CATEGORIES = new Set(); // ...and which of them head a phrase in it
 let PROJECTION_LEVELS = {};   // number -> {code, name}
@@ -785,6 +925,7 @@ function setMode(id) {
   LEVEL2_SUBLEVELS = MODE.level2;
   QUIZ_SUBLEVELS = MODE.quiz;
   QUIZ_CONSTITUENCY_SUBLEVELS = MODE.quizConstituency;
+  LEVEL9_SUBLEVELS = MODE.level9;
   MODE_CATEGORIES = MODE.categories;
   MODE_PHRASE_CATEGORIES = MODE.phraseCategories;
   PROJECTION_LEVELS = MODE.levels;
