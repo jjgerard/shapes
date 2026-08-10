@@ -39,17 +39,27 @@
 // shrunk to fit (see _fitSlotLabels) rather than the box being sized around
 // the longest word.
 const CB_SIZING = {
-  // nodeGap has to clear a slot standing next to a shape -- slotW/2 + r
-  // plus a little air -- or the dashed box overlaps the head beside it.
-  desktop: { r: 28, levelGap: 92, nodeGap: 104, wordGap: 132, snapDistance: 96, margin: 900, pieceGap: 130, slotW: 118, chipW: 112, chipH: 42, wordFont: 24, springApart: 90 },
-  mobile:  { r: 38, levelGap: 124, nodeGap: 130, wordGap: 168, snapDistance: 128, margin: 700, pieceGap: 150, slotW: 140, chipW: 146, chipH: 54, wordFont: 30, springApart: 110 },
+  // nodeGap has to clear two slots standing side by side -- slotW plus a
+  // little air. Levels 11 and 12 deal nodes whose daughters are BOTH still
+  // empty (a bar level with its head and its complement both open), which
+  // no earlier level does, and sizing this to slot-next-to-shape instead
+  // leaves those two dashed boxes touching.
+  desktop: { r: 28, levelGap: 92, nodeGap: 132, wordGap: 148, snapDistance: 96, margin: 900, pieceGap: 130, slotW: 118, chipW: 112, chipH: 42, wordFont: 24, springApart: 90 },
+  mobile:  { r: 38, levelGap: 124, nodeGap: 156, wordGap: 176, snapDistance: 128, margin: 700, pieceGap: 150, slotW: 140, chipW: 146, chipH: 54, wordFont: 30, springApart: 110 },
 };
 
 // What a slot says on it. Kept as whole words rather than "Spec"/"Comp":
 // this level is where the two terms are introduced, and an abbreviation of
 // a word you have never seen is not a shorter version of it, it is a
 // different unknown.
-const SLOT_LABEL = { spec: 'Specifier', comp: 'Complement', head: 'Head' };
+const SLOT_LABEL = {
+  spec: 'Specifier', comp: 'Complement', head: 'Head',
+  // Levels 11-12 only, where a node arrives with nothing under it at all.
+  // "Bar level" is the layer the student has been calling 1.5 since Level
+  // 5; "Adjunct" is the one genuinely new term, and it arrives on the level
+  // whose whole job is putting adjectives, adverbs and prepositions in.
+  bar: 'Bar level', adjunct: 'Adjunct',
+};
 
 class CombineEditor {
   constructor(svg) {
@@ -74,6 +84,7 @@ class CombineEditor {
     this.onFeedback = null;
     this.onConnect = null;
     this.onSnipModeChange = null;
+    this.onStrictFail = null;   // a wrong join in a no-mistakes round
 
     this._applySizing();
     this._bindGlobalPointerEvents();
@@ -115,7 +126,12 @@ class CombineEditor {
   // `pieces` is a list of {shape, number, children} trees, where a child may
   // instead be {slot:'spec'|'comp', accepts:['T1', ...]}. Each becomes one
   // freestanding component.
-  load(pieces, { silentNote = '' } = {}) {
+  // `strict` is Levels 11 and 12: a round has to be done without a single
+  // wrong join, so the first illegal drop ends it and the host restarts.
+  // Hints are switched off with it -- they exist to rescue someone who has
+  // failed three times in a row, which can no longer happen.
+  load(pieces, { silentNote = '', strict = false } = {}) {
+    this.strict = strict;
     this.nodes = new Map();
     this.seams = new Map();
     this.nextId = 1;
@@ -129,6 +145,7 @@ class CombineEditor {
     this.moveCount = 0;
     this.insertCount = 0;
     this.failedAttempts = 0;
+    this.strictFailed = false;
     this.hintIds = null;
     // Words need much wider columns than bare numbers, and a sub-level
     // either has them throughout or not at all, so this is decided once for
@@ -313,21 +330,21 @@ class CombineEditor {
     if (!wrap || !this.nodes.size) return;
     requestAnimationFrame(() => {
       if (!wrap.clientWidth || !wrap.clientHeight) return;
-      const b = this.contentBounds();
-      const pad = 40;
-      // The zoom/fit cluster floats over the bottom-right of the canvas, so
-      // the opening view leaves it a strip of its own. Without this the
-      // last piece dealt reliably starts out half-hidden behind the buttons
-      // -- which is the same problem as a piece being off-screen, just
-      // harder to spot.
-      const padBottom = pad + 76;
-      const rawW = (b.maxX - b.minX) + pad * 2, rawH = (b.maxY - b.minY) + pad + padBottom;
-      this.zoom = Math.max(this.minZoom(),
-        Math.min(1, wrap.clientWidth / rawW, wrap.clientHeight / rawH));
-      this.render();
-      const cw = rawW * this.zoom, ch = rawH * this.zoom;
-      wrap.scrollLeft = Math.max(0, (b.minX - pad) * this.zoom - (wrap.clientWidth - cw) / 2);
-      wrap.scrollTop = Math.max(0, (b.minY - pad) * this.zoom - (wrap.clientHeight - ch) / 2);
+      // Framed the same way the Fit button does it, including the strip
+      // reserved for the buttons themselves -- see controlsReserve(). A
+      // piece dealt underneath them can be seen but not picked up, which on
+      // a 30-node round means the puzzle simply cannot be finished.
+      fitBoundsInView(this, this.contentBounds());
+      // A round small enough to fit twice over shouldn't open blown up past
+      // full size; re-centre by hand after capping, since the fit's own
+      // scroll was worked out for the bigger zoom.
+      if (this.zoom > 1) {
+        this.zoom = 1;
+        this.render();
+        const b = this.contentBounds();
+        wrap.scrollLeft = Math.max(0, b.minX - (wrap.clientWidth - (b.maxX - b.minX)) / 2);
+        wrap.scrollTop = Math.max(0, b.minY - (wrap.clientHeight - (b.maxY - b.minY)) / 2);
+      }
     });
   }
 
@@ -922,20 +939,28 @@ class CombineEditor {
       const d = Math.hypot(root._x - slot._x, root._y - slot._y);
       if (d < reach && d < bestDist) { bestDist = d; near = slot; }
     }
+    // Dropped in open space -- that's just moving a piece around, and in a
+    // strict round it must not count as a mistake either.
     if (!near) { this.setFeedback(''); return; }
 
     // Naming the piece and the position, but never what the slot wants:
     // working out what fits where is the entire level.
     const label = nodeLabel(root.catKey, root.number);
     const owner = nodeLabel(this.node(near.parentId).catKey, this.node(near.parentId).number);
-    this.setFeedback(
-      near.role === 'spec'
-        ? `A ${label} can't be the specifier of ${owner}.`
-        : `A ${label} can't be the complement of ${owner}.`,
-      'err');
+    const what = near.role === 'spec' ? 'the specifier of' : near.role === 'head' ? 'the head of' : 'the complement of';
+    this.setFeedback(`A ${label} can't be ${what} ${owner}.`, 'err');
 
+    if (this.strict) { this._failStrict(); return; }
     this.failedAttempts++;
     if (this.failedAttempts >= HINT_AFTER_ATTEMPTS) this._offerHint();
+  }
+
+  // One wrong join ends a strict round. The host hears about it through
+  // onStrictFail and deals it again; saying what was wrong first, and only
+  // then restarting, is what keeps it from feeling arbitrary.
+  _failStrict() {
+    this.strictFailed = true;
+    if (this.onStrictFail) this.onStrictFail();
   }
 
   // The landing site nearest the finger. Measured from the pointer, not

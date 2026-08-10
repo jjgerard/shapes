@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shapes and Language</title>
-<link rel="stylesheet" href="style.css?v=61">
-<link rel="icon" href="icon.svg?v=61" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=62">
+<link rel="icon" href="icon.svg?v=62" type="image/svg+xml">
 <meta name="theme-color" content="#2f6f5e">
 </head>
 <body>
@@ -13,7 +13,7 @@
 
   <header id="app-header">
     <div class="brand">
-      <img src="icon.svg?v=61" alt="" class="brand-logo">
+      <img src="icon.svg?v=62" alt="" class="brand-logo">
       <span class="brand-name">Shapes and Language</span>
     </div>
     <div class="header-right">
@@ -30,27 +30,43 @@
   <main>
 
     <!-- ============ NAME GATE ============ -->
+    <!-- The first thing anyone sees, and for a lot of this audience the
+         moment they decide whether this is going to be painful. So the
+         logo and the name get the whole top of the screen at a size you
+         can't miss, and the two boxes sit underneath as the small, easy
+         thing they actually are. The header's own brand is hidden here --
+         showing the name twice on the one screen that is about the name
+         just makes both of them look smaller. -->
     <section id="screen-name" class="screen">
+      <div class="hero">
+        <img src="icon.svg?v=62" alt="" class="hero-logo">
+        <h1 class="hero-name">Shapes and Language</h1>
+        <p class="hero-tag">Build a sentence out of shapes.</p>
+      </div>
       <div class="card narrow">
-        <h1>Who's building?</h1>
-        <p class="muted">Your points are saved on this device, under your name and class code.</p>
+        <h2>Let's get you started</h2>
         <label>Your name
           <input id="input-name" type="text" maxlength="30" autocomplete="off"
                  autocapitalize="words" autocorrect="off" spellcheck="false" placeholder="e.g. Jordan">
         </label>
         <label>Class code
           <input id="input-code" type="text" maxlength="20" autocomplete="off"
-                 autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="e.g. LING378">
+                 autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="e.g. CMM350">
         </label>
-        <p class="field-help">Your teacher gives you the class code. It just keeps your points separate from other classes &mdash; it isn't a password.</p>
+        <p class="field-help">Your teacher gives you this. It isn't a password.</p>
         <p id="name-error" class="field-error hidden"></p>
-        <button id="btn-start" class="btn-primary">Start building</button>
+        <button id="btn-start" class="btn-primary btn-hero">Start building</button>
+        <p class="muted start-note">Your points save on this device under your name and class code, so you can close the page and come back to them.</p>
+        <!-- The header is hidden on this screen, so the way into help is
+             here instead -- and a labelled link is easier to find than a
+             hamburger for someone who has just arrived. -->
+        <button class="link-btn welcome-help" data-help="general">How does this work?</button>
       </div>
     </section>
 
     <!-- ============ LEVEL SELECT ============ -->
-    <!-- One progression of eight. Levels 1-4 run the flat basic phase and
-         5-8 the X-bar phase, but a student is never asked to pick between
+    <!-- One progression of twelve. Levels 1-4 run the flat basic phase and
+         5-12 the X-bar phase, but a student is never asked to pick between
          them: the switch happens where the syllabus puts it, at Level 5.
          Locked cards show nothing but their number, so the vocabulary a
          later level teaches can't leak backwards. -->
@@ -92,20 +108,15 @@
       <div class="target-grid" id="categoryid-grid"></div>
     </section>
 
-    <!-- ============ LEVEL 9 (combining phrases) ============ -->
-    <section id="screen-level9" class="screen hidden">
+    <!-- ============ LEVELS 9-12 (one shared screen) ============ -->
+    <!-- All four run the same canvas and the same modal and differ only in
+         what they deal out, so they share a screen the way Levels 1-4 and
+         5-8 already do. The heading and the paragraph are set per level. -->
+    <section id="screen-combine" class="screen hidden">
       <button class="link-btn back-btn" data-back>&larr; Levels</button>
-      <h1 id="level9-heading">Level 9 &mdash; Building</h1>
-      <p class="muted">Every piece here is a whole phrase with its empty positions showing. Drag a phrase into a position it fits &mdash; each position only takes certain phrases. Finish one sub-level to unlock the next.</p>
+      <h1 id="combine-heading">Level 9 &mdash; Building</h1>
+      <p class="muted" id="combine-intro"></p>
       <div class="target-grid" id="combine-grid"></div>
-    </section>
-
-    <!-- ============ LEVEL 10 (movement) ============ -->
-    <section id="screen-level10" class="screen hidden">
-      <button class="link-btn back-btn" data-back>&larr; Levels</button>
-      <h1 id="level10-heading">Level 10 &mdash; Moving</h1>
-      <p class="muted">Each round starts as a statement with an empty piece to go on top of it. Build it, then move pieces up the tree to turn it into a question &mdash; what moves leaves a crossed-out copy behind.</p>
-      <div class="target-grid" id="movement-grid"></div>
     </section>
 
     <!-- ============ REVEAL (final sub-level: fill in the blanks) ============ -->
@@ -338,16 +349,16 @@
   </div>
 </div>
 
-<script src="sound.js?v=61"></script>
-<script src="data.js?v=61"></script>
-<script src="shapes.js?v=61"></script>
-<script src="canvas.js?v=61"></script>
-<script src="wordmatch.js?v=61"></script>
-<script src="editor.js?v=61"></script>
-<script src="combine.js?v=61"></script>
-<script src="streak.js?v=61"></script>
-<script src="treeviewer.js?v=61"></script>
-<script src="app.js?v=61"></script>
+<script src="sound.js?v=62"></script>
+<script src="data.js?v=62"></script>
+<script src="shapes.js?v=62"></script>
+<script src="canvas.js?v=62"></script>
+<script src="wordmatch.js?v=62"></script>
+<script src="editor.js?v=62"></script>
+<script src="combine.js?v=62"></script>
+<script src="streak.js?v=62"></script>
+<script src="treeviewer.js?v=62"></script>
+<script src="app.js?v=62"></script>
 <script>
   // Plain webpage, not an installable app -- clean up any service worker
   // and caches left over from when it registered one, so nobody's stuck

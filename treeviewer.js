@@ -82,12 +82,17 @@ class TreeViewer {
     requestAnimationFrame(() => {
       const pad = 30;
       const rawW = this.treeWidth + pad * 2, rawH = this.treeHeight + pad * 2;
-      const fitZoom = Math.min(wrap.clientWidth / rawW, wrap.clientHeight / rawH);
+      // The same usable height the Fit button works to (see controlsReserve
+      // in canvas.js), so opening the canvas and pressing Fit land on the
+      // same framing instead of Fit shrinking the tree the first time it is
+      // pressed -- and so the bottom of the tree isn't behind the buttons.
+      const availH = Math.max(60, wrap.clientHeight - controlsReserve(this));
+      const fitZoom = Math.min(wrap.clientWidth / rawW, availH / rawH);
       this.zoom = Math.max(this.minZoom(), Math.min(this.maxZoom(), fitZoom));
       this.render();
       const contentW = rawW * this.zoom, contentH = rawH * this.zoom;
       wrap.scrollLeft = Math.max(0, (this.xOffset - pad) * this.zoom - (wrap.clientWidth - contentW) / 2);
-      wrap.scrollTop = Math.max(0, (this.yOffset - pad) * this.zoom - (wrap.clientHeight - contentH) / 2);
+      wrap.scrollTop = Math.max(0, (this.yOffset - pad) * this.zoom - (availH - contentH) / 2);
     });
   }
 

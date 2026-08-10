@@ -73,7 +73,35 @@ h2 { font-size: 1.25rem; }
   border-radius: var(--radius);
   padding: 24px;
 }
-.card.narrow { max-width: 380px; margin: 60px auto; }
+.card.narrow { max-width: 420px; margin: 24px auto 60px; }
+
+/* ---- the welcome screen ---- */
+/* The logo at a size that reads as a title rather than a favicon, with the
+   name under it. This is the only screen in the game with room to spare,
+   and the only one where a first impression is being made. */
+/* The hero is the top of the page here, so it supplies its own breathing
+   room and main's standard top padding is just dead space above it. */
+body.on-welcome main { padding-top: 8px; }
+.hero { text-align: center; padding: 26px 16px 6px; }
+.hero-logo {
+  width: 116px; height: 116px; display: block; margin: 0 auto 14px;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.14));
+}
+.hero-name {
+  font-size: 2.6rem; line-height: 1.08; margin: 0 0 8px;
+  letter-spacing: -0.5px; color: var(--accent);
+}
+.hero-tag { font-size: 1.12rem; color: var(--muted); margin: 0; }
+.card.narrow h2 { margin: 0 0 4px; font-size: 1.15rem; }
+.btn-hero { width: 100%; margin-top: 18px; padding: 14px 18px; font-size: 1.08rem; }
+.start-note { font-size: 0.82rem; margin: 12px 0 0; text-align: center; }
+.welcome-help { display: block; margin: 8px auto 0; padding: 8px; font-size: 0.92rem; }
+/* No header at all here. It would show the name a second time on the one
+   screen that is about the name, and everything behind the menu -- sound,
+   help, switch player -- is about a game you haven't started yet. Dropping
+   it also buys back the ~68px that decides whether the Start button clears
+   the fold on a short phone, which matters more than any of it. */
+body.on-welcome #app-header { display: none; }
 .card label { display: block; margin-top: 14px; font-size: 0.9rem; font-weight: 600; }
 .card input {
   display: block;
@@ -717,7 +745,18 @@ button { font-family: inherit; cursor: pointer; }
   .brand-name { white-space: normal; text-overflow: clip; line-height: 1.15; }
   .brand-logo { width: 26px; height: 26px; }
   main { padding: 16px 12px calc(var(--mascot-bar-h) + 20px); }
-  .card.narrow { margin: 24px auto; padding: 20px; }
+  .card.narrow { margin: 10px auto 24px; padding: 18px; }
+  /* Still the biggest thing on the screen, but sized so that both boxes AND
+     the Start button clear the fold on a 640px-tall phone -- a first screen
+     whose only button needs scrolling to find is a first screen that looks
+     broken. Measured, not guessed: at 360x640 the button lands ~30px clear. */
+  .hero { padding: 4px 12px 2px; }
+  .hero-logo { width: 64px; height: 64px; margin-bottom: 8px; }
+  .hero-name { font-size: 1.8rem; }
+  .hero-tag { font-size: 0.95rem; }
+  .card.narrow h2 { font-size: 1.05rem; }
+  .btn-hero { margin-top: 12px; padding: 13px 16px; }
+  .card label { margin-top: 11px; }
   .level-grid, .target-grid, .fragment-grid { grid-template-columns: 1fr; }
   .level-card.level-done p { display: none; }
   .level-card.level-done { padding: 14px 18px; }
@@ -860,4 +899,16 @@ button { font-family: inherit; cursor: pointer; }
 @media (max-width: 360px) {
   #app-header { padding: 12px 10px; gap: 8px; }
   .header-right { gap: 6px; }
+}
+
+/* A 320x568 phone has about 100px less room than a 360x640 one, and the
+   welcome screen has to fit the same two boxes and the same button above
+   the mascot bar. The tagline is the one thing here that is decoration
+   rather than a job, so it is what goes. Kept below the 360px header
+   breakpoint deliberately: a 360px phone has the room and keeps the line. */
+@media (max-width: 340px) {
+  .hero-logo { width: 54px; height: 54px; margin-bottom: 6px; }
+  .hero-name { font-size: 1.6rem; }
+  .hero-tag { display: none; }
+  .card.narrow { padding: 15px; }
 }

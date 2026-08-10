@@ -123,13 +123,15 @@ const SCREEN_SPEECH = {
   level2: 'Choose a sentence below!',
   level3: 'Choose a sub-level below!',
   level4: 'Choose a sub-level below!',
-  level9: 'Choose a sub-level below!',
-  level10: 'Choose a sub-level below!',
+  combine: 'Choose a sub-level below!',
   reveal: 'Type what you think each shape and number means!',
 };
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById('screen-' + id).classList.remove('hidden');
+  // The welcome screen shows the name at full size itself, so the header
+  // stands down while it's up (see .on-welcome in style.css).
+  document.body.classList.toggle('on-welcome', id === 'name');
   if (SCREEN_SPEECH[id]) setMascotSpeech(SCREEN_SPEECH[id]);
   window.scrollTo(0, 0);
 }
@@ -186,14 +188,50 @@ const GAME_LEVELS = [
   // moves leaves a crossed-out copy of itself behind.
   { n: 10, phase: 'xbar', kind: 'movement', title: 'Moving',
     blurb: 'Turn the statements you built into questions, by moving pieces up the tree.' },
+  // The last thing taken away: no ready-made phrases at all, and no room
+  // for error either.
+  { n: 11, phase: 'xbar', kind: 'nodes', title: 'One at a Time',
+    blurb: 'Every node on its own. Build a phrase from scratch, with no wrong joins allowed.' },
+  { n: 12, phase: 'xbar', kind: 'fulltree', title: 'The Whole Thing',
+    blurb: 'The sentences you started with, built node by node — adjectives, adverbs and all.' },
 ];
 
 const ACTIVITY_SCREEN = {
   build: 'level1', words: 'level2', constituents: 'level3', categories: 'level4',
-  combine: 'level9', movement: 'level10',
+  // Levels 9-12 all run the same canvas and share one screen.
+  combine: 'combine', movement: 'combine', nodes: 'combine', fulltree: 'combine',
+};
+
+// Everything that differs between the four levels sharing that screen: what
+// they deal out, what the screen says, and which help entry the modal's ?
+// button opens.
+const COMBINE_KINDS = {
+  combine: {
+    modeKey: 'level9', help: 'combine',
+    intro: 'Every piece here is a whole phrase with its empty positions showing. Drag a phrase into a position it fits — each position only takes certain phrases.',
+  },
+  movement: {
+    modeKey: 'level10', help: 'movement',
+    intro: 'Each round starts as a statement with an empty piece to go on top of it. Build it, then move pieces up the tree to turn it into a question — what moves leaves a crossed-out copy behind.',
+  },
+  nodes: {
+    modeKey: 'level11', help: 'nodes',
+    intro: 'No ready-made phrases this time: every node arrives on its own. Build the whole phrase from the bottom up — and these have to be done without a single wrong join.',
+  },
+  fulltree: {
+    modeKey: 'level12', help: 'nodes',
+    intro: 'The sentences you built right at the start, drawn the way you draw them now, one node at a time. Still no wrong joins allowed.',
+  },
 };
 
 function levelByNumber(n) { return GAME_LEVELS.find(l => l.n === n); }
+
+// The sub-levels one of the shared-canvas levels deals out, read from that
+// level's OWN phase rather than whichever one happens to be loaded -- the
+// level select has to report on all twelve at once.
+function combineListForLevel(level) {
+  return MODES[level.phase][COMBINE_KINDS[level.kind].modeKey];
+}
 
 // Progress for a phase, read without disturbing whichever one is active --
 // the level select has to report on both at once.
@@ -214,8 +252,7 @@ function isLevelComplete(level) {
   }
   if (level.kind === 'words') return mode.level2.every(sub => p.sentences.includes(sub.id));
   if (level.kind === 'constituents') return mode.quizConstituency.every(sub => p.constituency.includes(sub.id));
-  if (level.kind === 'combine') return mode.level9.every(sub => p.combos.includes(sub.id));
-  if (level.kind === 'movement') return mode.level10.every(sub => p.combos.includes(sub.id));
+  if (COMBINE_KINDS[level.kind]) return combineListForLevel(level).every(sub => p.combos.includes(sub.id));
   return mode.quiz.every(sub => p.categoryid.includes(sub.id));
 }
 
@@ -235,8 +272,8 @@ function levelProgressLabel(level) {
   if (level.kind === 'constituents') {
     return `${mode.quizConstituency.filter(s => p.constituency.includes(s.id)).length} / ${mode.quizConstituency.length} sub-levels done`;
   }
-  if (level.kind === 'combine' || level.kind === 'movement') {
-    const list = level.kind === 'combine' ? mode.level9 : mode.level10;
+  if (COMBINE_KINDS[level.kind]) {
+    const list = combineListForLevel(level);
     return `${list.filter(s => p.combos.includes(s.id)).length} / ${list.length} sub-levels done`;
   }
   return `${mode.quiz.filter(s => p.categoryid.includes(s.id)).length} / ${mode.quiz.length} sub-levels done`;
@@ -510,6 +547,23 @@ const HELP = {
       ${CANVAS_HELP}
     </ul>`,
   },
+  nodes: {
+    title: 'Levels 11 and 12 — one node at a time',
+    html: `<ul>
+      <li>Nothing is joined up for you here. Every node arrives on its own, with
+          <strong>dashed boxes</strong> for whatever goes underneath it.</li>
+      <li>Most nodes have two boxes, because most nodes in a tree have two things
+          under them. Some have one.</li>
+      <li>Build from the <strong>bottom up</strong>: find the node each box is asking for,
+          and drag it in. Whole groups move together once they're joined.</li>
+      <li><strong>These have to be done with no wrong joins.</strong> If you put something
+          where it doesn't go, you'll be told why and the pieces are laid out again.
+          Nothing else is lost &mdash; points you've already earned are safe.</li>
+      <li>Nothing new is being taught here. Every rule you need you have already
+          used, so take it slowly and check before you drop.</li>
+      ${CANVAS_HELP}
+    </ul>`,
+  },
 };
 function openHelp(key) {
   const entry = HELP[key] || HELP.general;
@@ -654,10 +708,11 @@ function openLevel(level) {
   if (level.kind === 'build') { renderTargetGrid(); showScreen('level1'); }
   else if (level.kind === 'words') { renderLevel2Grid(); showScreen('level2'); }
   else if (level.kind === 'constituents') { renderConstituencyGrid(); showScreen('level3'); }
-  else if (level.kind === 'combine' || level.kind === 'movement') {
+  else if (COMBINE_KINDS[level.kind]) {
     combineKind = level.kind;
+    document.getElementById('combine-intro').textContent = COMBINE_KINDS[level.kind].intro;
     renderCombineGrid();
-    showScreen(ACTIVITY_SCREEN[level.kind]);
+    showScreen('combine');
   }
   else { renderCategoryIdGrid(); showScreen('level4'); }
 }
@@ -1442,7 +1497,7 @@ let combineRoundDone = false;
 let combineKind = 'combine';
 
 function combineSubLevels() {
-  return combineKind === 'movement' ? LEVEL10_SUBLEVELS : LEVEL9_SUBLEVELS;
+  return MODE[COMBINE_KINDS[combineKind].modeKey];
 }
 
 function ensureCombineEditor() {
@@ -1456,7 +1511,7 @@ function isCombineSubComplete(sub) {
 
 function renderCombineGrid() {
   const subs = combineSubLevels();
-  const grid = document.getElementById(combineKind === 'movement' ? 'movement-grid' : 'combine-grid');
+  const grid = document.getElementById('combine-grid');
   grid.innerHTML = '';
   subs.forEach((sub, i) => {
     const done = isCombineSubComplete(sub);
@@ -1499,8 +1554,7 @@ function openCombine(sub) {
   combineRoundIx = 0;
   // One modal serves both levels, so its ? button has to answer for
   // whichever one is open -- the binding reads this attribute at click time.
-  document.querySelector('#combine-overlay [data-help]').dataset.help =
-    combineKind === 'movement' ? 'movement' : 'combine';
+  document.querySelector('#combine-overlay [data-help]').dataset.help = COMBINE_KINDS[combineKind].help;
   const fit = fitCanvasSize(1600, 1000);
   combineEditor.open(fit.w, fit.h);
   combineEditor.onFeedback = relayFeedback;
@@ -1510,6 +1564,7 @@ function openCombine(sub) {
     document.getElementById('combine-snip').classList.toggle('active', on);
     setMascotSpeech(on ? COMBINE_SNIP_HINT : currentCombineRound().hint, { interrupt: on });
   };
+  combineEditor.onStrictFail = failCombineRound;
   clearMascotFlash();
   setModalDoneState(document.getElementById('combine-close'), false);
   // Shown BEFORE the round is dealt: the opening zoom is measured against
@@ -1528,8 +1583,14 @@ function currentCombineRound() { return combineSub.rounds[combineRoundIx]; }
 function loadCombineRound() {
   const round = currentCombineRound();
   combineRoundDone = false;
-  document.getElementById('combine-title').textContent =
-    `${combineSub.name} — round ${combineRoundIx + 1} of ${combineSub.rounds.length}`;
+  // A sub-level that is one long puzzle rather than a run of short ones
+  // says nothing about rounds -- "round 1 of 1" is a counter for something
+  // that isn't happening.
+  const many = combineSub.rounds.length > 1;
+  document.getElementById('combine-title').textContent = many
+    ? `${combineSub.name} — round ${combineRoundIx + 1} of ${combineSub.rounds.length}`
+    : combineSub.name;
+  document.getElementById('combine-rounds').classList.toggle('hidden', !many);
   document.getElementById('combine-next').classList.add('hidden');
   document.getElementById('combine-snip').classList.remove('active');
 
@@ -1547,7 +1608,25 @@ function loadCombineRound() {
 
   renderCombineRounds();
   setMascotSpeech(round.hint);
-  combineEditor.load(round.pieces.map(cloneSpec), { silentNote: combineSub.silentNote || '' });
+  combineEditor.load(round.pieces.map(cloneSpec), {
+    silentNote: combineSub.silentNote || '',
+    strict: !!combineSub.strict,
+  });
+}
+
+// A wrong join in a no-mistakes round. The explanation of what was wrong is
+// already in the mascot bar, so it gets a beat to be read before the pieces
+// are dealt again -- restarting in the same tick would look like the app
+// had simply thrown the work away without saying why.
+let combineFailTimer = null;
+function failCombineRound() {
+  clearTimeout(combineFailTimer);
+  const said = document.getElementById('mascot-bubble').textContent;
+  combineFailTimer = setTimeout(() => {
+    if (!combineSub) return;
+    loadCombineRound();
+    setMascotSpeech(`${said} This one has to be done without mistakes, so it's laid out again — have another go.`);
+  }, 1500);
 }
 
 // Each round is re-materialised from a fresh copy, so replaying a sub-level
@@ -1582,9 +1661,13 @@ function checkCombineRound() {
     const built = combineEditor.yieldWords().join(' ');
     if (built !== round.sentence) {
       // A well-formed tree of the wrong sentence -- worth naming precisely,
-      // because "that's wrong" here teaches nothing and this does.
+      // because "that's wrong" here teaches nothing and this does. In a
+      // no-mistakes round every join was legal, so this is the only place
+      // it can be caught, and it costs the round like any other error.
       combineEditor.setFeedback(
-        `That's a real tree, but it says “${titleCase(built)}”. Use the scissors and swap two pieces around.`, 'err');
+        `That's a real tree, but it says “${titleCase(built)}”.` +
+        (combineSub.strict ? '' : ' Use the scissors and swap two pieces around.'), 'err');
+      if (combineSub.strict) failCombineRound();
       return;
     }
   }
@@ -1634,9 +1717,10 @@ function markCombineSubDone(sub) {
 }
 
 function closeCombine() {
+  clearTimeout(combineFailTimer);
   document.getElementById('combine-overlay').classList.add('hidden');
   combineSub = null;
-  setMascotSpeech(SCREEN_SPEECH[ACTIVITY_SCREEN[combineKind]]);
+  setMascotSpeech(SCREEN_SPEECH.combine);
   clearMascotFlash();
 }
 

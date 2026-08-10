@@ -38,22 +38,39 @@ function zoomAboutCenter(view, factor) {
   wrap.scrollTop = contentY * newZoom - cy;
 }
 
-// Frame `bounds` (content coordinates) as large as it will go in the wrap,
-// centered. Unlike the various _scrollToStart() methods -- which only zoom
-// to fit when the result would still be comfortably readable, and otherwise
-// anchor to the top-left -- this always fits, because the student asked it
-// to: getting everything back on screen beats keeping it legible.
+// This cluster floats OVER the canvas, so the strip it covers isn't usable
+// space -- anything framed underneath it can be looked at but not touched,
+// because a press there lands on a button. Measured rather than assumed:
+// the buttons are bigger on a phone. Returned in screen pixels, which is
+// the point -- a reserve expressed in content units shrinks with the zoom,
+// and it is exactly when a canvas is zoomed right out (a big puzzle on a
+// small screen) that the cluster covers the most content.
+function controlsReserve(view) {
+  const stage = view.svg.parentElement && view.svg.parentElement.parentElement;
+  const bar = stage && stage.querySelector ? stage.querySelector('.canvas-controls') : null;
+  return bar ? bar.getBoundingClientRect().height + 14 : 0;
+}
+
+// Frame `bounds` (content coordinates) as large as it will go in the usable
+// part of the wrap, centered. Unlike the various _scrollToStart() methods --
+// which only zoom to fit when the result would still be comfortably
+// readable, and otherwise anchor to the top-left -- this always fits,
+// because the student asked it to: getting everything back on screen beats
+// keeping it legible.
 function fitBoundsInView(view, bounds, pad = 40) {
   const wrap = view.svg.parentElement;
   if (!wrap || !bounds) return;
   const rawW = (bounds.maxX - bounds.minX) + pad * 2;
   const rawH = (bounds.maxY - bounds.minY) + pad * 2;
   if (rawW <= 0 || rawH <= 0 || !wrap.clientWidth || !wrap.clientHeight) return;
-  view.zoom = clampZoom(view, Math.min(wrap.clientWidth / rawW, wrap.clientHeight / rawH));
+  const availH = Math.max(60, wrap.clientHeight - controlsReserve(view));
+  view.zoom = clampZoom(view, Math.min(wrap.clientWidth / rawW, availH / rawH));
   view.render();
   const contentW = rawW * view.zoom, contentH = rawH * view.zoom;
   wrap.scrollLeft = Math.max(0, (bounds.minX - pad) * view.zoom - (wrap.clientWidth - contentW) / 2);
-  wrap.scrollTop = Math.max(0, (bounds.minY - pad) * view.zoom - (wrap.clientHeight - contentH) / 2);
+  // Centred in the usable band rather than the whole wrap, so the reserve
+  // stays at the bottom where the buttons actually are.
+  wrap.scrollTop = Math.max(0, (bounds.minY - pad) * view.zoom - (availH - contentH) / 2);
 }
 
 // Re-frame everything. Each canvas class supplies contentBounds().
