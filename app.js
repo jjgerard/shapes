@@ -129,10 +129,16 @@ const SCREEN_SPEECH = {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById('screen-' + id).classList.remove('hidden');
-  // The welcome screen shows the name at full size itself, so the header
-  // stands down while it's up (see .on-welcome in style.css).
+  // The welcome screen shows the name at full size itself and has no puzzle
+  // for the mascot to talk about, so both the header and the mascot bar
+  // stand down while it's up (see .on-welcome in style.css). Toggled BEFORE
+  // the speech below: setMascotSpeech re-measures the bar, and measuring it
+  // while it is still on the wrong side of this class leaves main reserving
+  // a strip for a bar that isn't there, or not reserving one for a bar that
+  // is.
   document.body.classList.toggle('on-welcome', id === 'name');
   if (SCREEN_SPEECH[id]) setMascotSpeech(SCREEN_SPEECH[id]);
+  else syncMascotBarHeight();
   window.scrollTo(0, 0);
 }
 
@@ -215,11 +221,11 @@ const COMBINE_KINDS = {
     intro: 'Each round starts as a statement with an empty piece to go on top of it. Build it, then move pieces up the tree to turn it into a question — what moves leaves a crossed-out copy behind.',
   },
   nodes: {
-    modeKey: 'level11', help: 'nodes',
+    modeKey: 'level11', help: 'nodes', blankSlots: true,
     intro: 'No ready-made phrases this time: every node arrives on its own. Build the whole phrase from the bottom up. Put something in the wrong place and you\'ll be told why, and nothing is lost.',
   },
   fulltree: {
-    modeKey: 'level12', help: 'nodes',
+    modeKey: 'level12', help: 'nodes', blankSlots: true,
     intro: 'The sentences you built right at the start, drawn the way you draw them now, one node at a time. This time you have a set number of tries — use them all and the pieces are laid out again.',
   },
 };
@@ -551,14 +557,18 @@ const HELP = {
     title: 'Levels 11 and 12 — one node at a time',
     html: `<ul>
       <li>Nothing is joined up for you here. Every node arrives on its own, with
-          <strong>dashed boxes</strong> for whatever goes underneath it.</li>
+          <strong>blank grey boxes</strong> for whatever goes underneath it. They don't
+          say what they want &mdash; working that out is the whole exercise.</li>
       <li>Most nodes have two boxes, because most nodes in a tree have two things
           under them. Some have one.</li>
+      <li>The <strong>words</strong> are loose too, and have to be joined on like
+          everything else. A word only goes onto the piece it belongs to, and takes
+          that piece's colour once it lands.</li>
       <li>Build from the <strong>bottom up</strong>: find the node each box is asking for,
           and drag it in. Whole groups move together once they're joined.</li>
       <li>In <strong>Level 11</strong> a wrong join just doesn't happen: you'll be told why,
-          and nothing is lost. Stuck for three tries in a row and a pair that fits
-          starts glowing.</li>
+          and nothing is lost. Get it wrong three times in a row and one of the grey
+          boxes fills in with what it's waiting for.</li>
       <li>In <strong>Level 12</strong> you get a set number of tries, shown as
           <strong>♥</strong> hearts at the top. Use them all up and the pieces are laid out
           again from the start &mdash; but points you've already earned are always safe,
@@ -1616,6 +1626,7 @@ function loadCombineRound() {
   combineEditor.load(round.pieces.map(cloneSpec), {
     silentNote: combineSub.silentNote || '',
     lives: combineSub.lives || 0,
+    blankSlots: !!COMBINE_KINDS[combineKind].blankSlots,
   });
   renderCombineLives();
 }

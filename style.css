@@ -84,8 +84,8 @@ h2 { font-size: 1.25rem; }
 body.on-welcome main { padding-top: 8px; }
 .hero { text-align: center; padding: 26px 16px 6px; }
 .hero-logo {
-  width: 116px; height: 116px; display: block; margin: 0 auto 14px;
-  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.14));
+  width: 168px; height: 168px; display: block; margin: 0 auto 16px;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.15));
 }
 .hero-name {
   font-size: 2.6rem; line-height: 1.08; margin: 0 0 8px;
@@ -96,12 +96,18 @@ body.on-welcome main { padding-top: 8px; }
 .btn-hero { width: 100%; margin-top: 18px; padding: 14px 18px; font-size: 1.08rem; }
 .start-note { font-size: 0.82rem; margin: 12px 0 0; text-align: center; }
 .welcome-help { display: block; margin: 8px auto 0; padding: 8px; font-size: 0.92rem; }
-/* No header at all here. It would show the name a second time on the one
-   screen that is about the name, and everything behind the menu -- sound,
-   help, switch player -- is about a game you haven't started yet. Dropping
-   it also buys back the ~68px that decides whether the Start button clears
-   the fold on a short phone, which matters more than any of it. */
-body.on-welcome #app-header { display: none; }
+/* No header and no mascot here. The header would show the name a second
+   time on the one screen that is about the name, and everything behind the
+   menu -- sound, help, switch player -- is about a game you haven't started
+   yet. The mascot has nothing to say before there is a puzzle: it would be
+   a talking bar taking a strip of a screen whose only job is a logo, two
+   boxes and a button.
+
+   Between them they give back around 150px, which is what pays for a logo
+   this size still clearing the fold on a short phone. --mascot-bar-h
+   follows the bar's own height (syncMascotBarHeight in app.js), so main's
+   reserved strip collapses on its own. */
+body.on-welcome #app-header, body.on-welcome .mascot-wrap { display: none; }
 .card label { display: block; margin-top: 14px; font-size: 0.9rem; font-weight: 600; }
 .card input {
   display: block;
@@ -756,8 +762,8 @@ button { font-family: inherit; cursor: pointer; }
      the Start button clear the fold on a 640px-tall phone -- a first screen
      whose only button needs scrolling to find is a first screen that looks
      broken. Measured, not guessed: at 360x640 the button lands ~30px clear. */
-  .hero { padding: 4px 12px 2px; }
-  .hero-logo { width: 64px; height: 64px; margin-bottom: 8px; }
+  .hero { padding: 8px 12px 2px; }
+  .hero-logo { width: 118px; height: 118px; margin-bottom: 10px; }
   .hero-name { font-size: 1.8rem; }
   .hero-tag { font-size: 0.95rem; }
   .card.narrow h2 { font-size: 1.05rem; }
@@ -913,8 +919,7 @@ button { font-family: inherit; cursor: pointer; }
    rather than a job, so it is what goes. Kept below the 360px header
    breakpoint deliberately: a 360px phone has the room and keeps the line. */
 @media (max-width: 340px) {
-  .hero-logo { width: 54px; height: 54px; margin-bottom: 6px; }
+  .hero-logo { width: 96px; height: 96px; margin-bottom: 8px; }
   .hero-name { font-size: 1.6rem; }
-  .hero-tag { display: none; }
   .card.narrow { padding: 15px; }
 }

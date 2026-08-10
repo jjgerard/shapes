@@ -868,7 +868,8 @@ const XBAR_LEVEL9 = [
 // in play has been used for six levels, so the question has stopped being
 // "can you work it out" and become "do you know it". Run the allowance out
 // and the round is dealt again. The allowance grows with the tree, since a
-// wrong join is a fixed cost and a thirty-node sentence is not.
+// wrong join is a fixed cost and a forty-piece sentence is not: roughly one
+// try per six joins the round asks for.
 // ===========================================================================
 
 // Which position a daughter occupies, worked out from the shapes rather
@@ -885,20 +886,29 @@ function slotRoleFor(parent, child, siblings) {
   return parent.number === PHRASE_LEVEL ? 'spec' : 'adjunct'; // sibling of a bar level
 }
 
-// Break a finished tree into one piece per node. Each piece keeps its own
-// word (if it has one) and one empty position per daughter, accepting
-// exactly the category that daughter is.
+// Break a finished tree into one piece per node: an empty position per
+// daughter, accepting exactly the category that daughter is.
+//
+// A head's WORD comes out as a piece of its own too, and the head gets an
+// empty position waiting for it. Knowing that "the" is a determiner and
+// "quickly" is an adverb is a step in its own right -- it is what Level 2
+// spends its whole time on -- and leaving the word already attached would
+// be doing that step for the student on the one level that should be
+// asking for everything at once.
 function explodeNodes(root) {
   const pieces = [];
   (function walk(n) {
     const piece = { shape: n.shape, number: n.number, children: [] };
-    if (n.word) piece.word = n.word;
     if (n.silent) piece.silent = true;
     for (const c of n.children) {
       piece.children.push({
         slot: slotRoleFor(n, c, n.children),
         accepts: [`${c.shape}${c.number}`],
       });
+    }
+    if (n.word) {
+      piece.children.push({ slot: 'word', accepts: [`w:${n.word}`] });
+      pieces.push({ word: n.word });
     }
     pieces.push(piece);
     n.children.forEach(walk);
@@ -1146,9 +1156,9 @@ const XBAR_LEVEL12 = [
   {
     id: 'tree-chased',
     name: 'The Full Sentence',
-    description: 'A sentence you have built before, now one node at a time. Three tries.',
+    description: 'A sentence you have built before, now one node and one word at a time. Four tries.',
     goal: 'sentence',
-    lives: 3,
+    lives: 4,
     rounds: [ {
       sentence: 'the cat chased the mouse',
       hint: 'Nothing new here — just more of it, and no wrong joins allowed.',
@@ -1160,9 +1170,9 @@ const XBAR_LEVEL12 = [
   {
     id: 'tree-fluffy',
     name: 'With an Adjective',
-    description: 'An adjective joins in. It needs a phrase of its own. Three tries.',
+    description: 'An adjective joins in. It needs a phrase of its own. Four tries.',
     goal: 'sentence',
-    lives: 3,
+    lives: 4,
     rounds: [ {
       sentence: 'the fluffy cat will jump',
       hint: 'The adjective is a whole phrase, and it hangs off the noun\'s bar level rather than sitting beside the noun.',
@@ -1174,9 +1184,9 @@ const XBAR_LEVEL12 = [
   {
     id: 'tree-quickly',
     name: 'Everything At Once',
-    description: 'An adjective, an adverb and a preposition, in the longest sentence in the game. Five tries.',
+    description: 'An adjective, an adverb and a preposition, in the longest sentence in the game. Six tries.',
     goal: 'sentence',
-    lives: 5,
+    lives: 6,
     rounds: [ {
       sentence: 'the fluffy cat quickly jumped on the table',
       hint: 'The adjective describes the cat, so it goes inside the subject. The adverb and the prepositional phrase describe the jumping, so they go inside the verb phrase.',
