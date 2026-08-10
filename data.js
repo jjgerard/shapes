@@ -1161,7 +1161,7 @@ const XBAR_LEVEL12 = [
     lives: 4,
     rounds: [ {
       sentence: 'the cat chased the mouse',
-      hint: 'Nothing new here — just more of it, and no wrong joins allowed.',
+      hint: 'Nothing new here — just more of it, and the words are loose too.',
       pieces: explodeNodes(xClause(
         xDP('the', 'cat'), null,
         xBare('V', 'chased', xDP('the', 'mouse')))),
