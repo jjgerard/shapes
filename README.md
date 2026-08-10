@@ -6,6 +6,27 @@ account, stores nothing on a server, and has no build step.
 
 **Play it:** https://jjgerard.github.io/shapes/
 
+## Get it on a phone
+
+There is no app store and nothing to download from one. Open the link above and add it
+to the home screen — it then opens full-screen with its own icon, with no browser bars,
+and behaves like any other app on the phone.
+
+| | |
+|---|---|
+| **iPhone / iPad** | Open the link in Safari → **Share** → **Add to Home Screen** |
+| **Android** | Open the link in Chrome → **⋮** → **Install app** (or **Add to Home screen**) |
+
+The same instructions are in the game itself, under **Menu → About this game**.
+
+It needs a connection each time. That's deliberate: there is no service worker and no
+offline cache, so a student can never end up running a stale copy without knowing it —
+which for a page this small is a fair trade. If you want it genuinely offline, or want
+to host it yourself on a college network, download the repository as a ZIP
+([**Code → Download ZIP**](https://github.com/jjgerard/shapes/archive/refs/heads/main.zip))
+and open `index.html`, or serve the folder from anything at all. It has no back end and
+no dependencies.
+
 ---
 
 ## What it's for
