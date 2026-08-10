@@ -1003,10 +1003,25 @@ const XBAR_LEVEL10 = [
     name: 'Yes/No Questions',
     description: 'Raise the tense into the empty head at the top.',
     goal: 'question',
+    // The two rounds are the same sentence twice, and differ only in whether
+    // there is an auxiliary in it. The one that HAS an auxiliary goes first,
+    // because raising a word that is already there is the plain case; the
+    // one that doesn't goes second, where the missing word is the only thing
+    // that has changed and so is the only thing the student has to account
+    // for. Teaching do-support first and the plain case second would be
+    // teaching the exception before the rule.
     rounds: [
       {
-        sentence: 'did the cat chase the mouse',
-        hint: 'The tense has no word of its own, and one is waiting on the board. Drag it in, then carry the tense up into the empty head above it.',
+        sentence: 'will the dog chase the cat',
+        hint: 'The auxiliary is already there, so there is no word to add — it just has to get up to the top.',
+        pieces: [ mvCP(mvTP({
+          t0: mvAux('will', { moves: true }),
+          subject: cbDP('the', 'dog'), verb: 'chase', object: cbDP('the', 'cat'),
+        })) ],
+      },
+      {
+        sentence: 'did the dog chase the cat',
+        hint: 'The same sentence, with no auxiliary in it this time — so there is nothing in the tense to carry up. A word is waiting on the board: drag it in first.',
         // The loose word is dealt FIRST so it lands at the top-left of the
         // board. A round this size opens panned rather than fully framed,
         // and the opening view anchors on that corner -- dealt last, the one
@@ -1014,15 +1029,7 @@ const XBAR_LEVEL10 = [
         // off the edge of the screen.
         pieces: [ mvDoWord('did', 'chase'), mvCP(mvTP({
           t0: mvDoT('did'),
-          subject: cbDP('the', 'cat'), verb: 'chased', object: cbDP('the', 'mouse'),
-        })) ],
-      },
-      {
-        sentence: 'will the dog chase the cat',
-        hint: 'This one already has an auxiliary, so there is no word to add — it just has to get up to the top.',
-        pieces: [ mvCP(mvTP({
-          t0: mvAux('will', { moves: true }),
-          subject: cbDP('the', 'dog'), verb: 'chase', object: cbDP('the', 'cat'),
+          subject: cbDP('the', 'dog'), verb: 'chased', object: cbDP('the', 'cat'),
         })) ],
       },
     ],
