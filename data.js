@@ -73,13 +73,15 @@ const SHAPE_HINTS = {
 };
 
 // Roadmap shown (greyed out) on the level-select screen so the growth path
-// toward the full syllabus is visible even though only 1-4 are live.
-// Adjectives and adverbs have moved into the basic phase, so what's left
-// ahead is everything Carnie reaches after wh-movement.
+// is visible past the levels that are live. Only the COUNT is rendered --
+// each entry becomes one locked, numbered card, with no title, since a
+// title would name what a later level exists to teach. Levels 9 and 10 got
+// the student from pre-built phrases to building and moving them; what is
+// left is doing the same from single categories, with no phrase handed over
+// ready-made.
 const ROADMAP = [
-  'Embedded clauses (CP recursion)',
-  'Raising',
-  'Control',
+  'Building a phrase out of single categories',
+  'Building a whole tree out of single categories',
 ];
 
 function normalizeAnswer(s) {
@@ -314,6 +316,7 @@ function buildMode(spec) {
   // between a specifier and a complement, and the flat basic phase has
   // neither. The default keeps every phase-agnostic caller honest.
   mode.level9 = spec.level9 || [];
+  mode.level10 = spec.level10 || [];
 
   mode.numbers = Object.keys(mode.levels).map(Number).sort((a, b) => a - b);
   mode.phraseNumber = mode.numbers[0];
@@ -715,22 +718,31 @@ const XBAR_LEVEL2 = [
 
 const SPEC = (accepts) => ({ slot: 'spec', accepts });
 const COMP = (accepts) => ({ slot: 'comp', accepts });
+// A head position standing empty. Only Level 10 uses one: it is where an
+// auxiliary lands when it raises to C.
+const HEAD = (accepts) => ({ slot: 'head', accepts });
 
 // A complete DP -- "the cat", or the bare shape of one when no words are in
 // play. It has no slots of its own, which makes it the universal plug: the
 // only thing any specifier will take, and the only thing a verb or a
 // preposition will take as its complement.
-function cbDP(det, noun) {
+function cbDP(det, noun, opts = {}) {
   const d = { shape: 'D', number: 2, children: [] };
   const n = { shape: 'N', number: 2, children: [] };
   if (det) d.word = det;
   if (noun) n.word = noun;
-  return { shape: 'D', number: 1, children: [
+  const dp = { shape: 'D', number: 1, children: [
     { shape: 'D', number: 1.5, children: [
       d,
       { shape: 'N', number: 1, children: [ { shape: 'N', number: 1.5, children: [ n ] } ] },
     ] },
   ] };
+  // Level 10 marks the DP that fronts in a wh-question. `movable` is what
+  // may be carried to a landing site; `mustMove` is what the round isn't
+  // finished without.
+  if (opts.movable) dp.movable = true;
+  if (opts.mustMove) dp.mustMove = true;
+  return dp;
 }
 function cbTP(t0 = { shape: 'T', number: 2, children: [] }) {
   return { shape: 'T', number: 1, children: [
@@ -833,6 +845,157 @@ const XBAR_LEVEL9 = [
 ];
 
 // ===========================================================================
+// LEVEL 10 -- movement.
+//
+// The same canvas as Level 9 with one thing added: some nodes are marked
+// `movable`, and moving one leaves a crossed-out copy of itself behind.
+// Landing sites are ordinary empty slots, so C⁰ and Spec-CP need no special
+// machinery -- raising an auxiliary and fronting a wh-phrase are the same
+// gesture as every connection made in Level 9.
+//
+// Each round starts from a statement built in Level 9 plus a bare CP to put
+// on top, and turns it into a question. The order that forces itself is the
+// real derivation: join the CP on, then move, because until the CP is
+// attached there is nowhere in the tree for anything to move to.
+//
+// ---------------------------------------------------------------------------
+// One thing here is a deliberate asymmetry rather than an oversight.
+//
+// A SUBJECT question has no do-support and no auxiliary in C: it is "Who
+// chased the mouse?", never "*Who did chase the mouse?" -- so the rounds in
+// `Subject Questions` leave T silent and non-insertable, and C empty. An
+// OBJECT question has both. That contrast is the most valuable thing in the
+// level, so tapping the silent T in a subject question says why nothing
+// happens instead of doing nothing (see `silentNote`): `do` is a last
+// resort, and it appears only when something has to move past the subject.
+// ===========================================================================
+
+// The CP that turns a statement into a question: an empty specifier for a
+// wh-phrase to front into, an empty head for an auxiliary to raise into,
+// and a complement waiting for the statement itself.
+function mvCP() {
+  return { shape: 'C', number: 1, children: [
+    SPEC(['D1']),
+    { shape: 'C', number: 1.5, children: [ HEAD(['T2']), COMP(['T1']) ] },
+  ] };
+}
+
+// A finished transitive statement, words and all -- what Level 9's last
+// sub-level ends up with.
+function mvTP({ t0, subject, verb, object }) {
+  return { shape: 'T', number: 1, children: [
+    subject,
+    { shape: 'T', number: 1.5, children: [
+      t0,
+      { shape: 'V', number: 1, children: [
+        { shape: 'V', number: 1.5, children: [
+          { shape: 'V', number: 2, children: [], word: verb },
+          object,
+        ] },
+      ] },
+    ] },
+  ] };
+}
+
+// A tense with no auxiliary of its own, which CAN take `do` -- and, when it
+// does, takes the tense off the verb with it ("chased" becomes "chase").
+const mvSilentT = (word, verb) =>
+  ({ shape: 'T', number: 2, children: [], silent: true, mustMove: true, insertable: { word, verb } });
+// A tense with no auxiliary that stays silent and stays put: a subject
+// question has nothing for `do` to do.
+const mvBareT = () => ({ shape: 'T', number: 2, children: [], silent: true });
+// A real auxiliary. It raises in a yes/no or object question, and sits
+// still in a subject question.
+const mvAux = (word, opts = {}) =>
+  ({ shape: 'T', number: 2, children: [], word, ...(opts.moves ? { movable: true, mustMove: true } : {}) });
+
+const NO_DO_NOTE =
+  'Nothing has to get past the subject here, so there is no job for “do” — this stays empty.';
+
+// `goal: 'question'` finishes when the pieces are one tree, everything
+// marked as having to move has moved, and the words come out in the order
+// the question is actually said in.
+const XBAR_LEVEL10 = [
+  {
+    id: 'move-yesno',
+    name: 'Yes/No Questions',
+    description: 'Put a CP on top of a statement, and raise the tense into it.',
+    goal: 'question',
+    rounds: [
+      {
+        sentence: 'did the cat chase the mouse',
+        hint: 'Join the two pieces first. Then tap the empty tense to give it a word, and carry that word up into the empty head above it.',
+        pieces: [ mvCP(), mvTP({
+          t0: mvSilentT('did', 'chase'),
+          subject: cbDP('the', 'cat'), verb: 'chased', object: cbDP('the', 'mouse'),
+        }) ],
+      },
+      {
+        sentence: 'will the dog chase the cat',
+        hint: 'This one already has an auxiliary, so there is nothing to add — it just has to get up to the top.',
+        pieces: [ mvCP(), mvTP({
+          t0: mvAux('will', { moves: true }),
+          subject: cbDP('the', 'dog'), verb: 'chase', object: cbDP('the', 'cat'),
+        }) ],
+      },
+    ],
+  },
+  {
+    id: 'move-subject',
+    name: 'Subject Questions',
+    description: 'Ask about the subject. Watch what does NOT happen this time.',
+    goal: 'question',
+    silentNote: NO_DO_NOTE,
+    rounds: [
+      {
+        sentence: 'which cat chased the mouse',
+        hint: 'Join the pieces, then carry the subject up into the empty specifier. The tense stays exactly where it is.',
+        pieces: [ mvCP(), mvTP({
+          t0: mvBareT(),
+          subject: cbDP('which', 'cat', { movable: true, mustMove: true }),
+          verb: 'chased', object: cbDP('the', 'mouse'),
+        }) ],
+      },
+      {
+        sentence: 'which dog will chase the cat',
+        hint: 'There is an auxiliary this time, and it still does not move. Only the subject does.',
+        pieces: [ mvCP(), mvTP({
+          t0: mvAux('will'),
+          subject: cbDP('which', 'dog', { movable: true, mustMove: true }),
+          verb: 'chase', object: cbDP('the', 'cat'),
+        }) ],
+      },
+    ],
+  },
+  {
+    id: 'move-object',
+    name: 'Object Questions',
+    description: 'Ask about the object. Now two things have to move.',
+    goal: 'question',
+    rounds: [
+      {
+        sentence: 'which mouse did the cat chase',
+        hint: 'Two moves this time: the object has to get to the front, and the tense has to get past the subject — which is exactly when “do” is needed.',
+        pieces: [ mvCP(), mvTP({
+          t0: mvSilentT('did', 'chase'),
+          subject: cbDP('the', 'cat'), verb: 'chased',
+          object: cbDP('which', 'mouse', { movable: true, mustMove: true }),
+        }) ],
+      },
+      {
+        sentence: 'which cat will the dog chase',
+        hint: 'Same two moves, but the auxiliary is already there, so nothing needs adding.',
+        pieces: [ mvCP(), mvTP({
+          t0: mvAux('will', { moves: true }),
+          subject: cbDP('the', 'dog'), verb: 'chase',
+          object: cbDP('which', 'cat', { movable: true, mustMove: true }),
+        }) ],
+      },
+    ],
+  },
+];
+
+// ===========================================================================
 // The mode registry.
 // ===========================================================================
 
@@ -877,6 +1040,7 @@ const MODES = {
     level1: XBAR_LEVEL1,
     level2: XBAR_LEVEL2,
     level9: XBAR_LEVEL9,
+    level10: XBAR_LEVEL10,
     levelAnswers: {
       1: ['xp', 'x-bar phrase', 'phrase', 'phrase level', 'maximal projection', 'maximal phrase'],
       1.5: ["x'", 'x bar', 'x-bar', 'xbar', 'bar level', 'bar', 'in between', 'middle'],
@@ -911,6 +1075,7 @@ let LEVEL2_SUBLEVELS = [];
 let QUIZ_SUBLEVELS = [];
 let QUIZ_CONSTITUENCY_SUBLEVELS = [];   // Level 3's subset (see skipConstituency)
 let LEVEL9_SUBLEVELS = [];              // combining phrases -- X-bar phase only
+let LEVEL10_SUBLEVELS = [];             // movement -- X-bar phase only
 let MODE_CATEGORIES = [];               // which categories this phase actually uses
 let MODE_PHRASE_CATEGORIES = new Set(); // ...and which of them head a phrase in it
 let PROJECTION_LEVELS = {};   // number -> {code, name}
@@ -926,6 +1091,7 @@ function setMode(id) {
   QUIZ_SUBLEVELS = MODE.quiz;
   QUIZ_CONSTITUENCY_SUBLEVELS = MODE.quizConstituency;
   LEVEL9_SUBLEVELS = MODE.level9;
+  LEVEL10_SUBLEVELS = MODE.level10;
   MODE_CATEGORIES = MODE.categories;
   MODE_PHRASE_CATEGORIES = MODE.phraseCategories;
   PROJECTION_LEVELS = MODE.levels;

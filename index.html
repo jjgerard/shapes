@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shapes and Language</title>
-<link rel="stylesheet" href="style.css?v=60">
-<link rel="icon" href="icon.svg?v=60" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=61">
+<link rel="icon" href="icon.svg?v=61" type="image/svg+xml">
 <meta name="theme-color" content="#2f6f5e">
 </head>
 <body>
@@ -13,7 +13,7 @@
 
   <header id="app-header">
     <div class="brand">
-      <img src="icon.svg?v=60" alt="" class="brand-logo">
+      <img src="icon.svg?v=61" alt="" class="brand-logo">
       <span class="brand-name">Shapes and Language</span>
     </div>
     <div class="header-right">
@@ -98,6 +98,14 @@
       <h1 id="level9-heading">Level 9 &mdash; Building</h1>
       <p class="muted">Every piece here is a whole phrase with its empty positions showing. Drag a phrase into a position it fits &mdash; each position only takes certain phrases. Finish one sub-level to unlock the next.</p>
       <div class="target-grid" id="combine-grid"></div>
+    </section>
+
+    <!-- ============ LEVEL 10 (movement) ============ -->
+    <section id="screen-level10" class="screen hidden">
+      <button class="link-btn back-btn" data-back>&larr; Levels</button>
+      <h1 id="level10-heading">Level 10 &mdash; Moving</h1>
+      <p class="muted">Each round starts as a statement with an empty piece to go on top of it. Build it, then move pieces up the tree to turn it into a question &mdash; what moves leaves a crossed-out copy behind.</p>
+      <div class="target-grid" id="movement-grid"></div>
     </section>
 
     <!-- ============ REVEAL (final sub-level: fill in the blanks) ============ -->
@@ -330,16 +338,16 @@
   </div>
 </div>
 
-<script src="sound.js?v=60"></script>
-<script src="data.js?v=60"></script>
-<script src="shapes.js?v=60"></script>
-<script src="canvas.js?v=60"></script>
-<script src="wordmatch.js?v=60"></script>
-<script src="editor.js?v=60"></script>
-<script src="combine.js?v=60"></script>
-<script src="streak.js?v=60"></script>
-<script src="treeviewer.js?v=60"></script>
-<script src="app.js?v=60"></script>
+<script src="sound.js?v=61"></script>
+<script src="data.js?v=61"></script>
+<script src="shapes.js?v=61"></script>
+<script src="canvas.js?v=61"></script>
+<script src="wordmatch.js?v=61"></script>
+<script src="editor.js?v=61"></script>
+<script src="combine.js?v=61"></script>
+<script src="streak.js?v=61"></script>
+<script src="treeviewer.js?v=61"></script>
+<script src="app.js?v=61"></script>
 <script>
   // Plain webpage, not an installable app -- clean up any service worker
   // and caches left over from when it registered one, so nobody's stuck

@@ -124,6 +124,7 @@ const SCREEN_SPEECH = {
   level3: 'Choose a sub-level below!',
   level4: 'Choose a sub-level below!',
   level9: 'Choose a sub-level below!',
+  level10: 'Choose a sub-level below!',
   reveal: 'Type what you think each shape and number means!',
 };
 function showScreen(id) {
@@ -181,10 +182,15 @@ const GAME_LEVELS = [
   // positions, and which phrase fills which position is the question.
   { n: 9, phase: 'xbar', kind: 'combine', title: 'Building',
     blurb: 'Whole phrases, with their empty positions showing. Work out which one goes where.' },
+  // Same canvas as Level 9, one thing added: things can move, and what
+  // moves leaves a crossed-out copy of itself behind.
+  { n: 10, phase: 'xbar', kind: 'movement', title: 'Moving',
+    blurb: 'Turn the statements you built into questions, by moving pieces up the tree.' },
 ];
 
 const ACTIVITY_SCREEN = {
-  build: 'level1', words: 'level2', constituents: 'level3', categories: 'level4', combine: 'level9',
+  build: 'level1', words: 'level2', constituents: 'level3', categories: 'level4',
+  combine: 'level9', movement: 'level10',
 };
 
 function levelByNumber(n) { return GAME_LEVELS.find(l => l.n === n); }
@@ -209,6 +215,7 @@ function isLevelComplete(level) {
   if (level.kind === 'words') return mode.level2.every(sub => p.sentences.includes(sub.id));
   if (level.kind === 'constituents') return mode.quizConstituency.every(sub => p.constituency.includes(sub.id));
   if (level.kind === 'combine') return mode.level9.every(sub => p.combos.includes(sub.id));
+  if (level.kind === 'movement') return mode.level10.every(sub => p.combos.includes(sub.id));
   return mode.quiz.every(sub => p.categoryid.includes(sub.id));
 }
 
@@ -228,8 +235,9 @@ function levelProgressLabel(level) {
   if (level.kind === 'constituents') {
     return `${mode.quizConstituency.filter(s => p.constituency.includes(s.id)).length} / ${mode.quizConstituency.length} sub-levels done`;
   }
-  if (level.kind === 'combine') {
-    return `${mode.level9.filter(s => p.combos.includes(s.id)).length} / ${mode.level9.length} sub-levels done`;
+  if (level.kind === 'combine' || level.kind === 'movement') {
+    const list = level.kind === 'combine' ? mode.level9 : mode.level10;
+    return `${list.filter(s => p.combos.includes(s.id)).length} / ${list.length} sub-levels done`;
   }
   return `${mode.quiz.filter(s => p.categoryid.includes(s.id)).length} / ${mode.quiz.length} sub-levels done`;
 }
@@ -484,6 +492,24 @@ const HELP = {
       ${CANVAS_HELP}
     </ul>`,
   },
+  movement: {
+    title: 'Level 10 — Moving',
+    html: `<ul>
+      <li>Each round starts as a <strong>statement</strong> plus one empty piece to go on
+          top of it. Join them together first &mdash; until you do, there's nowhere for
+          anything to move to.</li>
+      <li>A piece with a <strong>dashed outline</strong> can move. Drag it onto an empty
+          position higher up the tree.</li>
+      <li>What moves <strong>leaves a crossed-out copy behind</strong>, and an arrow shows
+          where it came from. That copy isn't said out loud &mdash; it's just the record of
+          where the piece started.</li>
+      <li>A piece marked <strong>∅</strong> is a word slot with nothing in it. If it has a
+          solid outline, <strong>tap it</strong> to put a word in.</li>
+      <li>Changed your mind? Tap the <strong>✂️ scissors</strong>, then tap a piece outlined
+          in red to send it back where it came from.</li>
+      ${CANVAS_HELP}
+    </ul>`,
+  },
 };
 function openHelp(key) {
   const entry = HELP[key] || HELP.general;
@@ -628,7 +654,11 @@ function openLevel(level) {
   if (level.kind === 'build') { renderTargetGrid(); showScreen('level1'); }
   else if (level.kind === 'words') { renderLevel2Grid(); showScreen('level2'); }
   else if (level.kind === 'constituents') { renderConstituencyGrid(); showScreen('level3'); }
-  else if (level.kind === 'combine') { renderCombineGrid(); showScreen('level9'); }
+  else if (level.kind === 'combine' || level.kind === 'movement') {
+    combineKind = level.kind;
+    renderCombineGrid();
+    showScreen(ACTIVITY_SCREEN[level.kind]);
+  }
   else { renderCategoryIdGrid(); showScreen('level4'); }
 }
 
@@ -1405,6 +1435,15 @@ let combineEditor = null;
 let combineSub = null;      // the sub-level currently open
 let combineRoundIx = 0;
 let combineRoundDone = false;
+// Which of the two levels that share this canvas is open. Level 10 is
+// Level 9 plus movement -- same editor, same modal, same progress list --
+// so the only thing that differs is which sub-levels are on offer and
+// which screen the grid is drawn into.
+let combineKind = 'combine';
+
+function combineSubLevels() {
+  return combineKind === 'movement' ? LEVEL10_SUBLEVELS : LEVEL9_SUBLEVELS;
+}
 
 function ensureCombineEditor() {
   if (!combineEditor) combineEditor = new CombineEditor(document.getElementById('combine-canvas'));
@@ -1416,11 +1455,12 @@ function isCombineSubComplete(sub) {
 }
 
 function renderCombineGrid() {
-  const grid = document.getElementById('combine-grid');
+  const subs = combineSubLevels();
+  const grid = document.getElementById(combineKind === 'movement' ? 'movement-grid' : 'combine-grid');
   grid.innerHTML = '';
-  LEVEL9_SUBLEVELS.forEach((sub, i) => {
+  subs.forEach((sub, i) => {
     const done = isCombineSubComplete(sub);
-    const locked = i > 0 && !isCombineSubComplete(LEVEL9_SUBLEVELS[i - 1]);
+    const locked = i > 0 && !isCombineSubComplete(subs[i - 1]);
     const card = document.createElement('div');
     card.className = 'target-card' + (done ? ' done' : '') + (locked ? ' locked' : '');
 
@@ -1457,6 +1497,10 @@ function openCombine(sub) {
   ensureCombineEditor();
   combineSub = sub;
   combineRoundIx = 0;
+  // One modal serves both levels, so its ? button has to answer for
+  // whichever one is open -- the binding reads this attribute at click time.
+  document.querySelector('#combine-overlay [data-help]').dataset.help =
+    combineKind === 'movement' ? 'movement' : 'combine';
   const fit = fitCanvasSize(1600, 1000);
   combineEditor.open(fit.w, fit.h);
   combineEditor.onFeedback = relayFeedback;
@@ -1495,11 +1539,15 @@ function loadCombineRound() {
   // rather than a decision.
   const sentenceEl = document.getElementById('combine-sentence');
   sentenceEl.classList.toggle('hidden', !round.sentence);
-  if (round.sentence) sentenceEl.textContent = `Build: “${titleCase(round.sentence)}”`;
+  if (round.sentence) {
+    sentenceEl.textContent = combineSub.goal === 'question'
+      ? `Ask: “${titleCase(round.sentence)}?”`
+      : `Build: “${titleCase(round.sentence)}”`;
+  }
 
   renderCombineRounds();
   setMascotSpeech(round.hint);
-  combineEditor.load(round.pieces.map(cloneSpec));
+  combineEditor.load(round.pieces.map(cloneSpec), { silentNote: combineSub.silentNote || '' });
 }
 
 // Each round is re-materialised from a fresh copy, so replaying a sub-level
@@ -1541,6 +1589,21 @@ function checkCombineRound() {
     }
   }
 
+  // Movement rounds finish on the question actually being asked: everything
+  // that has to move has moved, and the words come out in the order the
+  // question is said in. Empty positions are expected here and are not a
+  // failure -- a yes/no question leaves the specifier of CP empty, and a
+  // subject question leaves its head empty, which is the point.
+  if (combineSub.goal === 'question') {
+    if (!combineEditor.allMoved()) return;
+    const built = combineEditor.yieldWords().join(' ');
+    if (built !== round.sentence) {
+      combineEditor.setFeedback(
+        `Everything has moved, but that comes out as “${titleCase(built)}”. Use the scissors to put something back and try again.`, 'err');
+      return;
+    }
+  }
+
   combineRoundDone = true;
   combineEditor.setFeedback(
     combineRoundIx + 1 < combineSub.rounds.length
@@ -1573,7 +1636,7 @@ function markCombineSubDone(sub) {
 function closeCombine() {
   document.getElementById('combine-overlay').classList.add('hidden');
   combineSub = null;
-  setMascotSpeech(SCREEN_SPEECH.level9);
+  setMascotSpeech(SCREEN_SPEECH[ACTIVITY_SCREEN[combineKind]]);
   clearMascotFlash();
 }
 
