@@ -142,7 +142,3 @@ Two conventions worth knowing before changing anything:
 - **Comments say why, not what.** Most of the non-obvious code has a note explaining the
   pedagogical or device constraint behind it. If a change makes one of those comments
   false, the change probably needs rethinking.
-
-## Licence
-
-Do what you like with it. If you use it with a class, I'd be glad to hear how it went.
