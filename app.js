@@ -1889,6 +1889,7 @@ function renderReveal() {
       isCorrect: (val) => isCorrectShapeAnswer(key, val),
       correctMap: prog().reveal.shapes,
       hint: SHAPE_HINTS[key],
+      looseNote: (val) => looseShapeNote(key, val),
       attempts: revealAttempts.shapes,
       answer: shapeCanonicalAnswer(key),
     })),

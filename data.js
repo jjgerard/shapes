@@ -51,15 +51,44 @@ const CATEGORIES = {
 // (case-insensitive, any one of these counts). Shared by both modes -- what
 // a shape MEANS doesn't change between them, only how many levels each one
 // projects through.
+// Both spellings of -ise/-ize throughout: this is written for a British
+// class, where "complementiser" is the spelling on the handout, and being
+// told you are wrong for spelling your own dialect is the exact opposite of
+// what a first Mystery Level is for.
+//
+// The looser answers here are deliberate. A student who calls T "aux" has
+// identified it correctly -- half the textbooks call it Aux and the older
+// ones call it INFL -- and marking that wrong three times before giving up
+// and printing "Tense" teaches nothing except that the game is fussy. They
+// are accepted and then nudged toward the term this course uses (see
+// SHAPE_ANSWER_NOTES).
 const SHAPE_ANSWERS = {
-  C: ['c', 'comp', 'complementizer'],
-  T: ['t', 'tense'],
+  C: ['c', 'comp', 'complementizer', 'complementiser'],
+  T: ['t', 'tense', 'aux', 'auxiliary', 'inflection', 'infl', 'agreement'],
   V: ['v', 'verb'],
-  D: ['d', 'det', 'determiner'],
+  D: ['d', 'det', 'determiner', 'article'],
   N: ['n', 'noun'],
-  P: ['p', 'prep', 'preposition'],
+  P: ['p', 'prep', 'preposition', 'prepositional'],
   Adj: ['adj', 'adjective'],
   Adv: ['adv', 'adverb'],
+};
+// Accepted, but not the word this course wants them to land on -- marked
+// right, then pointed at the more precise term. Same idea as
+// levelAnswerNotes, for the shape half of the Mystery Level.
+const SHAPE_ANSWER_NOTES = {
+  T: {
+    aux: 'That\'s the right piece — this course calls it "Tense," since it holds the tense whether or not there\'s an auxiliary to carry it.',
+    auxiliary: 'That\'s the right piece — this course calls it "Tense," since it holds the tense whether or not there\'s an auxiliary to carry it.',
+    inflection: 'Right piece — some books call it INFL, this one calls it "Tense."',
+    infl: 'Right piece — some books call it INFL, this one calls it "Tense."',
+    agreement: 'Right piece — this course calls it "Tense."',
+  },
+  D: {
+    article: 'Close enough to count — "determiner" is the wider term, since it covers "this," "my" and "some" as well as "the" and "a."',
+  },
+  P: {
+    prepositional: 'That\'s it — the category itself is just "preposition."',
+  },
 };
 const SHAPE_HINTS = {
   C: 'Introduces a subordinate clause, like "that" or "if."',
@@ -1243,8 +1272,10 @@ const MODES = {
     level1: PREX_LEVEL1,
     level2: PREX_LEVEL2,
     levelAnswers: {
-      1: ['xp', 'phrase', 'phrase level', 'a phrase', 'maximal projection', 'group', 'unit'],
-      2: ['x0', 'xzero', 'x-zero', 'head', 'word', 'the word', 'terminal'],
+      1: ['xp', 'phrase', 'phrase level', 'a phrase', 'the phrase', 'whole phrase',
+          'full phrase', 'the whole phrase', 'maximal projection', 'group', 'unit'],
+      2: ['x0', 'xzero', 'x-zero', 'head', 'the head', 'word', 'the word', 'terminal',
+          'terminal node', 'lexical item'],
     },
     // Accepted but not the term we want them to land on -- marked correct,
     // then nudged toward the more precise vocabulary.
@@ -1276,9 +1307,12 @@ const MODES = {
     level11: XBAR_LEVEL11,
     level12: XBAR_LEVEL12,
     levelAnswers: {
-      1: ['xp', 'x-bar phrase', 'phrase', 'phrase level', 'maximal projection', 'maximal phrase'],
-      1.5: ["x'", 'x bar', 'x-bar', 'xbar', 'bar level', 'bar', 'in between', 'middle'],
-      2: ['x0', 'xzero', 'x-zero', 'head', 'word'],
+      1: ['xp', 'x-bar phrase', 'phrase', 'phrase level', 'the phrase', 'whole phrase',
+          'full phrase', 'the whole phrase', 'maximal projection', 'maximal phrase'],
+      1.5: ["x'", 'x bar', 'x-bar', 'xbar', 'bar level', 'bar', 'the bar level',
+            'intermediate', 'intermediate projection', 'in between', 'middle'],
+      2: ['x0', 'xzero', 'x-zero', 'head', 'the head', 'word', 'the word', 'terminal',
+          'terminal node', 'lexical item'],
     },
     levelAnswerNotes: {
       1.5: {
@@ -1353,6 +1387,10 @@ function isLegalEdge(parentShape, parentNumber, childShape, childNumber) {
 
 function isCorrectShapeAnswer(catKey, answer) {
   return SHAPE_ANSWERS[catKey].includes(normalizeAnswer(answer));
+}
+function looseShapeNote(catKey, answer) {
+  const notes = SHAPE_ANSWER_NOTES[catKey];
+  return notes ? notes[normalizeAnswer(answer)] : undefined;
 }
 function isCorrectLevelAnswer(number, answer) {
   return (MODE.levelAnswers[number] || []).includes(normalizeAnswer(answer));
