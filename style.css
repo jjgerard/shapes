@@ -40,7 +40,8 @@ body {
   top: 0;
   z-index: 5;
 }
-.brand { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; }
+.brand-logo { height: 1.7em; width: auto; }
 #player-info { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
 .points-pill {
   background: var(--accent);
