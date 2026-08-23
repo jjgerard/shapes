@@ -1000,10 +1000,28 @@ function openTargetEditor(sub) {
     hint: `Drag every piece together until it's one connected shape of ${total}.`,
     items: expandInventory(sub.inventory),
     viewW: 1600, viewH: 1000,
+    // Finished means what the level says it means: every piece used, all of
+    // them in one connected shape. It deliberately does NOT compare against
+    // the target tree.
+    //
+    // Comparing was a bug, and a cruel one. This level has no words in it,
+    // so two pieces of the same shape and number are interchangeable as far
+    // as anything the student can see -- and "More Pieces" hands out two
+    // different NP pieces and two NP-shaped gaps to put them in. Both ways
+    // round build a legal, fully connected shape of exactly the right size;
+    // only one of them matched the stored tree. Measured over every order
+    // the pieces can be joined in, better than half of correct builds were
+    // silently refused: nothing happened, with no way to tell what was
+    // wrong, because nothing WAS wrong.
+    //
+    // Nothing illegal can slip through this. A snap only ever joins an open
+    // branch to a freestanding piece of the identical shape and number, so
+    // every edge in the finished shape is one the mode's own rules allow;
+    // and one connected shape containing every piece is the whole of what
+    // was asked for.
     onCheck: () => {
       const forest = editor.toForest();
-      const ok = editor.nodes.length === total && forest.length === 1 && matchesPattern(forest[0], sub.root);
-      if (!ok) return;
+      if (forest.length !== 1 || editor.nodes.length !== total) return;
       editor.setFeedback('Complete!', 'ok');
       markSubDone(sub, POINTS_TREE);
     },
