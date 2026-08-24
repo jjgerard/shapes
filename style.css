@@ -4,7 +4,15 @@
   --ink: #262220;
   --muted: #7a7369;
   --line: #e2ddd3;
-  --accent: #2f6f5e;
+  /* Deep navy, and it has to stay dark and out of the way. The chrome shares
+     a screen with the eight category colours, and an accent that sits near
+     one of them teaches students a colour means something it doesn't -- the
+     old green was only dE 23 from Adv's teal and 33 from T's green, close
+     enough to read as a category. Navy is dE 37 from its nearest (N's blue),
+     carries white text at 11.6:1, and belongs with the logo's primary red,
+     blue and yellow. Rule for anything replacing it: dark, and dE > 30 from
+     every colour in MODE_CATEGORIES. */
+  --accent: #173a5e;
   --accent-ink: #ffffff;
   --danger: #c1443a;
   --radius: 14px;
@@ -128,8 +136,8 @@ button { font-family: inherit; cursor: pointer; }
   font-weight: 600;
 }
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
-.btn-primary:hover { background: #24594b; }
-.btn-primary:disabled { background: #b9c9c3; cursor: not-allowed; }
+.btn-primary:hover { background: #0f2942; }
+.btn-primary:disabled { background: #aeb6c4; cursor: not-allowed; }
 .btn-secondary { background: #eee9df; color: var(--ink); }
 .btn-secondary:hover { background: #e2dccc; }
 .btn-icon {
@@ -213,7 +221,7 @@ button { font-family: inherit; cursor: pointer; }
 .level-card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
 .level-progress { margin-top: 12px; font-size: 0.85rem; font-weight: 600; color: var(--ink); }
 
-.level-card.level-done { border-color: var(--accent); background: #eef6f2; }
+.level-card.level-done { border-color: var(--accent); background: #eaeff7; }
 .level-card.locked {
   cursor: default;
   background: #f1efe7;
@@ -240,7 +248,7 @@ button { font-family: inherit; cursor: pointer; }
   text-align: center;
   position: relative;
 }
-.fragment-card.done { border-color: var(--accent); background: #eef6f2; }
+.fragment-card.done { border-color: var(--accent); background: #eaeff7; }
 .fragment-card .frag-num { font-size: 0.75rem; color: var(--muted); font-weight: 700; }
 .fragment-card svg { width: 100%; height: 90px; }
 .fragment-card button { width: 100%; margin-top: 6px; }
@@ -263,7 +271,7 @@ button { font-family: inherit; cursor: pointer; }
   padding: 20px;
   text-align: left;
 }
-.target-card.done { border-color: var(--accent); background: #eef6f2; }
+.target-card.done { border-color: var(--accent); background: #eaeff7; }
 .target-card.locked { opacity: 0.55; }
 .target-card h3 { margin: 0 0 6px; }
 .target-card p { color: var(--muted); font-size: 0.9rem; margin: 0 0 12px; }
@@ -429,7 +437,7 @@ button { font-family: inherit; cursor: pointer; }
 /* Same green as .snap-ready on a piece, and it means the same thing: let go
    now and this will drop in. */
 .cb-slot.ready .cb-slot-box {
-  fill: #e4f0ea; stroke: var(--accent); stroke-width: 4; stroke-dasharray: none;
+  fill: #e3ebf6; stroke: var(--accent); stroke-width: 4; stroke-dasharray: none;
   filter: drop-shadow(0 0 8px rgba(47,111,94,0.55));
 }
 .cb-slot.ready .cb-slot-text { fill: var(--accent); }
@@ -697,7 +705,7 @@ button { font-family: inherit; cursor: pointer; }
   background: #fbfaf7;
 }
 .legend-slot.filled { border-style: solid; }
-.legend-slot.correct { border-color: var(--accent); background: #eef6f2; }
+.legend-slot.correct { border-color: var(--accent); background: #eaeff7; }
 .legend-slot.incorrect { border-color: var(--danger); background: #fbeceb; }
 .legend-slot svg { width: 30px; height: 30px; flex-shrink: 0; }
 .legend-slot .slot-label { font-size: 0.8rem; color: var(--muted); width: 30px; }
@@ -878,7 +886,13 @@ button { font-family: inherit; cursor: pointer; }
 }
 .mascot { width: 60px; height: 60px; flex-shrink: 0; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.18)); }
 .mascot svg { width: 100%; height: 100%; overflow: visible; }
-.mascot-body { fill: #20c4b0; stroke: rgba(0,0,0,0.15); stroke-width: 2; }
+/* Same navy as the chrome, for the same reason: the mascot is a coloured
+   polygon sitting a few centimetres from a board full of coloured polygons
+   that mean something, and its old teal was the closest thing on the page to
+   a category colour (dE 18 from Adv's diamond). Navy reads as "part of the
+   app", not "a node you haven't met yet". The face goes cream so it still
+   shows on a dark body -- and it matches the logo's smilies. */
+.mascot-body { fill: #173a5e; stroke: rgba(0,0,0,0.15); stroke-width: 2; }
 
 .mascot-bubble {
   font-size: 0.95rem;
