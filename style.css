@@ -893,6 +893,27 @@ button { font-family: inherit; cursor: pointer; }
    app", not "a node you haven't met yet". The face goes cream so it still
    shows on a dark body -- and it matches the logo's smilies. */
 .mascot-body { fill: #173a5e; stroke: rgba(0,0,0,0.15); stroke-width: 2; }
+/* The logo's surface treatment, carried over so the mascot belongs to the same
+   family as the star, heart and square. */
+.mascot-gloss { fill: #ffffff; opacity: 0.10; }
+/* Near-opaque, and in V's pink so it belongs to the logo. A blush cannot be
+   a faint wash here the way it is on the logo's light shapes: pink at low
+   alpha over navy composites straight to grey-mauve, which reads as a
+   smudge rather than a cheek. Dark characters need the cheek to be a real
+   colour. */
+.mascot-blush { fill: #e2657c; opacity: 0.78; }
+.mascot-eye { fill: #f6f4ef; }
+/* Inverted from the logo, where a white glint sits on a dark eye. Here the eye
+   is the light part, so the glint is body-navy. It has to be a real colour
+   difference rather than a lighter cream: the whole mascot is 60px, which puts
+   this dot under 2px across, and anything subtle at that size is just gone. */
+.mascot-glint { fill: #173a5e; }
+.mascot-mouth { stroke: #f6f4ef; stroke-width: 5.5; fill: none; stroke-linecap: round; }
+.mascot-eye-shut { stroke: #f6f4ef; stroke-width: 5; fill: none; stroke-linecap: round; }
+.mascot-mouth-open { fill: #f6f4ef; }
+/* The delighted face waits underneath at zero opacity; the celebrations below
+   cross-fade to it and back. */
+.mascot-face-happy { opacity: 0; }
 
 .mascot-bubble {
   font-size: 0.95rem;
@@ -925,6 +946,58 @@ button { font-family: inherit; cursor: pointer; }
   100% { transform: translateY(0) rotate(0deg); }
 }
 .mascot.dancing { animation: mascot-dance 1.3s ease-in-out; }
+
+/* The face joins in. Body movement alone reads as "something happened"; the
+   eyes squeezing shut and the mouth flying open is what reads as pleased --
+   and at 60px the face is most of what a student can actually see change.
+   Durations here must stay in step with the timeouts in celebrateCorrect()
+   and celebrateComplete() (app.js), which strip the class again. */
+@keyframes mascot-face-swap {
+  0%, 8%     { opacity: 1; }
+  16%, 78%   { opacity: 0; }
+  92%, 100%  { opacity: 1; }
+}
+@keyframes mascot-face-swap-in {
+  0%, 8%     { opacity: 0; }
+  16%, 78%   { opacity: 1; }
+  92%, 100%  { opacity: 0; }
+}
+/* Hinged at the top so the mouth drops open rather than growing in place.
+   transform-box: fill-box makes the origin the shape's own box -- without it
+   an SVG child rotates about the viewBox origin instead. */
+@keyframes mascot-mouth-pop {
+  0%   { transform: scaleY(0.25); }
+  40%  { transform: scaleY(1.12); }
+  70%  { transform: scaleY(0.92); }
+  100% { transform: scaleY(1); }
+}
+.mascot-mouth-open { transform-box: fill-box; transform-origin: top center; }
+
+.mascot.jumping .mascot-face { animation: mascot-face-swap 0.6s ease-out; }
+.mascot.jumping .mascot-face-happy { animation: mascot-face-swap-in 0.6s ease-out; }
+.mascot.jumping .mascot-mouth-open { animation: mascot-mouth-pop 0.34s ease-out 0.06s; }
+
+.mascot.dancing .mascot-face { animation: mascot-face-swap 1.3s ease-in-out; }
+.mascot.dancing .mascot-face-happy { animation: mascot-face-swap-in 1.3s ease-in-out; }
+.mascot.dancing .mascot-mouth-open { animation: mascot-mouth-pop 0.4s ease-out 0.08s; }
+/* The blush comes up over the dance and stays up while it lasts. */
+.mascot.dancing .mascot-blush { animation: mascot-blush-up 1.3s ease-in-out; }
+@keyframes mascot-blush-up {
+  0%, 100% { opacity: 0.78; }
+  20%, 80% { opacity: 1; }
+}
+
+/* Every one of these is decoration on top of feedback that is already in
+   words in the bubble, so switching them off costs a student nothing. */
+@media (prefers-reduced-motion: reduce) {
+  .mascot.jumping, .mascot.dancing,
+  .mascot.jumping .mascot-face, .mascot.jumping .mascot-face-happy,
+  .mascot.jumping .mascot-mouth-open,
+  .mascot.dancing .mascot-face, .mascot.dancing .mascot-face-happy,
+  .mascot.dancing .mascot-mouth-open, .mascot.dancing .mascot-blush {
+    animation: none;
+  }
+}
 
 /* Two of the three words in the name are long ones. On the narrowest
    phones still in use (320px) trimming the header's own padding and gaps
