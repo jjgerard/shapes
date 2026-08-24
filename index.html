@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shapes and Language</title>
-<link rel="stylesheet" href="style.css?v=76">
-<link rel="icon" href="icon-32.png?v=76" sizes="32x32" type="image/png">
-<link rel="icon" href="icon-192.png?v=76" sizes="192x192" type="image/png">
+<link rel="stylesheet" href="style.css?v=77">
+<link rel="icon" href="icon-32.png?v=77" sizes="32x32" type="image/png">
+<link rel="icon" href="icon-192.png?v=77" sizes="192x192" type="image/png">
 <meta name="theme-color" content="#173a5e">
 <!-- Enough to be added to a home screen and open without browser bars, on
      both platforms. Deliberately NO service worker: this stays a plain page
@@ -15,8 +15,8 @@
      bottom of this file, which removes any left over from when there was
      one). The cost is that it needs a connection, which for a page this
      size is a fair trade for never lying about what it's showing. -->
-<link rel="manifest" href="manifest.webmanifest?v=76">
-<link rel="apple-touch-icon" href="icon-180.png?v=76">
+<link rel="manifest" href="manifest.webmanifest?v=77">
+<link rel="apple-touch-icon" href="icon-180.png?v=77">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Shapes">
@@ -26,7 +26,7 @@
 
   <header id="app-header">
     <div class="brand">
-      <img src="logo.png?v=76" alt="" class="brand-logo">
+      <img src="logo.png?v=77" alt="" class="brand-logo">
       <span class="brand-name">Shapes and Language</span>
     </div>
     <div class="header-right">
@@ -52,7 +52,7 @@
          just makes both of them look smaller. -->
     <section id="screen-name" class="screen">
       <div class="hero">
-        <img src="logo.png?v=76" alt="" class="hero-logo">
+        <img src="logo.png?v=77" alt="" class="hero-logo">
         <h1 class="hero-name">Shapes and Language</h1>
         <p class="hero-tag">Solve puzzles with linguistics!</p>
       </div>
@@ -357,26 +357,52 @@
 
 <div class="mascot-wrap">
   <div id="mascot-bubble" class="mascot-bubble" role="status"></div>
+  <!-- Same cutesy treatment as the logo shapes -- gloss, blush, glinted eyes
+       -- but deliberately still a hexagon, which is NOT one of the eight
+       category shapes. It sits inches from a board of shapes that mean
+       something, so it has to be readable as the guide and not as a piece.
+
+       Two faces are drawn, one on top of the other: the resting one and a
+       delighted one (eyes squeezed shut, mouth wide open). The celebrations
+       cross-fade between them in CSS -- morphing a path's `d` is not
+       something every browser will interpolate, but opacity always is. -->
   <div id="mascot" class="mascot" aria-hidden="true">
     <svg viewBox="0 0 100 100">
+      <clipPath id="mascot-clip">
+        <polygon points="50,8 86,29 86,71 50,92 14,71 14,29"/>
+      </clipPath>
       <polygon class="mascot-body" points="50,8 86,29 86,71 50,92 14,71 14,29"/>
-      <circle cx="36" cy="46" r="6" fill="#f6f4ef"/>
-      <circle cx="64" cy="46" r="6" fill="#f6f4ef"/>
-      <path d="M 32 60 Q 50 78 68 60" stroke="#f6f4ef" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <g clip-path="url(#mascot-clip)">
+        <ellipse class="mascot-gloss" cx="34" cy="26" rx="17" ry="8" transform="rotate(-24 34 26)"/>
+        <ellipse class="mascot-blush" cx="26" cy="62" rx="8" ry="5.2"/>
+        <ellipse class="mascot-blush" cx="74" cy="62" rx="8" ry="5.2"/>
+      </g>
+      <g class="mascot-face">
+        <ellipse class="mascot-eye" cx="36" cy="46" rx="7.5" ry="9"/>
+        <ellipse class="mascot-eye" cx="64" cy="46" rx="7.5" ry="9"/>
+        <circle class="mascot-glint" cx="33.5" cy="42.6" r="2.7"/>
+        <circle class="mascot-glint" cx="61.5" cy="42.6" r="2.7"/>
+        <path class="mascot-mouth" d="M 38 62 Q 50 73 62 62"/>
+      </g>
+      <g class="mascot-face-happy">
+        <path class="mascot-eye-shut" d="M 28 48 Q 36 39 44 48"/>
+        <path class="mascot-eye-shut" d="M 56 48 Q 64 39 72 48"/>
+        <path class="mascot-mouth-open" d="M 39 60 Q 39 74 50 74 Q 61 74 61 60 Z"/>
+      </g>
     </svg>
   </div>
 </div>
 
-<script src="sound.js?v=76"></script>
-<script src="data.js?v=76"></script>
-<script src="shapes.js?v=76"></script>
-<script src="canvas.js?v=76"></script>
-<script src="wordmatch.js?v=76"></script>
-<script src="editor.js?v=76"></script>
-<script src="combine.js?v=76"></script>
-<script src="streak.js?v=76"></script>
-<script src="treeviewer.js?v=76"></script>
-<script src="app.js?v=76"></script>
+<script src="sound.js?v=77"></script>
+<script src="data.js?v=77"></script>
+<script src="shapes.js?v=77"></script>
+<script src="canvas.js?v=77"></script>
+<script src="wordmatch.js?v=77"></script>
+<script src="editor.js?v=77"></script>
+<script src="combine.js?v=77"></script>
+<script src="streak.js?v=77"></script>
+<script src="treeviewer.js?v=77"></script>
+<script src="app.js?v=77"></script>
 <script>
   // Plain webpage, not an installable app -- clean up any service worker
   // and caches left over from when it registered one, so nobody's stuck
