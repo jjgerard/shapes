@@ -48,7 +48,7 @@ body {
 /* The same mark as the browser-tab icon, so the page and the tab agree
    about what this is. Decorative next to the name it sits beside, hence
    the empty alt. */
-.brand-logo { width: 30px; height: 30px; flex-shrink: 0; display: block; }
+.brand-logo { height: 30px; width: auto; flex-shrink: 0; display: block; }
 .brand-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .header-right { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .points-pill {
@@ -84,7 +84,7 @@ h2 { font-size: 1.25rem; }
 body.on-welcome main { padding-top: 8px; }
 .hero { text-align: center; padding: 26px 16px 6px; }
 .hero-logo {
-  width: 168px; height: 168px; display: block; margin: 0 auto 16px;
+  height: 168px; width: auto; display: block; margin: 0 auto 16px;
   filter: drop-shadow(0 8px 18px rgba(0,0,0,0.15));
 }
 .hero-name {
@@ -763,7 +763,7 @@ button { font-family: inherit; cursor: pointer; }
      the header doesn't actually get any taller. */
   .brand { gap: 7px; font-size: 0.95rem; }
   .brand-name { white-space: normal; text-overflow: clip; line-height: 1.15; }
-  .brand-logo { width: 26px; height: 26px; }
+  .brand-logo { height: 26px; width: auto; }
   main { padding: 16px 12px calc(var(--mascot-bar-h) + 20px); }
   .card.narrow { margin: 10px auto 24px; padding: 18px; }
   /* Still the biggest thing on the screen, but sized so that both boxes AND
@@ -771,7 +771,7 @@ button { font-family: inherit; cursor: pointer; }
      whose only button needs scrolling to find is a first screen that looks
      broken. Measured, not guessed: at 360x640 the button lands ~30px clear. */
   .hero { padding: 8px 12px 2px; }
-  .hero-logo { width: 118px; height: 118px; margin-bottom: 10px; }
+  .hero-logo { height: 118px; width: auto; margin-bottom: 10px; }
   .hero-name { font-size: 1.8rem; }
   .hero-tag { font-size: 0.95rem; }
   .card.narrow h2 { font-size: 1.05rem; }
@@ -927,7 +927,7 @@ button { font-family: inherit; cursor: pointer; }
    rather than a job, so it is what goes. Kept below the 360px header
    breakpoint deliberately: a 360px phone has the room and keeps the line. */
 @media (max-width: 340px) {
-  .hero-logo { width: 96px; height: 96px; margin-bottom: 8px; }
+  .hero-logo { height: 96px; width: auto; margin-bottom: 8px; }
   .hero-name { font-size: 1.6rem; }
   .card.narrow { padding: 15px; }
 }
