@@ -132,6 +132,7 @@ bumped on every change, so nobody is ever stuck on a stale cached copy.
 | `shapes.js` | Shape geometry, label fitting, and the shared static tree painter. |
 | `treeviewer.js` | The read-only tree used by the quizzes and the Mystery Level. |
 | `canvas.js` | Pan/zoom/fit shared by every canvas. |
+| `logo.svg` | The vector source for `logo.png` and the four `icon-*.png` sizes. The page loads the PNGs; edit this and re-export if the mark ever changes. |
 
 Two conventions worth knowing before changing anything:
 
