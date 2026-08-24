@@ -785,6 +785,7 @@ function lockedLevelReason(level) {
 let editor = null;
 let activeCheck = null;  // function() -> void, checked automatically after every move
 let currentItems = null; // flat list of STRUCTURES items for the open sub-level, so Start over can re-scatter them
+let currentScatter = {};  // ...laid out the same way it was the first time
 
 // The standing instruction for the open sub-level, so snip mode has
 // something to hand the bar back to when it's switched off.
@@ -807,6 +808,17 @@ function expandInventory(inventory) {
   return items;
 }
 
+// The same pieces, with ONE copy of the tree's top piece moved to the front so
+// the canvas can deal it onto its own row above the rest. Only one copy: a
+// fragment can be used more than once in a tree, and hoisting all of them
+// would put duplicates on the top row that aren't the top of anything.
+function inventoryItemsFor(sub) {
+  const items = expandInventory(sub.inventory);
+  const at = items.findIndex(it => it.id === sub.rootFragmentId);
+  if (at > 0) items.unshift(items.splice(at, 1)[0]);
+  return items;
+}
+
 // Fit the canvas to the actual screen instead of a fixed desktop size, so
 // the puzzle is scattered where a small phone screen can actually reach it.
 // This is just the STARTING size -- the editor grows it dynamically from
@@ -825,16 +837,25 @@ function setSnipButtonActive(on) {
   document.getElementById('editor-snip').classList.toggle('active', on);
 }
 
-function openEditor({ title, hint, items, viewW, viewH, onCheck }) {
+function openEditor({ title, hint, items, viewW, viewH, onCheck, scatter }) {
   ensureEditor();
   document.getElementById('editor-title').textContent = title;
   editorBaseHint = hint;
   clearMascotFlash();
   setMascotSpeech(hint);
   currentItems = items;
+  currentScatter = scatter || {};
+  // Unhide BEFORE scattering, so the canvas has a real width and height to lay
+  // the pieces out against. Nothing paints between here and the end of this
+  // function, so there is no flash of the previous puzzle -- and scatterAll
+  // choosing its shape from window.innerHeight instead of the canvas it is
+  // actually filling is how a portrait phone ended up with a one-piece-wide
+  // column running off the bottom.
+  const editorOverlay = document.getElementById('editor-overlay');
+  editorOverlay.classList.remove('hidden');
   const fit = fitCanvasSize(viewW, viewH);
   editor.open(fit.w, fit.h);
-  editor.scatterAll(items);
+  editor.scatterAll(items, currentScatter);
   setSnipButtonActive(false);
   setModalDoneState(document.getElementById('editor-close'), false);
   editor.onSnipModeChange = (on) => {
@@ -851,8 +872,6 @@ function openEditor({ title, hint, items, viewW, viewH, onCheck }) {
   // silently each time, and only act when it's actually complete.
   editor.onChange = () => { if (activeCheck) activeCheck(true); };
   activeCheck = onCheck;
-  const editorOverlay = document.getElementById('editor-overlay');
-  editorOverlay.classList.remove('hidden');
   // Labels can only be measured once they're actually displayed -- inside
   // a display:none subtree getComputedTextLength() is 0 and the fit
   // silently does nothing, leaving every label at its unfitted size.
@@ -881,7 +900,7 @@ document.getElementById('editor-clear').addEventListener('click', async () => {
     if (!ok) return;
   }
   editor.clear();
-  editor.scatterAll(currentItems);
+  editor.scatterAll(currentItems, currentScatter);
   setSnipButtonActive(false);
 });
 document.getElementById('editor-snip').addEventListener('click', () => {
@@ -998,7 +1017,8 @@ function openTargetEditor(sub) {
   openEditor({
     title: sub.name,
     hint: `Drag every piece together until it's one connected shape of ${total}.`,
-    items: expandInventory(sub.inventory),
+    items: inventoryItemsFor(sub),
+    scatter: { leadWithRoot: true },
     viewW: 1600, viewH: 1000,
     // Finished means what the level says it means: every piece used, all of
     // them in one connected shape. It deliberately does NOT compare against
