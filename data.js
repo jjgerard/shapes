@@ -291,6 +291,11 @@ function buildMode(spec) {
     sub.inventory = Object.entries(counts)
       .map(([id, count]) => ({ id: Number(id), count }))
       .sort((a, b) => a.id - b.id);
+    // Which piece is the top of the finished tree. The canvas deals that one
+    // first and puts it on its own row, so the puzzle opens with the piece
+    // everything else hangs off at the top rather than wherever a sort by
+    // piece id happened to leave it.
+    sub.rootFragmentId = fragmentIdFor(mode.structures, sub.root) || null;
   }
 
   // Levels 3 & 4 walk the same Level 2 trees, in the same order, skipping

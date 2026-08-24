@@ -29,6 +29,11 @@
 // not just a scaled-down copy of the desktop layout. Recomputed by
 // _applySizing() every time the editor opens, so rotating a device or
 // resizing the window between sub-levels picks up the right sizes.
+// The floor for the opening view. Below this the labels stop being readable,
+// so a puzzle too big to fit opens here and is panned rather than shrunk
+// further.
+const MIN_OPEN_ZOOM = 0.45;
+
 const SIZING = {
   desktop: { nodeRadius: 32, snapDistance: 60, slotSize: 320, scatterMargin: 1120, gap: 240, childSpreadX: 76, childSpreadY: 90, springApart: 80 },
   mobile:  { nodeRadius: 44, snapDistance: 82, slotSize: 300, scatterMargin: 800, gap: 250, childSpreadX: 100, childSpreadY: 120, springApart: 90 },
@@ -158,19 +163,109 @@ class TreeEditor {
     return Math.max(this.minViewH || 0, this.contentBottom() + this.slotHeight * 2);
   }
 
-  // Dump every piece for this sub-level onto the canvas at once, laid out
-  // in a grid centered in the middle of the canvas -- like a jigsaw puzzle
-  // tipped out on a table. There's no "add a piece" step, everything
+  // Half the width of one silhouette, from its own SHAPE_REACH (shapes.js)
+  // rather than the nominal radius. The difference is not cosmetic: P's
+  // rectangle is 1.35r each side, so two rectangles as siblings are 2.7r wide
+  // between them where a flat radius budgets 2r -- which is exactly why they
+  // were overlapping each other inside their own piece.
+  _halfWidth(shapeKey) {
+    const silhouette = CATEGORIES[shapeKey] && CATEGORIES[shapeKey].shape;
+    const reach = SHAPE_REACH[silhouette];
+    return this.nodeRadius * (reach ? reach.r : 1) + 3;   // +3 for the stroke
+  }
+
+  // Where a piece's children sit relative to its root: laid out left to right
+  // by their real widths and then centred under it, instead of stepped by one
+  // pitch that every shape has to share. The gap between neighbours is the gap
+  // the old fixed pitch produced for same-width shapes, so nothing moves for
+  // the pieces that were already fine.
+  _childOffsets(item) {
+    const gap = Math.max(10, this.childSpreadX - this.nodeRadius * 2);
+    const halves = item.children.map(c => this._halfWidth(c.shape));
+    const total = halves.reduce((w, h) => w + h * 2, 0) + gap * (halves.length - 1);
+    const out = [];
+    let x = -total / 2;
+    for (const h of halves) { out.push(x + h); x += h * 2 + gap; }
+    return { offsets: out, halfWidth: Math.max(total / 2, this._halfWidth(item.shape)) };
+  }
+
+  // How much room a whole piece takes up, measured from its own root.
+  _chunkHalfWidth(item) {
+    return item.children.length ? this._childOffsets(item).halfWidth : this._halfWidth(item.shape);
+  }
+  _chunkBelow(item) {
+    return (item.children.length ? this.childSpreadY : 0) + this.nodeRadius;
+  }
+
+  // How many pieces per row, chosen so the cluster ends up roughly the shape
+  // of the screen it has to fit into. A square-ish grid (the old
+  // ceil(sqrt(n))) lays a portrait phone's pieces out far wider than the phone
+  // is, and scrollToStart then can't fit them at a readable zoom and falls
+  // back to anchoring top-left -- which is how a six-piece level ends up
+  // opening on two and a half pieces.
+  //
+  // Measured against the canvas itself where possible (openEditor unhides the
+  // overlay first so it has a size here); the viewport is only the fallback,
+  // for a caller that scatters while hidden.
+  _columnsFor(items) {
+    if (items.length < 2) return 1;
+    const avgW = items.reduce((w, it) => w + this._chunkHalfWidth(it) * 2, 0) / items.length;
+    const avgH = items.reduce((h, it) => h + this._chunkBelow(it), 0) / items.length + this.nodeRadius;
+    const wrap = this.svg.parentElement;
+    const boxW = (wrap && wrap.clientWidth) || window.innerWidth;
+    const boxH = (wrap && wrap.clientHeight) || window.innerHeight;
+    const want = Math.max(0.3, boxW / Math.max(1, boxH));
+    let best = 1, bestErr = Infinity;
+    for (let c = 1; c <= items.length; c++) {
+      const aspect = (c * avgW) / (Math.ceil(items.length / c) * avgH);
+      const err = Math.abs(Math.log(aspect / want));
+      if (err < bestErr) { bestErr = err; best = c; }
+    }
+    return best;
+  }
+
+  // Dump every piece for this sub-level onto the canvas at once -- like a
+  // jigsaw tipped out on a table. There's no "add a piece" step, everything
   // needed is already there to drag together.
-  scatterAll(structureItems) {
-    const cols = Math.max(2, Math.ceil(Math.sqrt(structureItems.length * 1.3)));
-    const rows = Math.ceil(structureItems.length / cols);
-    const offsetX = this.scatterMargin + this.colGap / 2;
-    const offsetY = this.scatterMargin + this.rowGap / 2;
-    structureItems.forEach((item, i) => {
-      const col = i % cols, row = Math.floor(i / cols);
-      this.addChunk(item, { x: offsetX + col * this.colGap, y: offsetY + row * this.rowGap });
-    });
+  //
+  // Laid out by MEASURING each piece rather than stepping a fixed grid pitch.
+  // A single pitch has to be either wide enough for the widest piece (leaving
+  // the small ones adrift in whitespace) or too narrow for it (leaving a
+  // three-child piece overlapping whatever is beside it, which is what the
+  // six-piece sub-level did on a phone). Rows are packed to measured widths
+  // and centred on each other.
+  //
+  // leadWithRoot puts the first piece alone on the top row. For a build
+  // sub-level that piece is the top of the finished tree, and starting it
+  // above everything else is a much better first impression of the job than
+  // finding it in the bottom-left corner of a grid sorted by piece id.
+  scatterAll(structureItems, { leadWithRoot = false } = {}) {
+    if (!structureItems.length) return;
+    const padX = this.nodeRadius * 1.25;
+    const padY = this.nodeRadius * 1.1;
+
+    const rows = [];
+    if (leadWithRoot) rows.push([structureItems[0]]);
+    const rest = leadWithRoot ? structureItems.slice(1) : structureItems;
+    for (let i = 0; i < rest.length; i += this._columnsFor(rest)) {
+      rows.push(rest.slice(i, i + this._columnsFor(rest)));
+    }
+
+    const rowWidth = row => row.reduce((w, it) => w + this._chunkHalfWidth(it) * 2, 0)
+      + padX * (row.length - 1);
+    const widest = Math.max(...rows.map(rowWidth));
+
+    let y = this.scatterMargin;
+    for (const row of rows) {
+      y += this.nodeRadius;                        // top edge of the row -> root centre
+      let x = this.scatterMargin + (widest - rowWidth(row)) / 2;
+      for (const item of row) {
+        x += this._chunkHalfWidth(item);
+        this.addChunk(item, { x, y });
+        x += this._chunkHalfWidth(item) + padX;
+      }
+      y += Math.max(...row.map(it => this._chunkBelow(it))) + padY;
+    }
     this.scrollToStart();
   }
 
@@ -187,6 +282,12 @@ class TreeEditor {
   // though there was room to show both by zooming out just slightly (mobile
   // pieces are bigger/further apart than desktop ones to begin with, so a
   // strict "already fits at 100%" check was failing there in practice).
+  //
+  // And when it genuinely can't fit -- a six-piece level on a 360x640 phone --
+  // it still opens at MIN_OPEN_ZOOM anchored on the pieces, rather than at
+  // 100% where all but a couple of them are off-screen. A student who has to
+  // pan before they can see what the puzzle even is has been handed a worse
+  // problem than small shapes.
   scrollToStart() {
     const wrap = this.svg.parentElement;
     if (!wrap || !this.nodes.length) return;
@@ -198,15 +299,17 @@ class TreeEditor {
       const maxY = Math.max(...this.nodes.map(n => n.y + this.nodeRadius)) + pad;
       const rawW = maxX - minX, rawH = maxY - minY;
       const fitZoom = Math.min(1, wrap.clientWidth / rawW, wrap.clientHeight / rawH);
-      if (fitZoom >= 0.5) {
+      if (fitZoom >= MIN_OPEN_ZOOM) {
         this.zoom = fitZoom;
         this.render();
         const contentW = rawW * this.zoom, contentH = rawH * this.zoom;
         wrap.scrollLeft = Math.max(0, minX * this.zoom - (wrap.clientWidth - contentW) / 2);
         wrap.scrollTop = Math.max(0, minY * this.zoom - (wrap.clientHeight - contentH) / 2);
       } else {
-        wrap.scrollLeft = Math.max(0, (this.scatterMargin - pad) * this.zoom);
-        wrap.scrollTop = Math.max(0, (this.scatterMargin - pad) * this.zoom);
+        this.zoom = MIN_OPEN_ZOOM;
+        this.render();
+        wrap.scrollLeft = Math.max(0, minX * this.zoom);
+        wrap.scrollTop = Math.max(0, minY * this.zoom);
       }
     });
   }
@@ -222,9 +325,9 @@ class TreeEditor {
     };
     this.nodes.push(root);
 
-    const n = structureItem.children.length;
+    const { offsets } = this._childOffsets(structureItem);
     structureItem.children.forEach((c, i) => {
-      const cx = baseX + (i - (n - 1) / 2) * this.childSpreadX;
+      const cx = baseX + offsets[i];
       const cy = baseY + this.childSpreadY;
       const child = {
         id: this.nextId++, catKey: c.shape, number: c.number,
