@@ -10,6 +10,24 @@ function getAudioCtx() {
   return audioCtx;
 }
 
+// resume() is ASYNCHRONOUS, and that swallowed the first sound of every
+// session. A browser hands you a suspended context until a user gesture has
+// happened; the resume() above starts it, but the caller carries straight on
+// and schedules its nodes at ctx.currentTime -- a clock that hasn't started
+// yet -- so the very first click was silent even though every later one
+// worked. Awaiting the promise inside each play* function would push the
+// sound past the thing it is meant to accompany.
+//
+// So open and start the context on the first gesture anywhere on the page --
+// typing a name, tapping Start -- which is many seconds before any piece can
+// snap. By the time a sound is wanted the clock is already running.
+function primeAudio() {
+  try { getAudioCtx(); } catch (e) { /* no Web Audio here; every play* no-ops */ }
+}
+for (const ev of ['pointerdown', 'touchstart', 'keydown']) {
+  window.addEventListener(ev, primeAudio, { once: true, capture: true });
+}
+
 // Sound is on by default but genuinely switchable, and the choice sticks
 // across sessions. This is a classroom app: someone working through it on a
 // shared desk, in a quiet room, or with sound sensitivity needs a mute they
