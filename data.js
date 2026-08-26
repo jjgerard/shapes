@@ -463,6 +463,11 @@ const PREX_LEVEL1 = [
     task: 'join',
     name: 'First Join',
     description: 'Drag two pieces together until they snap -- this time each one brings its own branches.',
+    // The two that go together glow from the start. This is the sub-level
+    // where a piece first arrives with children hanging off it, so "which two
+    // of these six nodes are the pair" is a real question -- and the normal
+    // answer, three failed attempts, is a poor way to first meet it.
+    showHint: true,
     pieceIds: [6, 1],
   },
   {

@@ -451,6 +451,21 @@ class TreeEditor {
     this.scrollToStart();
   }
 
+  // Point at the one pair that can join, from the moment a sub-level opens,
+  // rather than waiting for the three failed attempts that normally earn a
+  // hint. For the sub-level where a piece first arrives carrying children,
+  // "which two of these go together" is the whole question -- and finding out
+  // by getting it wrong three times first is a worse way to be told.
+  hintLegalPair() {
+    for (const a of this.nodes) {
+      for (const b of this.nodes) {
+        const pair = this.resolveSnapPair(a.id, b.id);
+        if (pair) { this.hintIds = pair.slice(); this.render(); return true; }
+      }
+    }
+    return false;
+  }
+
   hasSeam(nodeId) {
     return this.seams.has(nodeId);
   }
