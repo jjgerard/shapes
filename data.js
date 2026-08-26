@@ -420,11 +420,26 @@ function pxFullClause() {
 }
 
 const PREX_LEVEL1 = [
+  // Two sub-levels, not one, for the two things this canvas can do. Asking a
+  // student to learn "drag until it snaps" AND "arm the scissors, then tap the
+  // joint" before they have done either once is the steepest step in the whole
+  // game, and it is the first one. They are the same two pieces both times --
+  // the second opens with them already joined -- so the second sub-level is
+  // genuinely one new action and nothing else.
   {
     id: 'first-join',
     kind: 'tutorial',
+    task: 'join',
     name: 'First Join',
-    description: 'Snap two pieces together, then use the scissors to pull them apart again.',
+    description: 'Drag two pieces together until they snap.',
+    pieceIds: [6, 1],
+  },
+  {
+    id: 'first-cut',
+    kind: 'tutorial',
+    task: 'cut',
+    name: 'First Cut',
+    description: 'Use the scissors to pull two joined pieces apart again.',
     pieceIds: [6, 1],
   },
   {

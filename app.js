@@ -997,15 +997,38 @@ function markSubDone(sub, points) {
   // done" signal, the student closes manually whenever they're ready.
 }
 
+// One entry per thing this canvas can do. Level 1 teaches them one at a time
+// (sub.task 'join' then 'cut'); Level 5's tutorial is a refresher for someone
+// who has already done both, so it keeps them together and has no task set.
+const TUTORIAL_TASKS = {
+  join: {
+    hint: 'Drag the two pieces together until they snap.',
+    preJoin: false,
+    done: (ed) => ed.snapCount >= 1,
+  },
+  cut: {
+    hint: 'These two are already joined. Tap the scissors, then tap the joint between them to pull them apart.',
+    preJoin: true,
+    done: (ed) => ed.snipCount >= 1,
+  },
+  both: {
+    hint: 'Drag the two pieces together until they snap. Then tap the scissors and click the joint to pull them apart again.',
+    preJoin: false,
+    done: (ed) => ed.snapCount >= 1 && ed.snipCount >= 1,
+  },
+};
+
 function openTutorialEditor(sub) {
+  const task = TUTORIAL_TASKS[sub.task] || TUTORIAL_TASKS.both;
   const items = sub.pieceIds.map(id => STRUCTURES.find(s => s.id === id));
   openEditor({
     title: sub.name,
-    hint: 'Drag the two pieces together until they snap. Then tap the scissors and click the joint to pull them apart again.',
+    hint: task.hint,
     items,
+    scatter: { preJoin: task.preJoin },
     viewW: 800, viewH: 700,
-    onCheck: (silent) => {
-      if (editor.snapCount < 1 || editor.snipCount < 1) return;
+    onCheck: () => {
+      if (!task.done(editor)) return;
       editor.setFeedback('Nice work!', 'ok');
       markSubDone(sub, POINTS_TUTORIAL);
     },

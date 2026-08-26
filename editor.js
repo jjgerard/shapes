@@ -239,7 +239,7 @@ class TreeEditor {
   // sub-level that piece is the top of the finished tree, and starting it
   // above everything else is a much better first impression of the job than
   // finding it in the bottom-left corner of a grid sorted by piece id.
-  scatterAll(structureItems, { leadWithRoot = false } = {}) {
+  scatterAll(structureItems, { leadWithRoot = false, preJoin = false } = {}) {
     if (!structureItems.length) return;
     const padX = this.nodeRadius * 1.25;
     const padY = this.nodeRadius * 1.1;
@@ -266,7 +266,8 @@ class TreeEditor {
       }
       y += Math.max(...row.map(it => this._chunkBelow(it))) + padY;
     }
-    this.scrollToStart();
+    if (preJoin) this.preJoinAll();   // re-frames the view itself
+    else this.scrollToStart();
   }
 
   // Open the view anchored just above/left of the piece cluster (with a
@@ -390,7 +391,7 @@ class TreeEditor {
   // one node at leafId's position; rootId's children are adopted. Before
   // rootId disappears, remember exactly what it was so a later snip can
   // rebuild it as an identical, freestanding piece again.
-  snap(leafId, rootId) {
+  snap(leafId, rootId, { silent = false } = {}) {
     const root = this.nodes.find(n => n.id === rootId);
     this.seams.set(leafId, {
       catKey: root.catKey, number: root.number,
@@ -399,15 +400,55 @@ class TreeEditor {
     });
     this.edges.forEach(e => { if (e.parent === rootId) e.parent = leafId; });
     this.nodes = this.nodes.filter(n => n.id !== rootId);
-    this.snapCount++;
     // Getting somewhere clears the slate: the hint counter is about being
     // stuck right now, not about a tally over the whole puzzle.
     this.failedAttempts = 0;
     this.hintIds = null;
+    // A silent snap is the app setting a puzzle up, not the student doing
+    // something -- so it makes no sound, takes no credit, and stays out of
+    // snapCount, which is what "Start over" reads to decide whether there is
+    // any work worth confirming the loss of.
+    if (silent) return;
+    this.snapCount++;
     this.setFeedback('Snapped together.', 'ok');
     playClickSound();
     if (this.onSnap) this.onSnap();
     if (this.onChange) this.onChange();
+  }
+
+  // Open a sub-level with its pieces already joined. The scissors tutorial
+  // needs this: there is nothing to cut until something has been snapped, and
+  // making the student snap it first is the very thing that sub-level exists
+  // to stop asking of them all at once.
+  //
+  // The subtree is moved onto its new parent before the join, because snap()
+  // adopts children where they stand -- which is right when a student has
+  // just dragged the piece into position, and leaves the children stranded
+  // across the canvas when nobody has.
+  preJoinAll() {
+    for (let guard = this.nodes.length; guard > 0; guard--) {
+      let pair = null;
+      for (const a of this.nodes) {
+        for (const b of this.nodes) {
+          pair = this.resolveSnapPair(a.id, b.id);
+          if (pair) break;
+        }
+        if (pair) break;
+      }
+      if (!pair) break;
+      const [leafId, rootId] = pair;
+      const leaf = this.nodes.find(n => n.id === leafId);
+      const root = this.nodes.find(n => n.id === rootId);
+      const dx = leaf.x - root.x, dy = leaf.y - root.y;
+      for (const id of this.subtreeOf(rootId)) {
+        const n = this.nodes.find(m => m.id === id);
+        n.x += dx; n.y += dy;
+      }
+      this.snap(leafId, rootId, { silent: true });
+    }
+    this.setFeedback('');
+    this.render();
+    this.scrollToStart();
   }
 
   hasSeam(nodeId) {
