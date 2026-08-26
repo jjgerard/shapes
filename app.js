@@ -1020,7 +1020,9 @@ const TUTORIAL_TASKS = {
 
 function openTutorialEditor(sub) {
   const task = TUTORIAL_TASKS[sub.task] || TUTORIAL_TASKS.both;
-  const items = sub.pieceIds.map(id => STRUCTURES.find(s => s.id === id));
+  // Either named pieces out of the mode's inventory, or written-out ones for
+  // the opening sub-levels, whose lone nodes are deliberately not in it.
+  const items = sub.pieces || sub.pieceIds.map(id => STRUCTURES.find(s => s.id === id));
   openEditor({
     title: sub.name,
     hint: task.hint,
