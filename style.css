@@ -419,14 +419,28 @@ button { font-family: inherit; cursor: pointer; }
 }
 .tree-node.hinted .node-shape { stroke: #e8b400; animation: hint-pulse 1.2s ease-in-out infinite; }
 .wm-slot.hinted { animation: hint-pulse 1.2s ease-in-out infinite; }
-.tree-node.snip-disabled { opacity: 0.45; }
+/* Arming the scissors has to change the screen unmistakably. It was a thin
+   dashed outline, which is easy to miss on a busy canvas and -- in the
+   tutorial that is one node on an empty one -- was the only thing that
+   changed at all. So: a thick pulsing outline with a red halo, and everything
+   that can't be cut pushed further back. Animated on .node-shape rather than
+   on .tree-node, because the group carries its position in a transform
+   attribute and animating transform there would drag every node to the
+   canvas origin. */
+@keyframes snip-pulse {
+  0%, 100% { stroke-width: 6; filter: drop-shadow(0 0 4px rgba(193,68,58,0.65)); }
+  50%      { stroke-width: 10; filter: drop-shadow(0 0 14px rgba(193,68,58,1)); }
+}
+.tree-node.snip-disabled { opacity: 0.3; }
 .tree-node.snippable .node-shape {
   stroke: var(--danger);
-  stroke-width: 4;
-  stroke-dasharray: 5 3;
+  stroke-width: 6;
+  stroke-dasharray: 9 5;
+  stroke-linecap: round;
+  animation: snip-pulse 1s ease-in-out infinite;
 }
 .tree-edge { stroke: #8a8375; stroke-width: 2; fill: none; }
-.tree-edge.seam { stroke: var(--danger); stroke-width: 3; stroke-dasharray: 6 4; }
+.tree-edge.seam { stroke: var(--danger); stroke-width: 5; stroke-dasharray: 8 5; stroke-linecap: round; }
 
 /* ---- level 9 combining ---- */
 #combine-canvas {

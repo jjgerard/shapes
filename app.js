@@ -786,6 +786,7 @@ let editor = null;
 let activeCheck = null;  // function() -> void, checked automatically after every move
 let currentItems = null; // flat list of STRUCTURES items for the open sub-level, so Start over can re-scatter them
 let currentScatter = {};  // ...laid out the same way it was the first time
+let currentHintPair = false;   // ...and re-pointed at the answer, if it was
 
 // The standing instruction for the open sub-level, so snip mode has
 // something to hand the bar back to when it's switched off.
@@ -837,7 +838,7 @@ function setSnipButtonActive(on) {
   document.getElementById('editor-snip').classList.toggle('active', on);
 }
 
-function openEditor({ title, hint, items, viewW, viewH, onCheck, scatter }) {
+function openEditor({ title, hint, items, viewW, viewH, onCheck, scatter, hintPair }) {
   ensureEditor();
   document.getElementById('editor-title').textContent = title;
   editorBaseHint = hint;
@@ -856,6 +857,8 @@ function openEditor({ title, hint, items, viewW, viewH, onCheck, scatter }) {
   const fit = fitCanvasSize(viewW, viewH);
   editor.open(fit.w, fit.h);
   editor.scatterAll(items, currentScatter);
+  currentHintPair = !!hintPair;
+  if (currentHintPair) editor.hintLegalPair();
   setSnipButtonActive(false);
   setModalDoneState(document.getElementById('editor-close'), false);
   editor.onSnipModeChange = (on) => {
@@ -901,7 +904,12 @@ document.getElementById('editor-clear').addEventListener('click', async () => {
   }
   editor.clear();
   editor.scatterAll(currentItems, currentScatter);
+  if (currentHintPair) editor.hintLegalPair();
   setSnipButtonActive(false);
+  // Re-fit, for the same reason openEditor does it: the labels were sized
+  // against shapes that no longer exist, and a fresh scatter has to look like
+  // a fresh open.
+  fitShapeLabels(document.getElementById('editor-overlay'));
 });
 document.getElementById('editor-snip').addEventListener('click', () => {
   if (!editor) return;
@@ -1028,6 +1036,7 @@ function openTutorialEditor(sub) {
     hint: task.hint,
     items,
     scatter: { preJoin: task.preJoin },
+    hintPair: !!sub.showHint,
     viewW: 800, viewH: 700,
     onCheck: () => {
       if (!task.done(editor)) return;
