@@ -787,6 +787,7 @@ let activeCheck = null;  // function() -> void, checked automatically after ever
 let currentItems = null; // flat list of STRUCTURES items for the open sub-level, so Start over can re-scatter them
 let currentScatter = {};  // ...laid out the same way it was the first time
 let currentHintPair = false;   // ...and re-pointed at the answer, if it was
+let currentCallSnip = false;   // ...with the scissors still asking to be tapped
 
 // The standing instruction for the open sub-level, so snip mode has
 // something to hand the bar back to when it's switched off.
@@ -835,10 +836,21 @@ function fitCanvasSize(maxW, maxH) {
 }
 
 function setSnipButtonActive(on) {
-  document.getElementById('editor-snip').classList.toggle('active', on);
+  const btn = document.getElementById('editor-snip');
+  btn.classList.toggle('active', on);
+  // Arming it answers the call, and from here on red means "armed" -- two
+  // different reds on the same button would be saying two different things.
+  if (on) btn.classList.remove('calling');
 }
 
-function openEditor({ title, hint, items, viewW, viewH, onCheck, scatter, hintPair }) {
+// Flash the scissors until they are tapped. Only for the sub-levels whose whole
+// job is the scissors: everywhere else the button is one option among several
+// and has no business demanding attention.
+function setSnipButtonCalling(on) {
+  document.getElementById('editor-snip').classList.toggle('calling', !!on);
+}
+
+function openEditor({ title, hint, items, viewW, viewH, onCheck, scatter, hintPair, callSnip }) {
   ensureEditor();
   document.getElementById('editor-title').textContent = title;
   editorBaseHint = hint;
@@ -859,7 +871,9 @@ function openEditor({ title, hint, items, viewW, viewH, onCheck, scatter, hintPa
   editor.scatterAll(items, currentScatter);
   currentHintPair = !!hintPair;
   if (currentHintPair) editor.hintLegalPair();
+  currentCallSnip = !!callSnip;
   setSnipButtonActive(false);
+  setSnipButtonCalling(currentCallSnip);
   setModalDoneState(document.getElementById('editor-close'), false);
   editor.onSnipModeChange = (on) => {
     setSnipButtonActive(on);
@@ -906,6 +920,7 @@ document.getElementById('editor-clear').addEventListener('click', async () => {
   editor.scatterAll(currentItems, currentScatter);
   if (currentHintPair) editor.hintLegalPair();
   setSnipButtonActive(false);
+  setSnipButtonCalling(currentCallSnip);
   // Re-fit, for the same reason openEditor does it: the labels were sized
   // against shapes that no longer exist, and a fresh scatter has to look like
   // a fresh open.
@@ -1017,6 +1032,7 @@ const TUTORIAL_TASKS = {
   cut: {
     hint: 'These two are already joined. Tap the scissors, then tap the joint between them to pull them apart.',
     preJoin: true,
+    callSnip: true,
     done: (ed) => ed.snipCount >= 1,
   },
   both: {
@@ -1037,6 +1053,7 @@ function openTutorialEditor(sub) {
     items,
     scatter: { preJoin: task.preJoin },
     hintPair: !!sub.showHint,
+    callSnip: !!task.callSnip,
     viewW: 800, viewH: 700,
     onCheck: () => {
       if (!task.done(editor)) return;
