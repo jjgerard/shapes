@@ -419,19 +419,50 @@ function pxFullClause() {
   );
 }
 
+// A lone node with nothing under it, for the two opening sub-levels. Written
+// out here rather than added to PREX_STRUCTURES on purpose: the structures
+// list is what buildMode() derives legal edges and piece inventories from, and
+// a childless entry has no business in any of that. These exist only to be
+// dealt onto a canvas.
+const pxLoose = (shape, number) => ({ id: `loose:${shape}${number}`, shape, number, children: [] });
+
 const PREX_LEVEL1 = [
-  // Two sub-levels, not one, for the two things this canvas can do. Asking a
-  // student to learn "drag until it snaps" AND "arm the scissors, then tap the
-  // joint" before they have done either once is the steepest step in the whole
-  // game, and it is the first one. They are the same two pieces both times --
-  // the second opens with them already joined -- so the second sub-level is
-  // genuinely one new action and nothing else.
+  // Four tutorials before any puzzle, each teaching exactly one thing.
+  //
+  // The first two are a single shape, twice, and nothing else on the canvas:
+  // there is precisely one thing that can be dragged and precisely one thing
+  // that can be cut, so neither move can be got wrong and neither has to be
+  // picked out from anything. Two N1s join the way any two nodes of the same
+  // shape and number do -- one becomes the other -- so a student sees the
+  // whole mechanic in its smallest possible form: two triangles in, one
+  // triangle out, and the scissors put it back.
+  //
+  // Only then do the next two run the same two moves on real pieces that have
+  // children hanging off them.
+  {
+    id: 'loose-join',
+    kind: 'tutorial',
+    task: 'join',
+    name: 'Snap',
+    description: 'Two pieces, one move. Drag them together until they snap.',
+    pieces: [pxLoose('N', 1), pxLoose('N', 1)],
+  },
+  {
+    id: 'loose-cut',
+    kind: 'tutorial',
+    task: 'cut',
+    name: 'Snip',
+    description: 'Now cut that join apart again.',
+    pieces: [pxLoose('N', 1), pxLoose('N', 1)],
+  },
+  // The same two moves, now on pieces with children -- so the thing that is
+  // new here is only that a join carries a whole piece with it.
   {
     id: 'first-join',
     kind: 'tutorial',
     task: 'join',
     name: 'First Join',
-    description: 'Drag two pieces together until they snap.',
+    description: 'Drag two pieces together until they snap -- this time each one brings its own branches.',
     pieceIds: [6, 1],
   },
   {
