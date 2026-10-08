@@ -216,6 +216,7 @@ button { font-family: inherit; cursor: pointer; }
    what the setting currently IS. */
 .menu-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
 .menu-item { width: 100%; text-align: left; }
+.menu-link { display: block; box-sizing: border-box; text-decoration: none; }
 
 .field-help { font-size: 0.82rem; color: var(--muted); margin: 10px 0 0; line-height: 1.4; }
 /* Errors go inline, right under the fields they're about. A toast at the
@@ -238,6 +239,7 @@ button { font-family: inherit; cursor: pointer; }
   padding: 0;
 }
 .link-btn:hover { text-decoration: underline; }
+a.link-btn { text-decoration: none; }
 /* The only real links in the app are in the About panel. Underlined and in
    the accent colour, because "it looks like a link" is the whole of how
    anyone knows to tap it. */
