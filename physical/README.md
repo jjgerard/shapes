@@ -14,6 +14,9 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `out/spokes.png/.svg` | One sheet drawing every piece's socket and plugs. |
 | `coupon.py` | Builds the STL test coupon and checks the real meshes in 3D (seats every plug in every socket and measures overlap). |
 | `coupon/` | The coupon: three `.stl` files, `COUPON.md` (how to print and what to test), `preview.png`. |
+| `arms.py` | Lays out every game tree with real piece sizes to find the arm design; checks all 14 trees and draws the results. |
+| `ARMS.md` | Generated: the arm design, why these numbers, tree sizes, and what is still open. |
+| `out/arms_piece.*`, `out/arms_trees.*` | Drawings: one three-arm piece to scale, and the game's trees built with the chosen arms. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):

@@ -1,0 +1,127 @@
+{
+ "body": {
+  "width": {
+   "1": 30.0,
+   "2": 33.0,
+   "3": 46.0
+  },
+  "height": 26.0
+ },
+ "hinge": {
+  "pitch": 13.0,
+  "hub": 12.0
+ },
+ "arm": {
+  "section": 7.0,
+  "length": 72,
+  "clicks": [
+   -50,
+   -25,
+   0,
+   25,
+   50
+  ]
+ },
+ "stub": {
+  "length": 22
+ },
+ "clear_gap": 5.0,
+ "trees": {
+  "prex:L1 four-pieces": {
+   "width": 236,
+   "height": 294,
+   "pieces": 10
+  },
+  "prex:L1 one-more-branch": {
+   "width": 334,
+   "height": 379,
+   "pieces": 16
+  },
+  "prex:L1 name-them": {
+   "width": 334,
+   "height": 379,
+   "pieces": 16
+  },
+  "prex:L2 the-cat": {
+   "width": 86,
+   "height": 124,
+   "pieces": 3
+  },
+  "prex:L2 the-cat-chased-the-mouse": {
+   "width": 236,
+   "height": 294,
+   "pieces": 10
+  },
+  "prex:L2 the-fluffy-cat-will-jump": {
+   "width": 168,
+   "height": 263,
+   "pieces": 9
+  },
+  "prex:L2 the-fluffy-cat-quickly-jumped-on-the-table": {
+   "width": 334,
+   "height": 379,
+   "pieces": 16
+  },
+  "xbar:L1 four-pieces": {
+   "width": 163,
+   "height": 300,
+   "pieces": 7
+  },
+  "xbar:L1 one-more-branch": {
+   "width": 465,
+   "height": 984,
+   "pieces": 37
+  },
+  "xbar:L1 name-them": {
+   "width": 465,
+   "height": 984,
+   "pieces": 37
+  },
+  "xbar:L2 the-cat": {
+   "width": 112,
+   "height": 305,
+   "pieces": 6
+  },
+  "xbar:L2 the-cat-chased-the-mouse": {
+   "width": 305,
+   "height": 651,
+   "pieces": 18
+  },
+  "xbar:L2 did-the-cat-chase-the-mouse": {
+   "width": 305,
+   "height": 840,
+   "pieces": 21
+  },
+  "xbar:L2 which-mouse-did-the-cat-chase": {
+   "width": 397,
+   "height": 814,
+   "pieces": 27
+  }
+ },
+ "alternatives": [
+  {
+   "name": "fixed 64 mm, hinge 0 / \u00b130 / \u00b160",
+   "failing_trees": 2
+  },
+  {
+   "name": "fixed 72 mm, hinge 0 / \u00b130 / \u00b160",
+   "failing_trees": 2
+  },
+  {
+   "name": "fixed 72 mm, hinge 0 / \u00b125 / \u00b150  (chosen)",
+   "failing_trees": 0
+  },
+  {
+   "name": "fixed 66 mm, hinge 0 / \u00b125 / \u00b150 / \u00b170",
+   "failing_trees": 0
+  },
+  {
+   "name": "telescoping 44 or 72 mm, hinge 0 / \u00b125 / \u00b150",
+   "failing_trees": 0
+  },
+  {
+   "name": "telescoping 44 / 58 / 72 mm, hinge 0 / \u00b125 / \u00b150",
+   "failing_trees": 0
+  }
+ ]
+}
