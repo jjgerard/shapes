@@ -1,0 +1,47 @@
+{
+ "parts": {
+  "coupon_plugs": {
+   "watertight": true,
+   "volume": true,
+   "mm3": 23271.626586348913,
+   "bounds": [
+    66.0,
+    72.0,
+    14.0
+   ]
+  },
+  "coupon_clearance_sockets": {
+   "watertight": true,
+   "volume": true,
+   "mm3": 88745.37450039676,
+   "bounds": [
+    101.0,
+    76.0,
+    14.0
+   ]
+  },
+  "coupon_key_sockets": {
+   "watertight": true,
+   "volume": true,
+   "mm3": 48275.201519305934,
+   "bounds": [
+    101.0,
+    42.0,
+    14.0
+   ]
+  }
+ },
+ "dims": {
+  "plug_len": 12.0,
+  "block_h": 14.0,
+  "core_diameter": 18.716621307606893,
+  "clearances": [
+   0.05,
+   0.1,
+   0.15,
+   0.2,
+   0.25
+  ],
+  "design_clearance": 0.15
+ }
+}

@@ -12,6 +12,8 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `spokes.py` | Assigns the circle-and-spokes keys, verifies them geometrically (and against every game tree), draws the sheet. |
 | `SPOKES.md` | Generated report: kit sizes per mode, every piece, what it hangs from, what each arm takes. |
 | `out/spokes.png/.svg` | One sheet drawing every piece's socket and plugs. |
+| `coupon.py` | Builds the STL test coupon and checks the real meshes in 3D (seats every plug in every socket and measures overlap). |
+| `coupon/` | The coupon: three `.stl` files, `COUPON.md` (how to print and what to test), `preview.png`. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):

@@ -246,10 +246,11 @@ class Spokes:
         if self.with_reg: tip = tip.union(p['reg'])
         return tip, tip.union(p['b'])
 
-    def socket(self, codes):
-        w, r1 = SPOKE_W + 2 * CLR, self.r1 + CLR
-        deep = Point(0, 0).buffer(self.R + CLR, 96)
-        if self.with_reg: deep = deep.union(spoke(self.reg, REG_W + 2 * CLR, self.r0, r1))
+    def socket(self, codes, clr=None):
+        clr = CLR if clr is None else clr
+        w, r1 = SPOKE_W + 2 * clr, self.r1 + clr
+        deep = Point(0, 0).buffer(self.R + clr, 96)
+        if self.with_reg: deep = deep.union(spoke(self.reg, REG_W + 2 * clr, self.r0, r1))
         for a in {c[0] for c in codes}: deep = deep.union(spoke(self.ang_a[a], w, self.r0, r1))
         shallow = deep
         for b in {c[1] for c in codes}: shallow = shallow.union(spoke(self.ang_b[b], w, self.r0, r1))
@@ -506,7 +507,9 @@ def write_report(res, cats, modes, tree_stats, path):
     open(path, 'w').write('\n'.join(L) + '\n')
 
 
-def main():
+def design():
+    """The kit: piece types, plug keys, which keys each socket takes, and the
+    spoke codes. Shared by the report/drawing script and the STL coupon."""
     cats, modes = load()
     check_ports_against_game(modes)
     types = sorted({t for p, pp in PORTS.items() for k in pp.values() for t in (p, *k)},
@@ -515,6 +518,11 @@ def main():
     keys = sorted({frozenset(k) for pp in PORTS.values() for k in pp.values()}, key=sorted)
     accepts = {c: {k for k in keys if c in k} for c in types}
     cfg, asg = choose_grid(keys, accepts)
+    return cats, modes, types, keys, accepts, cfg, asg
+
+
+def main():
+    cats, modes, types, keys, accepts, cfg, asg = design()
     print(f'{len(types)} pieces, {len(keys)} plug keys -> grid {cfg.n_a}x{cfg.n_b} '
           f'({cfg.n_slots} slots, {cfg.step:.1f} deg apart, R={cfg.R:.1f} mm)')
     res = dict(types=types, keys=keys, accepts=accepts, asg=asg, cfg=cfg, geo=Spokes(cfg))
