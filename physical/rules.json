@@ -1,146 +1,626 @@
 {
- "prex": [
-  [
-   "N1",
-   "D2"
-  ],
-  [
-   "N1",
-   "N2"
-  ],
-  [
-   "N1",
-   "Adj1"
-  ],
-  [
-   "Adj1",
-   "Adj2"
-  ],
-  [
-   "Adv1",
-   "Adv2"
-  ],
-  [
-   "V1",
-   "V2"
-  ],
-  [
-   "V1",
-   "N1"
-  ],
-  [
-   "V1",
-   "Adv1"
-  ],
-  [
-   "V1",
-   "P1"
-  ],
-  [
-   "P1",
-   "P2"
-  ],
-  [
-   "P1",
-   "N1"
-  ],
-  [
-   "T1",
-   "N1"
-  ],
-  [
-   "T1",
-   "T2"
-  ],
-  [
-   "T1",
-   "V1"
-  ]
- ],
- "xbar": [
-  [
-   "T1",
-   "D1"
-  ],
-  [
-   "T1",
-   "T1.5"
-  ],
-  [
-   "T1.5",
-   "T2"
-  ],
-  [
-   "T1.5",
-   "V1"
-  ],
-  [
-   "V1",
-   "V1.5"
-  ],
-  [
-   "V1.5",
-   "V1.5"
-  ],
-  [
-   "V1.5",
-   "P1"
-  ],
-  [
-   "V1.5",
-   "V2"
-  ],
-  [
-   "V1.5",
-   "D1"
-  ],
-  [
-   "D1",
-   "D1.5"
-  ],
-  [
-   "D1.5",
-   "D2"
-  ],
-  [
-   "D1.5",
-   "N1"
-  ],
-  [
-   "N1",
-   "N1.5"
-  ],
-  [
-   "N1.5",
-   "N2"
-  ],
-  [
-   "C1",
-   "D1"
-  ],
-  [
-   "C1",
-   "C1.5"
-  ],
-  [
-   "C1.5",
-   "C2"
-  ],
-  [
-   "C1.5",
-   "T1"
-  ],
-  [
-   "P1",
-   "P1.5"
-  ],
-  [
-   "P1.5",
-   "P2"
-  ],
-  [
-   "P1.5",
-   "D1"
-  ]
- ]
+ "categories": {
+  "C": {
+   "shape": "star",
+   "color": "#e8b400",
+   "name": "Complementizer"
+  },
+  "T": {
+   "shape": "square",
+   "color": "#3f9d5c",
+   "name": "Tense"
+  },
+  "V": {
+   "shape": "heart",
+   "color": "#e2657c",
+   "name": "Verb"
+  },
+  "D": {
+   "shape": "circle",
+   "color": "#d84a3b",
+   "name": "Determiner"
+  },
+  "N": {
+   "shape": "triangle",
+   "color": "#3f8fd0",
+   "name": "Noun"
+  },
+  "P": {
+   "shape": "rectangle",
+   "color": "#9b59b6",
+   "name": "Preposition"
+  },
+  "Adj": {
+   "shape": "pentagon",
+   "color": "#e07b39",
+   "name": "Adjective"
+  },
+  "Adv": {
+   "shape": "diamond",
+   "color": "#14a0a0",
+   "name": "Adverb"
+  }
+ },
+ "modes": {
+  "prex": {
+   "edges": [
+    [
+     "N1",
+     "D2"
+    ],
+    [
+     "N1",
+     "N2"
+    ],
+    [
+     "N1",
+     "Adj1"
+    ],
+    [
+     "Adj1",
+     "Adj2"
+    ],
+    [
+     "Adv1",
+     "Adv2"
+    ],
+    [
+     "V1",
+     "V2"
+    ],
+    [
+     "V1",
+     "N1"
+    ],
+    [
+     "V1",
+     "Adv1"
+    ],
+    [
+     "V1",
+     "P1"
+    ],
+    [
+     "P1",
+     "P2"
+    ],
+    [
+     "P1",
+     "N1"
+    ],
+    [
+     "T1",
+     "N1"
+    ],
+    [
+     "T1",
+     "T2"
+    ],
+    [
+     "T1",
+     "V1"
+    ]
+   ],
+   "structures": [
+    {
+     "id": 1,
+     "shape": "N",
+     "number": 1,
+     "rule": "NP → D + N",
+     "children": [
+      {
+       "shape": "D",
+       "number": 2
+      },
+      {
+       "shape": "N",
+       "number": 2
+      }
+     ]
+    },
+    {
+     "id": 2,
+     "shape": "N",
+     "number": 1,
+     "rule": "NP → D + AdjP + N",
+     "children": [
+      {
+       "shape": "D",
+       "number": 2
+      },
+      {
+       "shape": "Adj",
+       "number": 1
+      },
+      {
+       "shape": "N",
+       "number": 2
+      }
+     ]
+    },
+    {
+     "id": 3,
+     "shape": "Adj",
+     "number": 1,
+     "rule": "AdjP → Adj",
+     "children": [
+      {
+       "shape": "Adj",
+       "number": 2
+      }
+     ]
+    },
+    {
+     "id": 4,
+     "shape": "Adv",
+     "number": 1,
+     "rule": "AdvP → Adv",
+     "children": [
+      {
+       "shape": "Adv",
+       "number": 2
+      }
+     ]
+    },
+    {
+     "id": 5,
+     "shape": "V",
+     "number": 1,
+     "rule": "VP → V",
+     "children": [
+      {
+       "shape": "V",
+       "number": 2
+      }
+     ]
+    },
+    {
+     "id": 6,
+     "shape": "V",
+     "number": 1,
+     "rule": "VP → V + NP",
+     "children": [
+      {
+       "shape": "V",
+       "number": 2
+      },
+      {
+       "shape": "N",
+       "number": 1
+      }
+     ]
+    },
+    {
+     "id": 7,
+     "shape": "V",
+     "number": 1,
+     "rule": "VP → AdvP + V + PP",
+     "children": [
+      {
+       "shape": "Adv",
+       "number": 1
+      },
+      {
+       "shape": "V",
+       "number": 2
+      },
+      {
+       "shape": "P",
+       "number": 1
+      }
+     ]
+    },
+    {
+     "id": 8,
+     "shape": "P",
+     "number": 1,
+     "rule": "PP → P + NP",
+     "children": [
+      {
+       "shape": "P",
+       "number": 2
+      },
+      {
+       "shape": "N",
+       "number": 1
+      }
+     ]
+    },
+    {
+     "id": 9,
+     "shape": "T",
+     "number": 1,
+     "rule": "TP → NP + T + VP",
+     "children": [
+      {
+       "shape": "N",
+       "number": 1
+      },
+      {
+       "shape": "T",
+       "number": 2
+      },
+      {
+       "shape": "V",
+       "number": 1
+      }
+     ]
+    },
+    {
+     "id": 10,
+     "shape": "T",
+     "number": 2,
+     "rule": "T (bare head)",
+     "children": []
+    },
+    {
+     "id": 11,
+     "shape": "V",
+     "number": 2,
+     "rule": "V (bare head)",
+     "children": []
+    },
+    {
+     "id": 12,
+     "shape": "D",
+     "number": 2,
+     "rule": "D (bare head)",
+     "children": []
+    },
+    {
+     "id": 13,
+     "shape": "N",
+     "number": 2,
+     "rule": "N (bare head)",
+     "children": []
+    },
+    {
+     "id": 14,
+     "shape": "P",
+     "number": 2,
+     "rule": "P (bare head)",
+     "children": []
+    },
+    {
+     "id": 15,
+     "shape": "Adj",
+     "number": 2,
+     "rule": "Adj (bare head)",
+     "children": []
+    },
+    {
+     "id": 16,
+     "shape": "Adv",
+     "number": 2,
+     "rule": "Adv (bare head)",
+     "children": []
+    }
+   ]
+  },
+  "xbar": {
+   "edges": [
+    [
+     "T1",
+     "D1"
+    ],
+    [
+     "T1",
+     "T1.5"
+    ],
+    [
+     "T1.5",
+     "T2"
+    ],
+    [
+     "T1.5",
+     "V1"
+    ],
+    [
+     "V1",
+     "V1.5"
+    ],
+    [
+     "V1.5",
+     "V1.5"
+    ],
+    [
+     "V1.5",
+     "P1"
+    ],
+    [
+     "V1.5",
+     "V2"
+    ],
+    [
+     "V1.5",
+     "D1"
+    ],
+    [
+     "D1",
+     "D1.5"
+    ],
+    [
+     "D1.5",
+     "D2"
+    ],
+    [
+     "D1.5",
+     "N1"
+    ],
+    [
+     "N1",
+     "N1.5"
+    ],
+    [
+     "N1.5",
+     "N2"
+    ],
+    [
+     "C1",
+     "D1"
+    ],
+    [
+     "C1",
+     "C1.5"
+    ],
+    [
+     "C1.5",
+     "C2"
+    ],
+    [
+     "C1.5",
+     "T1"
+    ],
+    [
+     "P1",
+     "P1.5"
+    ],
+    [
+     "P1.5",
+     "P2"
+    ],
+    [
+     "P1.5",
+     "D1"
+    ]
+   ],
+   "structures": [
+    {
+     "id": 1,
+     "shape": "T",
+     "number": 1,
+     "rule": "XP → Spec + X′",
+     "children": [
+      {
+       "shape": "D",
+       "number": 1
+      },
+      {
+       "shape": "T",
+       "number": 1.5
+      }
+     ]
+    },
+    {
+     "id": 2,
+     "shape": "T",
+     "number": 1.5,
+     "rule": "X′ → X⁰ + Complement",
+     "children": [
+      {
+       "shape": "T",
+       "number": 2
+      },
+      {
+       "shape": "V",
+       "number": 1
+      }
+     ]
+    },
+    {
+     "id": 3,
+     "shape": "V",
+     "number": 1,
+     "rule": "XP → X′ (no specifier)",
+     "children": [
+      {
+       "shape": "V",
+       "number": 1.5
+      }
+     ]
+    },
+    {
+     "id": 4,
+     "shape": "V",
+     "number": 1.5,
+     "rule": "X′ → X′ + Adjunct",
+     "children": [
+      {
+       "shape": "V",
+       "number": 1.5
+      },
+      {
+       "shape": "P",
+       "number": 1
+      }
+     ]
+    },
+    {
+     "id": 5,
+     "shape": "V",
+     "number": 1.5,
+     "rule": "X′ → X⁰ (intransitive)",
+     "children": [
+      {
+       "shape": "V",
+       "number": 2
+      }
+     ]
+    },
+    {
+     "id": 6,
+     "shape": "V",
+     "number": 1.5,
+     "rule": "X′ → X⁰ + Complement",
+     "children": [
+      {
+       "shape": "V",
+       "number": 2
+      },
+      {
+       "shape": "D",
+       "number": 1
+      }
+     ]
+    },
+    {
+     "id": 7,
+     "shape": "D",
+     "number": 1,
+     "rule": "XP → X′ (no specifier)",
+     "children": [
+      {
+       "shape": "D",
+       "number": 1.5
+      }
+     ]
+    },
+    {
+     "id": 8,
+     "shape": "D",
+     "number": 1.5,
+     "rule": "X′ → X⁰ + Complement",
+     "children": [
+      {
+       "shape": "D",
+       "number": 2
+      },
+      {
+       "shape": "N",
+       "number": 1
+      }
+     ]
+    },
+    {
+     "id": 9,
+     "shape": "N",
+     "number": 1,
+     "rule": "XP → X′ (no specifier)",
+     "children": [
+      {
+       "shape": "N",
+       "number": 1.5
+      }
+     ]
+    },
+    {
+     "id": 10,
+     "shape": "N",
+     "number": 1.5,
+     "rule": "X′ → X⁰",
+     "children": [
+      {
+       "shape": "N",
+       "number": 2
+      }
+     ]
+    },
+    {
+     "id": 11,
+     "shape": "C",
+     "number": 1,
+     "rule": "XP → Spec + X′",
+     "children": [
+      {
+       "shape": "D",
+       "number": 1
+      },
+      {
+       "shape": "C",
+       "number": 1.5
+      }
+     ]
+    },
+    {
+     "id": 12,
+     "shape": "C",
+     "number": 1.5,
+     "rule": "X′ → X⁰ + Complement",
+     "children": [
+      {
+       "shape": "C",
+       "number": 2
+      },
+      {
+       "shape": "T",
+       "number": 1
+      }
+     ]
+    },
+    {
+     "id": 13,
+     "shape": "P",
+     "number": 1,
+     "rule": "XP → X′ (no specifier)",
+     "children": [
+      {
+       "shape": "P",
+       "number": 1.5
+      }
+     ]
+    },
+    {
+     "id": 14,
+     "shape": "P",
+     "number": 1.5,
+     "rule": "X′ → X⁰ + Complement",
+     "children": [
+      {
+       "shape": "P",
+       "number": 2
+      },
+      {
+       "shape": "D",
+       "number": 1
+      }
+     ]
+    },
+    {
+     "id": 15,
+     "shape": "C",
+     "number": 2,
+     "rule": "X⁰ (bare head)",
+     "children": []
+    },
+    {
+     "id": 16,
+     "shape": "T",
+     "number": 2,
+     "rule": "X⁰ (bare head)",
+     "children": []
+    },
+    {
+     "id": 17,
+     "shape": "D",
+     "number": 2,
+     "rule": "X⁰ (bare head)",
+     "children": []
+    },
+    {
+     "id": 18,
+     "shape": "N",
+     "number": 2,
+     "rule": "X⁰ (bare head)",
+     "children": []
+    },
+    {
+     "id": 19,
+     "shape": "P",
+     "number": 2,
+     "rule": "X⁰ (bare head)",
+     "children": []
+    }
+   ]
+  }
+ }
 }
