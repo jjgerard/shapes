@@ -365,6 +365,7 @@ def write_doc(cnt, tot_used, tot_unused, pat, rows, tbl, chk, peak, pred, fails,
           'So the arm-end joint cannot be a rigid plug. The natural fix is a **swivel at the arm tip** that carries the plug, so a hanging child stays plumb (and can be given a light detent at upright). '
           'That is a design of its own, and it changes how the arm ends.\n',
           '## What this does not settle\n',
+          '- **Strength.** FORTIFY.md found that the hub walls beside this socket are far too thin as built (safety factor 0.06 to 0.19 under a 15 N shove on the arm) and gives a fortified version (24 mm hub, 12 mm arm). Use that version, not the parts above.',
           '- **The tilt problem above.** It matters more than stowing; every layout result in `ARMS.md` assumes upright children.',
           '- **Where removed arms live.** They need a tray in the box; arms are the one loose part in the system.',
           f'- **How many arms a kit needs.** Fewer than three per three-slot piece, since unused ones come off. The most hinged arms any one of the game\'s trees uses is {max(u for _, u, _ in cnt)}, so a kit that can build any of them needs at least that many arms.',

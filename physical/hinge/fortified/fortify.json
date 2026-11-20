@@ -1,0 +1,203 @@
+{
+ "old": [
+  [
+   "hub wall over the socket (plain), arm shoved sideways",
+   108.03324099722988,
+   0.1851282051282052
+  ],
+  [
+   "hub wall over the socket (under a groove), arm shoved sideways",
+   358.429208655387,
+   0.055799023955185156
+  ],
+  [
+   "arm bar, in plane, shoved against the end stop",
+   36.0,
+   0.5555555555555556
+  ],
+  [
+   "tongue at the slit end (square corner), shoved",
+   33.75,
+   0.5925925925925926
+  ],
+  [
+   "flexure beam, every click (2.0 mm, 12.5 mm long)",
+   14.4,
+   0.8333333333333333
+  ],
+  [
+   "swivel stem, tilted, p90 worst x2",
+   22.74,
+   0.8795074758135445
+  ],
+  [
+   "arm bar, out of plane, shoved",
+   22.5,
+   0.8888888888888888
+  ],
+  [
+   "arm bar, out of plane, carried",
+   17.25,
+   1.1594202898550725
+  ],
+  [
+   "swivel stem, hanging, biggest arm net",
+   12.059999999999999,
+   1.6583747927031511
+  ],
+  [
+   "arm bar, in plane, carried (detent slips first)",
+   11.988749201255123,
+   1.6682307440300916
+  ]
+ ],
+ "new": {
+  "PETG": [
+   [
+    "hub wall over the socket (plain), arm shoved sideways",
+    11.203677104280375,
+    1.7851282051282058
+   ],
+   [
+    "hub wall over the socket (under a groove), arm shoved sideways",
+    15.33442581812905,
+    1.304254899218665
+   ],
+   [
+    "arm bar, in plane, shoved against the end stop",
+    24.0,
+    0.8333333333333334
+   ],
+   [
+    "tongue at the slit end (round corner), shoved",
+    12.0,
+    1.6666666666666667
+   ],
+   [
+    "flexure beam, every click (2.6 mm, 16.5 mm long)",
+    10.743801652892563,
+    1.116923076923077
+   ],
+   [
+    "swivel stem, tilted, p90 worst x2",
+    15.16,
+    1.3192612137203166
+   ],
+   [
+    "arm bar, out of plane, shoved",
+    10.0,
+    2.0
+   ],
+   [
+    "arm bar, out of plane, carried",
+    7.666666666666667,
+    2.608695652173913
+   ],
+   [
+    "swivel stem, hanging, biggest arm net",
+    8.04,
+    2.4875621890547266
+   ],
+   [
+    "arm bar, in plane, carried (detent slips first)",
+    7.634680712994704,
+    2.619624939384662
+   ]
+  ],
+  "carbon-fibre nylon": [
+   [
+    "hub wall over the socket (plain), arm shoved sideways",
+    11.203677104280375,
+    3.5702564102564116
+   ],
+   [
+    "hub wall over the socket (under a groove), arm shoved sideways",
+    15.33442581812905,
+    2.60850979843733
+   ],
+   [
+    "arm bar, in plane, shoved against the end stop",
+    24.0,
+    1.6666666666666667
+   ],
+   [
+    "tongue at the slit end (round corner), shoved",
+    12.0,
+    3.3333333333333335
+   ],
+   [
+    "flexure beam, every click (2.6 mm, 16.5 mm long)",
+    10.743801652892563,
+    2.0476923076923077
+   ],
+   [
+    "swivel stem, tilted, p90 worst x2",
+    15.16,
+    2.638522427440633
+   ],
+   [
+    "arm bar, out of plane, shoved",
+    10.0,
+    4.0
+   ],
+   [
+    "arm bar, out of plane, carried",
+    7.666666666666667,
+    5.217391304347826
+   ],
+   [
+    "swivel stem, hanging, biggest arm net",
+    8.04,
+    4.975124378109453
+   ],
+   [
+    "arm bar, in plane, carried (detent slips first)",
+    7.634680712994704,
+    5.239249878769324
+   ]
+  ]
+ },
+ "dims": {
+  "L_H": 24.0,
+  "T_ARM": 12.0,
+  "BEAM_Y_ANCHOR": 21.0,
+  "Y_MAX": 25.0,
+  "T_SCALE": 1.3,
+  "STEM_END": 28.0,
+  "STEM_W_FAR": 10.0,
+  "BOSS_W": 10.0
+ },
+ "checks": {
+  "free": {
+   "-60": 0.439488058442123,
+   "-55": 0.0,
+   "-50": 0.0,
+   "-45": 0.0,
+   "-40": 0.0,
+   "-35": 0.0,
+   "-30": 0.0,
+   "-25": 0.0,
+   "-20": 0.0,
+   "-15": 0.0,
+   "-10": 0.0,
+   "-5": 0.0,
+   "0": 0.0,
+   "5": 0.0,
+   "10": 0.0,
+   "15": 0.0,
+   "20": 0.0,
+   "25": 0.0,
+   "30": 0.0,
+   "35": 0.0,
+   "40": 0.0,
+   "45": 0.0,
+   "50": 0.0,
+   "55": 0.0,
+   "60": 0.439488058442123
+  },
+  "rings": [
+   6.3999999999999995,
+   6.400000000000002
+  ]
+ }
+}

@@ -24,6 +24,8 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `STOW.md` | Generated: the findings and the snap-in arm design. |
 | `arm_options.py` | Compares ways for the arm to move (swing, swing with a swivel, slide) on every game tree. |
 | `ARM_OPTIONS.md` | Generated: the comparison, the swivel's load, and what the sliding model leaves out. |
+| `fortify.py` | Finds where the arm would break (hand calculations from the game's loads plus a shove) and builds and checks a fortified version. |
+| `FORTIFY.md` | Generated: break points, safety factors before and after, and what changed. Parts in `hinge/fortified/`. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):

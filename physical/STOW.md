@@ -94,6 +94,7 @@ They still lay out without collisions, but the trees sprawl and bend sideways (t
 
 ## What this does not settle
 
+- **Strength.** FORTIFY.md found that the hub walls beside this socket are far too thin as built (safety factor 0.06 to 0.19 under a 15 N shove on the arm) and gives a fortified version (24 mm hub, 12 mm arm). Use that version, not the parts above.
 - **The tilt problem above.** It matters more than stowing; every layout result in `ARMS.md` assumes upright children.
 - **Where removed arms live.** They need a tray in the box; arms are the one loose part in the system.
 - **How many arms a kit needs.** Fewer than three per three-slot piece, since unused ones come off. The most hinged arms any one of the game's trees uses is 28, so a kit that can build any of them needs at least that many arms.

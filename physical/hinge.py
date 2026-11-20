@@ -268,14 +268,17 @@ Z_LO, Z_HI = -GAP, L_H + GAP                                      # housing span
 SCREWS = [(sx * 10.0, y) for sx in (-1, 1) for y in (4.0, 18.0)]
 
 
-def housing(slot_top=None):
+def housing(slot_top=None, slot_bot=None):
+    """slot_bot lifts the bottom of the arm slot off the housing floor, leaving a full ring under the arm
+    (retains the hub and carries the arm's out-of-plane load); None keeps it open to the bottom lid."""
     slot_top = (ARM_Z + 0.4) if slot_top is None else slot_top
+    slot_bot = (Z_LO - 1) if slot_bot is None else slot_bot
     blk = slab(-X_HALF, X_HALF, Y_MIN, Y_MAX, Z_LO, Z_HI)
     cuts = [cyl(R_B, Z_LO - 1, Z_HI + 1)]
     pts = [(0, 0)] + [(40 * math.cos(math.radians(-90 + a)), 40 * math.sin(math.radians(-90 + a)))
                       for a in np.linspace(-SLOT_HALF, SLOT_HALF, 60)]
-    sector = extrude_polygon(Polygon(pts), slot_top - (Z_LO - 1), engine='earcut')
-    sector.apply_translation([0, 0, Z_LO - 1])
+    sector = extrude_polygon(Polygon(pts), slot_top - slot_bot, engine='earcut')
+    sector.apply_translation([0, 0, slot_bot])
     cuts.append(sector)
     cuts += [cyl(1.7, Z_LO - 1, Z_HI + 1, x, y, 24) for x, y in SCREWS]
     return fix(difference([blk] + cuts, engine=ENGINE))
@@ -605,6 +608,7 @@ def write_doc(req, table, clr, margin, edge, chk, corr, err, fails):
           'Hang a bag from the hole and add weight until the arm drops out of the click. The torque is `mass (kg) × 9.81 × 73 mm`; 250 N·mm is about 350 g.',
           '3. Repeat after 50 turns of the arm through all the clicks, to see whether the flexures wear or the hold fades.\n',
           '## What this does not settle\n',
+          '- **Strength and hub retention.** FORTIFY.md found two problems in this design: the arm slot was open to the floor and wider than the hub, so a thin ring above the arm was all that held the hub in; and several parts are under a safety factor of 1 under a modest shove. It gives a fortified version.',
           '- **Real hold.** The numbers above are a prediction; the test in the previous section is what decides the thickness.',
           '- **Assembly.** The coupon uses screws. The real piece needs a snap-on lid (or one lid carrying all three flexures) and a way for the hub to go in; and it must be strong enough that a student cannot pull the arm off.',
           '- **Unused arms.** The hinge turns ±50° and the slot opens ±82°, so a folded-back arm is not possible. See STOW.md for what to do with them (arms that snap in and come off).',

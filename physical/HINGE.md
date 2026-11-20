@@ -70,6 +70,7 @@ Test one lid thickness at a time (1.6, 2.0, 2.4 mm):
 
 ## What this does not settle
 
+- **Strength and hub retention.** FORTIFY.md found two problems in this design: the arm slot was open to the floor and wider than the hub, so a thin ring above the arm was all that held the hub in; and several parts are under a safety factor of 1 under a modest shove. It gives a fortified version.
 - **Real hold.** The numbers above are a prediction; the test in the previous section is what decides the thickness.
 - **Assembly.** The coupon uses screws. The real piece needs a snap-on lid (or one lid carrying all three flexures) and a way for the hub to go in; and it must be strong enough that a student cannot pull the arm off.
 - **Unused arms.** The hinge turns ±50° and the slot opens ±82°, so a folded-back arm is not possible. See STOW.md for what to do with them (arms that snap in and come off).
