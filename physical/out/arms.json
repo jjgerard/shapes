@@ -2,18 +2,18 @@
  "body": {
   "width": {
    "1": 30.0,
-   "2": 33.0,
-   "3": 46.0
+   "2": 38.5,
+   "3": 54.5
   },
   "height": 26.0
  },
  "hinge": {
-  "pitch": 13.0,
-  "hub": 12.0
+  "pitch": 16.0,
+  "hub": 14.5
  },
  "arm": {
-  "section": 7.0,
-  "length": 72,
+  "section": 5.0,
+  "length": 80.0,
   "clicks": [
    -50,
    -25,
@@ -28,88 +28,92 @@
  "clear_gap": 5.0,
  "trees": {
   "prex:L1 four-pieces": {
-   "width": 236,
-   "height": 294,
+   "width": 266,
+   "height": 315,
    "pieces": 10
   },
   "prex:L1 one-more-branch": {
-   "width": 334,
-   "height": 379,
+   "width": 376,
+   "height": 406,
    "pieces": 16
   },
   "prex:L1 name-them": {
-   "width": 334,
-   "height": 379,
+   "width": 376,
+   "height": 406,
    "pieces": 16
   },
   "prex:L2 the-cat": {
-   "width": 86,
-   "height": 124,
+   "width": 96,
+   "height": 132,
    "pieces": 3
   },
   "prex:L2 the-cat-chased-the-mouse": {
-   "width": 236,
-   "height": 294,
+   "width": 266,
+   "height": 315,
    "pieces": 10
   },
   "prex:L2 the-fluffy-cat-will-jump": {
-   "width": 168,
-   "height": 263,
+   "width": 247,
+   "height": 257,
    "pieces": 9
   },
   "prex:L2 the-fluffy-cat-quickly-jumped-on-the-table": {
-   "width": 334,
-   "height": 379,
+   "width": 376,
+   "height": 406,
    "pieces": 16
   },
   "xbar:L1 four-pieces": {
-   "width": 163,
-   "height": 300,
+   "width": 188,
+   "height": 322,
    "pieces": 7
   },
   "xbar:L1 one-more-branch": {
-   "width": 465,
-   "height": 984,
+   "width": 527,
+   "height": 1051,
    "pieces": 37
   },
   "xbar:L1 name-them": {
-   "width": 465,
-   "height": 984,
+   "width": 527,
+   "height": 1051,
    "pieces": 37
   },
   "xbar:L2 the-cat": {
-   "width": 112,
-   "height": 305,
+   "width": 126,
+   "height": 319,
    "pieces": 6
   },
   "xbar:L2 the-cat-chased-the-mouse": {
-   "width": 305,
-   "height": 651,
+   "width": 346,
+   "height": 692,
    "pieces": 18
   },
   "xbar:L2 did-the-cat-chase-the-mouse": {
-   "width": 305,
-   "height": 840,
+   "width": 346,
+   "height": 896,
    "pieces": 21
   },
   "xbar:L2 which-mouse-did-the-cat-chase": {
-   "width": 397,
-   "height": 814,
+   "width": 449,
+   "height": 868,
    "pieces": 27
   }
  },
  "alternatives": [
   {
    "name": "fixed 64 mm, hinge 0 / \u00b130 / \u00b160",
-   "failing_trees": 2
+   "failing_trees": 0
   },
   {
    "name": "fixed 72 mm, hinge 0 / \u00b130 / \u00b160",
-   "failing_trees": 2
+   "failing_trees": 0
   },
   {
-   "name": "fixed 72 mm, hinge 0 / \u00b125 / \u00b150  (chosen)",
+   "name": "fixed 80 mm, hinge 0 / \u00b125 / \u00b150  (chosen)",
    "failing_trees": 0
+  },
+  {
+   "name": "fixed 72 mm, hinge 0 / \u00b125 / \u00b150  (the earlier design)",
+   "failing_trees": 2
   },
   {
    "name": "fixed 66 mm, hinge 0 / \u00b125 / \u00b150 / \u00b170",

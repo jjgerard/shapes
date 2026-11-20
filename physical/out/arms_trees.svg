@@ -1,322 +1,322 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="820" height="1556" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="909" height="1603" font-family="Helvetica,Arial,sans-serif">
 <rect width="100%" height="100%" fill="#f7f8fb"/>
 <text x="24" y="36" font-size="22" font-weight="700" fill="#222">The game's trees, built with the chosen arms</text>
 <text x="24" y="56" font-size="12.5" fill="#555">to scale (1.05 px per mm) · arm angles shown on the long arms · * = XP-mode head · stubs on single-slot pieces are 22 mm</text>
-<text x="24.0" y="86" font-size="13" font-weight="700" fill="#333">XP mode · Level 1 one-more-branch</text><text x="24.0" y="102" font-size="12" fill="#667">16 pieces · 334 × 379 mm</text>
-<line x1="143.3" y1="143.3" x2="85.3" y2="191.9" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="143.3" cy="143.3" r="3.4" fill="#4a5164"/>
-<text x="107.3" y="167.6" font-size="7.0" fill="#334" text-anchor="end">-50°</text>
-<line x1="71.7" y1="219.2" x2="39.8" y2="287.7" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="71.7" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="48.7" y="253.5" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="85.3" y1="219.2" x2="85.3" y2="294.8" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="85.3" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="92.3" y="257.0" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<line x1="85.3" y1="322.1" x2="85.3" y2="345.2" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="85.3" cy="322.1" r="3.4" fill="#4a5164"/>
-<line x1="99.0" y1="219.2" x2="130.9" y2="287.7" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="99.0" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="122.0" y="253.5" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="156.9" y1="143.3" x2="156.9" y2="218.9" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="156.9" cy="143.3" r="3.4" fill="#4a5164"/>
-<text x="163.9" y="181.1" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<line x1="170.6" y1="143.3" x2="228.5" y2="191.9" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="170.6" cy="143.3" r="3.4" fill="#4a5164"/>
-<text x="206.5" y="167.6" font-size="7.0" fill="#334" text-anchor="start">+50°</text>
-<line x1="214.8" y1="219.2" x2="182.9" y2="287.7" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="214.8" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="191.9" y="253.5" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="182.9" y1="315.0" x2="182.9" y2="338.1" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="182.9" cy="315.0" r="3.4" fill="#4a5164"/>
-<line x1="228.5" y1="219.2" x2="228.5" y2="294.8" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="228.5" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="235.5" y="257.0" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<line x1="242.1" y1="219.2" x2="274.1" y2="287.7" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="242.1" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="265.1" y="253.5" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="267.3" y1="315.0" x2="235.3" y2="383.5" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="267.3" cy="315.0" r="3.4" fill="#4a5164"/>
-<text x="244.3" y="349.3" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="280.9" y1="315.0" x2="312.9" y2="383.5" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="280.9" cy="315.0" r="3.4" fill="#4a5164"/>
-<text x="303.9" y="349.3" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="299.2" y1="410.8" x2="299.2" y2="486.4" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="299.2" cy="410.8" r="3.4" fill="#4a5164"/>
-<text x="306.2" y="448.6" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<line x1="326.5" y1="410.8" x2="358.5" y2="479.3" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="326.5" cy="410.8" r="3.4" fill="#4a5164"/>
-<text x="349.5" y="445.1" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<rect x="132.8" y="116.0" width="48.3" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
-<text x="156.9" y="132.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">TP</text>
-<rect x="61.2" y="191.9" width="48.3" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="85.3" y="208.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
-<rect x="24.0" y="287.7" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="39.8" y="304.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
-<rect x="69.6" y="294.8" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
-<text x="85.3" y="311.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">AdjP</text>
-<rect x="69.6" y="345.2" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
-<text x="85.3" y="362.0" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">Adj⁰*</text>
-<rect x="115.2" y="287.7" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="130.9" y="304.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
-<rect x="141.2" y="218.9" width="31.5" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
-<text x="156.9" y="235.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">T⁰*</text>
-<rect x="204.3" y="191.9" width="48.3" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
-<text x="228.5" y="208.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">VP</text>
-<rect x="167.1" y="287.7" width="31.5" height="27.3" rx="4.2" fill="#14a0a0" stroke="#0c6060" stroke-width="1"/>
-<text x="182.9" y="304.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">AdvP</text>
-<rect x="167.1" y="338.1" width="31.5" height="27.3" rx="4.2" fill="#14a0a0" stroke="#0c6060" stroke-width="1"/>
-<text x="182.9" y="354.9" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">Adv⁰*</text>
-<rect x="212.7" y="294.8" width="31.5" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
-<text x="228.5" y="311.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">V⁰*</text>
-<rect x="256.8" y="287.7" width="34.7" height="27.3" rx="4.2" fill="#9b59b6" stroke="#5d356d" stroke-width="1"/>
-<text x="274.1" y="304.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">PP</text>
-<rect x="219.6" y="383.5" width="31.5" height="27.3" rx="4.2" fill="#9b59b6" stroke="#5d356d" stroke-width="1"/>
-<text x="235.3" y="400.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">P⁰*</text>
-<rect x="288.7" y="383.5" width="48.3" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="312.9" y="400.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
-<rect x="283.5" y="486.4" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="299.2" y="503.2" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
-<rect x="342.7" y="479.3" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="358.5" y="496.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
-<text x="422.20068214997696" y="86" font-size="13" font-weight="700" fill="#333">XP mode · the-fluffy-cat-quickly-jumped-on-the-table</text><text x="422.20068214997696" y="102" font-size="12" fill="#667">16 pieces · 334 × 379 mm</text>
-<line x1="541.5" y1="143.3" x2="483.6" y2="191.9" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="541.5" cy="143.3" r="3.4" fill="#4a5164"/>
-<text x="505.5" y="167.6" font-size="7.0" fill="#334" text-anchor="end">-50°</text>
-<line x1="469.9" y1="219.2" x2="438.0" y2="287.7" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="469.9" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="446.9" y="253.5" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="483.6" y1="219.2" x2="483.6" y2="294.8" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="483.6" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="490.6" y="257.0" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<line x1="483.6" y1="322.1" x2="483.6" y2="345.2" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="483.6" cy="322.1" r="3.4" fill="#4a5164"/>
-<line x1="497.2" y1="219.2" x2="529.2" y2="287.7" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="497.2" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="520.2" y="253.5" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="555.1" y1="143.3" x2="555.1" y2="218.9" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="555.1" cy="143.3" r="3.4" fill="#4a5164"/>
-<text x="562.1" y="181.1" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<line x1="568.8" y1="143.3" x2="626.7" y2="191.9" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="568.8" cy="143.3" r="3.4" fill="#4a5164"/>
-<text x="604.7" y="167.6" font-size="7.0" fill="#334" text-anchor="start">+50°</text>
-<line x1="613.0" y1="219.2" x2="581.1" y2="287.7" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="613.0" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="590.1" y="253.5" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="581.1" y1="315.0" x2="581.1" y2="338.1" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="581.1" cy="315.0" r="3.4" fill="#4a5164"/>
-<line x1="626.7" y1="219.2" x2="626.7" y2="294.8" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="626.7" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="633.7" y="257.0" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<line x1="640.3" y1="219.2" x2="672.3" y2="287.7" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="640.3" cy="219.2" r="3.4" fill="#4a5164"/>
-<text x="663.3" y="253.5" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="665.5" y1="315.0" x2="633.5" y2="383.5" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="665.5" cy="315.0" r="3.4" fill="#4a5164"/>
-<text x="642.5" y="349.3" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="679.1" y1="315.0" x2="711.1" y2="383.5" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="679.1" cy="315.0" r="3.4" fill="#4a5164"/>
-<text x="702.1" y="349.3" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="697.4" y1="410.8" x2="697.4" y2="486.4" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="697.4" cy="410.8" r="3.4" fill="#4a5164"/>
-<text x="704.4" y="448.6" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<line x1="724.7" y1="410.8" x2="756.7" y2="479.3" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="724.7" cy="410.8" r="3.4" fill="#4a5164"/>
-<text x="747.7" y="445.1" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<rect x="531.0" y="116.0" width="48.3" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
-<text x="555.1" y="132.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">TP</text>
-<rect x="459.4" y="191.9" width="48.3" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="483.6" y="208.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
-<rect x="422.2" y="287.7" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="438.0" y="304.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
-<rect x="467.8" y="294.8" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
-<text x="483.6" y="311.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">AdjP</text>
-<rect x="467.8" y="345.2" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
-<text x="483.6" y="362.0" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">Adj⁰*</text>
-<rect x="513.4" y="287.7" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="529.2" y="304.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
-<rect x="539.4" y="218.9" width="31.5" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
-<text x="555.1" y="235.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">T⁰*</text>
-<rect x="602.5" y="191.9" width="48.3" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
-<text x="626.7" y="208.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">VP</text>
-<rect x="565.3" y="287.7" width="31.5" height="27.3" rx="4.2" fill="#14a0a0" stroke="#0c6060" stroke-width="1"/>
-<text x="581.1" y="304.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">AdvP</text>
-<rect x="565.3" y="338.1" width="31.5" height="27.3" rx="4.2" fill="#14a0a0" stroke="#0c6060" stroke-width="1"/>
-<text x="581.1" y="354.9" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">Adv⁰*</text>
-<rect x="610.9" y="294.8" width="31.5" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
-<text x="626.7" y="311.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">V⁰*</text>
-<rect x="655.0" y="287.7" width="34.7" height="27.3" rx="4.2" fill="#9b59b6" stroke="#5d356d" stroke-width="1"/>
-<text x="672.3" y="304.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">PP</text>
-<rect x="617.8" y="383.5" width="31.5" height="27.3" rx="4.2" fill="#9b59b6" stroke="#5d356d" stroke-width="1"/>
-<text x="633.5" y="400.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">P⁰*</text>
-<rect x="686.9" y="383.5" width="48.3" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="711.1" y="400.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
-<rect x="681.7" y="486.4" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="697.4" y="503.2" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
-<rect x="740.9" y="479.3" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="756.7" y="496.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
-<text x="24.0" y="571.7284806922439" font-size="13" font-weight="700" fill="#333">X′ mode · the-cat-chased-the-mouse</text><text x="24.0" y="587.7284806922439" font-size="12" fill="#667">18 pieces · 305 × 651 mm</text>
-<line x1="136.4" y1="629.0" x2="78.5" y2="677.6" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="136.4" cy="629.0" r="3.4" fill="#4a5164"/>
-<text x="100.5" y="653.3" font-size="7.0" fill="#334" text-anchor="end">-50°</text>
-<line x1="78.5" y1="704.9" x2="78.5" y2="728.0" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="78.5" cy="704.9" r="3.4" fill="#4a5164"/>
-<line x1="71.7" y1="755.3" x2="39.8" y2="823.8" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="71.7" cy="755.3" r="3.4" fill="#4a5164"/>
-<text x="48.7" y="789.6" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="85.3" y1="755.3" x2="117.3" y2="823.8" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="85.3" cy="755.3" r="3.4" fill="#4a5164"/>
-<text x="108.3" y="789.6" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="130.9" y1="851.1" x2="99.0" y2="919.7" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="130.9" cy="851.1" r="3.4" fill="#4a5164"/>
-<text x="108.0" y="885.4" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="99.0" y1="947.0" x2="99.0" y2="970.1" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="99.0" cy="947.0" r="3.4" fill="#4a5164"/>
-<line x1="163.7" y1="629.0" x2="221.7" y2="677.6" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="163.7" cy="629.0" r="3.4" fill="#4a5164"/>
-<text x="199.7" y="653.3" font-size="7.0" fill="#334" text-anchor="start">+50°</text>
-<line x1="214.8" y1="704.9" x2="182.9" y2="773.4" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="214.8" cy="704.9" r="3.4" fill="#4a5164"/>
-<text x="191.9" y="739.2" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="228.5" y1="704.9" x2="260.4" y2="773.4" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="228.5" cy="704.9" r="3.4" fill="#4a5164"/>
-<text x="251.5" y="739.2" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="274.1" y1="800.7" x2="242.1" y2="869.3" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="274.1" cy="800.7" r="3.4" fill="#4a5164"/>
-<text x="251.1" y="835.0" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="235.3" y1="896.6" x2="203.4" y2="965.1" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="235.3" cy="896.6" r="3.4" fill="#4a5164"/>
-<text x="212.3" y="930.8" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="249.0" y1="896.6" x2="280.9" y2="965.1" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="249.0" cy="896.6" r="3.4" fill="#4a5164"/>
-<text x="271.9" y="930.8" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="280.9" y1="992.4" x2="280.9" y2="1015.5" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="280.9" cy="992.4" r="3.4" fill="#4a5164"/>
-<line x1="274.1" y1="1042.8" x2="242.1" y2="1111.3" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="274.1" cy="1042.8" r="3.4" fill="#4a5164"/>
-<text x="251.1" y="1077.0" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="287.7" y1="1042.8" x2="319.7" y2="1111.3" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="287.7" cy="1042.8" r="3.4" fill="#4a5164"/>
-<text x="310.7" y="1077.0" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="333.3" y1="1138.6" x2="301.4" y2="1207.1" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="333.3" cy="1138.6" r="3.4" fill="#4a5164"/>
-<text x="310.4" y="1172.8" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="301.4" y1="1234.4" x2="301.4" y2="1257.5" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="301.4" cy="1234.4" r="3.4" fill="#4a5164"/>
-<rect x="125.9" y="601.7" width="48.3" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
-<text x="150.1" y="618.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">TP</text>
-<rect x="62.8" y="677.6" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="78.5" y="694.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">DP</text>
-<rect x="61.2" y="728.0" width="34.6" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="78.5" y="744.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D′</text>
-<rect x="24.0" y="823.8" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="39.8" y="840.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰</text>
-<rect x="93.1" y="823.8" width="48.3" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="117.3" y="840.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
-<rect x="83.2" y="919.7" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="99.0" y="936.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N′</text>
-<rect x="83.2" y="970.1" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="99.0" y="986.9" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰</text>
-<rect x="204.3" y="677.6" width="34.6" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
-<text x="221.7" y="694.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">T′</text>
-<rect x="167.1" y="773.4" width="31.5" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
-<text x="182.9" y="790.2" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">T⁰</text>
-<rect x="236.3" y="773.4" width="48.3" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
-<text x="260.4" y="790.2" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">VP</text>
-<rect x="224.8" y="869.3" width="34.6" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
-<text x="242.1" y="886.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">V′</text>
-<rect x="187.6" y="965.1" width="31.5" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
-<text x="203.4" y="981.9" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">V⁰</text>
-<rect x="265.2" y="965.1" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="280.9" y="981.9" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">DP</text>
-<rect x="263.6" y="1015.5" width="34.7" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="280.9" y="1032.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D′</text>
-<rect x="226.4" y="1111.3" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="242.1" y="1128.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰</text>
-<rect x="295.5" y="1111.3" width="48.3" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="319.7" y="1128.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
-<rect x="285.6" y="1207.1" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="301.4" y="1223.9" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N′</text>
-<rect x="285.6" y="1257.5" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="301.4" y="1274.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰</text>
-<text x="422.20068214997696" y="571.7284806922439" font-size="13" font-weight="700" fill="#333">X′ mode · the-cat</text><text x="422.20068214997696" y="587.7284806922439" font-size="12" fill="#667">6 pieces · 112 × 305 mm</text>
-<line x1="476.7" y1="629.0" x2="476.7" y2="652.1" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="476.7" cy="629.0" r="3.4" fill="#4a5164"/>
-<line x1="469.9" y1="679.4" x2="438.0" y2="747.9" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="469.9" cy="679.4" r="3.4" fill="#4a5164"/>
-<text x="446.9" y="713.7" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="483.6" y1="679.4" x2="515.5" y2="747.9" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="483.6" cy="679.4" r="3.4" fill="#4a5164"/>
-<text x="506.5" y="713.7" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="529.2" y1="775.2" x2="497.2" y2="843.8" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="529.2" cy="775.2" r="3.4" fill="#4a5164"/>
-<text x="506.2" y="809.5" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="497.2" y1="871.1" x2="497.2" y2="894.2" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="497.2" cy="871.1" r="3.4" fill="#4a5164"/>
-<rect x="461.0" y="601.7" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="476.7" y="618.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">DP</text>
-<rect x="459.4" y="652.1" width="34.6" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="476.7" y="668.9" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D′</text>
-<rect x="422.2" y="747.9" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="438.0" y="764.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰</text>
-<rect x="491.4" y="747.9" width="48.3" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="515.5" y="764.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
-<rect x="481.5" y="843.8" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="497.2" y="860.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N′</text>
-<rect x="481.5" y="894.2" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="497.2" y="911.0" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰</text>
-<text x="422.20068214997696" y="979.4622180921854" font-size="13" font-weight="700" fill="#333">XP mode · the-cat</text><text x="422.20068214997696" y="995.4622180921854" font-size="12" fill="#667">3 pieces · 86 × 124 mm</text>
-<line x1="438.0" y1="1036.8" x2="438.0" y2="1112.4" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="438.0" cy="1036.8" r="3.4" fill="#4a5164"/>
-<text x="445.0" y="1074.6" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<line x1="465.3" y1="1036.8" x2="497.2" y2="1105.3" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="465.3" cy="1036.8" r="3.4" fill="#4a5164"/>
-<text x="488.2" y="1071.0" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<rect x="427.5" y="1009.5" width="48.3" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="451.6" y="1026.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
-<rect x="422.2" y="1112.4" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="438.0" y="1129.2" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
-<rect x="481.5" y="1105.3" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="497.2" y="1122.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
-<text x="422.20068214997696" y="1197.6622180921854" font-size="13" font-weight="700" fill="#333">XP mode · the-fluffy-cat-will-jump</text><text x="422.20068214997696" y="1213.6622180921854" font-size="12" fill="#667">9 pieces · 168 × 263 mm</text>
-<line x1="515.5" y1="1255.0" x2="483.6" y2="1323.5" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="515.5" cy="1255.0" r="3.4" fill="#4a5164"/>
-<text x="492.5" y="1289.2" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="469.9" y1="1350.8" x2="438.0" y2="1419.3" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="469.9" cy="1350.8" r="3.4" fill="#4a5164"/>
-<text x="446.9" y="1385.0" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
-<line x1="483.6" y1="1350.8" x2="483.6" y2="1426.4" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="483.6" cy="1350.8" r="3.4" fill="#4a5164"/>
-<text x="490.6" y="1388.6" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<line x1="483.6" y1="1453.7" x2="483.6" y2="1476.8" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="483.6" cy="1453.7" r="3.4" fill="#4a5164"/>
-<line x1="497.2" y1="1350.8" x2="529.2" y2="1419.3" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="497.2" cy="1350.8" r="3.4" fill="#4a5164"/>
-<text x="520.2" y="1385.0" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="529.2" y1="1255.0" x2="529.2" y2="1330.6" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="529.2" cy="1255.0" r="3.4" fill="#4a5164"/>
-<text x="536.2" y="1292.8" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<line x1="542.8" y1="1255.0" x2="574.8" y2="1323.5" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="542.8" cy="1255.0" r="3.4" fill="#4a5164"/>
-<text x="565.8" y="1289.2" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
-<line x1="574.8" y1="1350.8" x2="574.8" y2="1426.4" stroke="#7a8296" stroke-width="7.4" stroke-linecap="round"/>
-<circle cx="574.8" cy="1350.8" r="3.4" fill="#4a5164"/>
-<text x="581.8" y="1388.6" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
-<rect x="505.0" y="1227.7" width="48.3" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
-<text x="529.2" y="1244.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">TP</text>
-<rect x="459.4" y="1323.5" width="48.3" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="483.6" y="1340.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
-<rect x="422.2" y="1419.3" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
-<text x="438.0" y="1436.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
-<rect x="467.8" y="1426.4" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
-<text x="483.6" y="1443.2" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">AdjP</text>
-<rect x="467.8" y="1476.8" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
-<text x="483.6" y="1493.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">Adj⁰*</text>
-<rect x="513.4" y="1419.3" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
-<text x="529.2" y="1436.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
-<rect x="513.4" y="1330.6" width="31.5" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
-<text x="529.2" y="1347.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">T⁰*</text>
-<rect x="550.6" y="1323.5" width="48.3" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
-<text x="574.8" y="1340.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">VP</text>
-<rect x="559.0" y="1426.4" width="31.5" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
-<text x="574.8" y="1443.2" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">V⁰*</text>
+<text x="24.0" y="86" font-size="13" font-weight="700" fill="#333">XP mode · Level 1 one-more-branch</text><text x="24.0" y="102" font-size="12" fill="#667">16 pieces · 376 × 406 mm</text>
+<line x1="156.4" y1="143.3" x2="92.0" y2="197.3" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="156.4" cy="143.3" r="3.4" fill="#4a5164"/>
+<text x="117.2" y="170.3" font-size="7.0" fill="#334" text-anchor="end">-50°</text>
+<line x1="75.2" y1="224.6" x2="39.8" y2="300.7" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="75.2" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="50.5" y="262.7" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="92.0" y1="224.6" x2="92.0" y2="308.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="92.0" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="99.0" y="266.6" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<line x1="92.0" y1="335.9" x2="92.0" y2="359.0" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="92.0" cy="335.9" r="3.4" fill="#4a5164"/>
+<line x1="108.8" y1="224.6" x2="144.3" y2="300.7" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="108.8" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="133.6" y="262.7" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="173.2" y1="143.3" x2="173.2" y2="227.3" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="173.2" cy="143.3" r="3.4" fill="#4a5164"/>
+<text x="180.2" y="185.3" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<line x1="190.0" y1="143.3" x2="254.3" y2="197.3" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="190.0" cy="143.3" r="3.4" fill="#4a5164"/>
+<text x="229.2" y="170.3" font-size="7.0" fill="#334" text-anchor="start">+50°</text>
+<line x1="237.5" y1="224.6" x2="202.0" y2="300.7" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="237.5" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="212.8" y="262.7" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="202.0" y1="328.0" x2="202.0" y2="351.1" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="202.0" cy="328.0" r="3.4" fill="#4a5164"/>
+<line x1="254.3" y1="224.6" x2="254.3" y2="308.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="254.3" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="261.3" y="266.6" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<line x1="271.1" y1="224.6" x2="306.6" y2="300.7" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="271.1" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="295.9" y="262.7" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="298.2" y1="328.0" x2="262.7" y2="404.2" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="298.2" cy="328.0" r="3.4" fill="#4a5164"/>
+<text x="273.5" y="366.1" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="315.0" y1="328.0" x2="350.5" y2="404.2" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="315.0" cy="328.0" r="3.4" fill="#4a5164"/>
+<text x="339.8" y="366.1" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="333.7" y1="431.5" x2="333.7" y2="515.5" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="333.7" cy="431.5" r="3.4" fill="#4a5164"/>
+<text x="340.7" y="473.5" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<line x1="367.3" y1="431.5" x2="402.8" y2="507.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="367.3" cy="431.5" r="3.4" fill="#4a5164"/>
+<text x="392.1" y="469.5" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<rect x="144.6" y="116.0" width="57.2" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
+<text x="173.2" y="132.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">TP</text>
+<rect x="63.4" y="197.3" width="57.2" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="92.0" y="214.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
+<rect x="24.0" y="300.7" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="39.8" y="317.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
+<rect x="76.3" y="308.6" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
+<text x="92.0" y="325.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">AdjP</text>
+<rect x="76.3" y="359.0" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
+<text x="92.0" y="375.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">Adj⁰*</text>
+<rect x="128.6" y="300.7" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="144.3" y="317.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
+<rect x="157.4" y="227.3" width="31.5" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
+<text x="173.2" y="244.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">T⁰*</text>
+<rect x="225.7" y="197.3" width="57.2" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
+<text x="254.3" y="214.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">VP</text>
+<rect x="186.3" y="300.7" width="31.5" height="27.3" rx="4.2" fill="#14a0a0" stroke="#0c6060" stroke-width="1"/>
+<text x="202.0" y="317.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">AdvP</text>
+<rect x="186.3" y="351.1" width="31.5" height="27.3" rx="4.2" fill="#14a0a0" stroke="#0c6060" stroke-width="1"/>
+<text x="202.0" y="367.9" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">Adv⁰*</text>
+<rect x="238.6" y="308.6" width="31.5" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
+<text x="254.3" y="325.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">V⁰*</text>
+<rect x="286.4" y="300.7" width="40.4" height="27.3" rx="4.2" fill="#9b59b6" stroke="#5d356d" stroke-width="1"/>
+<text x="306.6" y="317.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">PP</text>
+<rect x="247.0" y="404.2" width="31.5" height="27.3" rx="4.2" fill="#9b59b6" stroke="#5d356d" stroke-width="1"/>
+<text x="262.7" y="421.0" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">P⁰*</text>
+<rect x="321.9" y="404.2" width="57.2" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="350.5" y="421.0" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
+<rect x="318.0" y="515.5" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="333.7" y="532.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
+<rect x="387.1" y="507.6" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="402.8" y="524.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
+<text x="466.59520238886336" y="86" font-size="13" font-weight="700" fill="#333">XP mode · the-fluffy-cat-quickly-jumped-on-the-table</text><text x="466.59520238886336" y="102" font-size="12" fill="#667">16 pieces · 376 × 406 mm</text>
+<line x1="599.0" y1="143.3" x2="534.6" y2="197.3" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="599.0" cy="143.3" r="3.4" fill="#4a5164"/>
+<text x="559.8" y="170.3" font-size="7.0" fill="#334" text-anchor="end">-50°</text>
+<line x1="517.8" y1="224.6" x2="482.3" y2="300.7" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="517.8" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="493.1" y="262.7" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="534.6" y1="224.6" x2="534.6" y2="308.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="534.6" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="541.6" y="266.6" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<line x1="534.6" y1="335.9" x2="534.6" y2="359.0" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="534.6" cy="335.9" r="3.4" fill="#4a5164"/>
+<line x1="551.4" y1="224.6" x2="586.9" y2="300.7" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="551.4" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="576.2" y="262.7" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="615.8" y1="143.3" x2="615.8" y2="227.3" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="615.8" cy="143.3" r="3.4" fill="#4a5164"/>
+<text x="622.8" y="185.3" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<line x1="632.6" y1="143.3" x2="696.9" y2="197.3" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="632.6" cy="143.3" r="3.4" fill="#4a5164"/>
+<text x="671.8" y="170.3" font-size="7.0" fill="#334" text-anchor="start">+50°</text>
+<line x1="680.1" y1="224.6" x2="644.6" y2="300.7" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="680.1" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="655.4" y="262.7" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="644.6" y1="328.0" x2="644.6" y2="351.1" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="644.6" cy="328.0" r="3.4" fill="#4a5164"/>
+<line x1="696.9" y1="224.6" x2="696.9" y2="308.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="696.9" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="703.9" y="266.6" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<line x1="713.7" y1="224.6" x2="749.2" y2="300.7" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="713.7" cy="224.6" r="3.4" fill="#4a5164"/>
+<text x="738.5" y="262.7" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="740.8" y1="328.0" x2="705.3" y2="404.2" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="740.8" cy="328.0" r="3.4" fill="#4a5164"/>
+<text x="716.1" y="366.1" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="757.6" y1="328.0" x2="793.1" y2="404.2" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="757.6" cy="328.0" r="3.4" fill="#4a5164"/>
+<text x="782.4" y="366.1" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="776.3" y1="431.5" x2="776.3" y2="515.5" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="776.3" cy="431.5" r="3.4" fill="#4a5164"/>
+<text x="783.3" y="473.5" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<line x1="809.9" y1="431.5" x2="845.4" y2="507.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="809.9" cy="431.5" r="3.4" fill="#4a5164"/>
+<text x="834.7" y="469.5" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<rect x="587.2" y="116.0" width="57.2" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
+<text x="615.8" y="132.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">TP</text>
+<rect x="506.0" y="197.3" width="57.2" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="534.6" y="214.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
+<rect x="466.6" y="300.7" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="482.3" y="317.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
+<rect x="518.9" y="308.6" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
+<text x="534.6" y="325.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">AdjP</text>
+<rect x="518.9" y="359.0" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
+<text x="534.6" y="375.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">Adj⁰*</text>
+<rect x="571.2" y="300.7" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="586.9" y="317.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
+<rect x="600.0" y="227.3" width="31.5" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
+<text x="615.8" y="244.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">T⁰*</text>
+<rect x="668.3" y="197.3" width="57.2" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
+<text x="696.9" y="214.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">VP</text>
+<rect x="628.9" y="300.7" width="31.5" height="27.3" rx="4.2" fill="#14a0a0" stroke="#0c6060" stroke-width="1"/>
+<text x="644.6" y="317.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">AdvP</text>
+<rect x="628.9" y="351.1" width="31.5" height="27.3" rx="4.2" fill="#14a0a0" stroke="#0c6060" stroke-width="1"/>
+<text x="644.6" y="367.9" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">Adv⁰*</text>
+<rect x="681.2" y="308.6" width="31.5" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
+<text x="696.9" y="325.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">V⁰*</text>
+<rect x="729.0" y="300.7" width="40.4" height="27.3" rx="4.2" fill="#9b59b6" stroke="#5d356d" stroke-width="1"/>
+<text x="749.2" y="317.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">PP</text>
+<rect x="689.6" y="404.2" width="31.5" height="27.3" rx="4.2" fill="#9b59b6" stroke="#5d356d" stroke-width="1"/>
+<text x="705.3" y="421.0" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">P⁰*</text>
+<rect x="764.5" y="404.2" width="57.2" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="793.1" y="421.0" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
+<rect x="760.6" y="515.5" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="776.3" y="532.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
+<rect x="829.7" y="507.6" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="845.4" y="524.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
+<text x="24.0" y="600.7538674358265" font-size="13" font-weight="700" fill="#333">X′ mode · the-cat-chased-the-mouse</text><text x="24.0" y="616.7538674358265" font-size="12" fill="#667">18 pieces · 346 × 692 mm</text>
+<line x1="148.0" y1="658.1" x2="83.6" y2="712.0" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="148.0" cy="658.1" r="3.4" fill="#4a5164"/>
+<text x="108.8" y="685.1" font-size="7.0" fill="#334" text-anchor="end">-50°</text>
+<line x1="83.6" y1="739.3" x2="83.6" y2="762.4" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="83.6" cy="739.3" r="3.4" fill="#4a5164"/>
+<line x1="75.2" y1="789.7" x2="39.8" y2="865.9" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="75.2" cy="789.7" r="3.4" fill="#4a5164"/>
+<text x="50.5" y="827.8" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="92.0" y1="789.7" x2="127.5" y2="865.9" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="92.0" cy="789.7" r="3.4" fill="#4a5164"/>
+<text x="116.8" y="827.8" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="144.3" y1="893.2" x2="108.8" y2="969.3" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="144.3" cy="893.2" r="3.4" fill="#4a5164"/>
+<text x="119.6" y="931.2" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="108.8" y1="996.6" x2="108.8" y2="1019.7" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="108.8" cy="996.6" r="3.4" fill="#4a5164"/>
+<line x1="181.6" y1="658.1" x2="245.9" y2="712.0" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="181.6" cy="658.1" r="3.4" fill="#4a5164"/>
+<text x="220.8" y="685.1" font-size="7.0" fill="#334" text-anchor="start">+50°</text>
+<line x1="237.5" y1="739.3" x2="202.0" y2="815.5" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="237.5" cy="739.3" r="3.4" fill="#4a5164"/>
+<text x="212.8" y="777.4" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="254.3" y1="739.3" x2="289.8" y2="815.5" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="254.3" cy="739.3" r="3.4" fill="#4a5164"/>
+<text x="279.1" y="777.4" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="306.6" y1="842.8" x2="271.1" y2="918.9" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="306.6" cy="842.8" r="3.4" fill="#4a5164"/>
+<text x="281.9" y="880.8" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="262.7" y1="946.2" x2="227.2" y2="1022.3" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="262.7" cy="946.2" r="3.4" fill="#4a5164"/>
+<text x="238.0" y="984.3" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="279.5" y1="946.2" x2="315.0" y2="1022.3" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="279.5" cy="946.2" r="3.4" fill="#4a5164"/>
+<text x="304.3" y="984.3" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="315.0" y1="1049.6" x2="315.0" y2="1072.7" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="315.0" cy="1049.6" r="3.4" fill="#4a5164"/>
+<line x1="306.6" y1="1100.0" x2="271.1" y2="1176.2" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="306.6" cy="1100.0" r="3.4" fill="#4a5164"/>
+<text x="281.9" y="1138.1" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="323.4" y1="1100.0" x2="358.9" y2="1176.2" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="323.4" cy="1100.0" r="3.4" fill="#4a5164"/>
+<text x="348.2" y="1138.1" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="375.7" y1="1203.5" x2="340.2" y2="1279.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="375.7" cy="1203.5" r="3.4" fill="#4a5164"/>
+<text x="351.0" y="1241.5" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="340.2" y1="1306.9" x2="340.2" y2="1330.0" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="340.2" cy="1306.9" r="3.4" fill="#4a5164"/>
+<rect x="136.2" y="630.8" width="57.2" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
+<text x="164.8" y="647.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">TP</text>
+<rect x="67.9" y="712.0" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="83.6" y="728.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">DP</text>
+<rect x="63.4" y="762.4" width="40.4" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="83.6" y="779.2" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D′</text>
+<rect x="24.0" y="865.9" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="39.8" y="882.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰</text>
+<rect x="98.9" y="865.9" width="57.2" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="127.5" y="882.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
+<rect x="93.1" y="969.3" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="108.8" y="986.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N′</text>
+<rect x="93.1" y="1019.7" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="108.8" y="1036.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰</text>
+<rect x="225.7" y="712.0" width="40.4" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
+<text x="245.9" y="728.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">T′</text>
+<rect x="186.3" y="815.5" width="31.5" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
+<text x="202.0" y="832.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">T⁰</text>
+<rect x="261.2" y="815.5" width="57.2" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
+<text x="289.8" y="832.3" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">VP</text>
+<rect x="250.9" y="918.9" width="40.4" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
+<text x="271.1" y="935.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">V′</text>
+<rect x="211.5" y="1022.3" width="31.5" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
+<text x="227.2" y="1039.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">V⁰</text>
+<rect x="299.3" y="1022.3" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="315.0" y="1039.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">DP</text>
+<rect x="294.8" y="1072.7" width="40.4" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="315.0" y="1089.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D′</text>
+<rect x="255.4" y="1176.2" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="271.1" y="1193.0" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰</text>
+<rect x="330.3" y="1176.2" width="57.2" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="358.9" y="1193.0" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
+<rect x="324.5" y="1279.6" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="340.2" y="1296.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N′</text>
+<rect x="324.5" y="1330.0" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="340.2" y="1346.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰</text>
+<text x="466.59520238886336" y="600.7538674358265" font-size="13" font-weight="700" fill="#333">X′ mode · the-cat</text><text x="466.59520238886336" y="616.7538674358265" font-size="12" fill="#667">6 pieces · 126 × 319 mm</text>
+<line x1="526.2" y1="658.1" x2="526.2" y2="681.2" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="526.2" cy="658.1" r="3.4" fill="#4a5164"/>
+<line x1="517.8" y1="708.5" x2="482.3" y2="784.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="517.8" cy="708.5" r="3.4" fill="#4a5164"/>
+<text x="493.1" y="746.5" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="534.6" y1="708.5" x2="570.1" y2="784.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="534.6" cy="708.5" r="3.4" fill="#4a5164"/>
+<text x="559.4" y="746.5" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="586.9" y1="811.9" x2="551.4" y2="888.0" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="586.9" cy="811.9" r="3.4" fill="#4a5164"/>
+<text x="562.2" y="849.9" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="551.4" y1="915.3" x2="551.4" y2="938.4" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="551.4" cy="915.3" r="3.4" fill="#4a5164"/>
+<rect x="510.5" y="630.8" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="526.2" y="647.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">DP</text>
+<rect x="506.0" y="681.2" width="40.4" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="526.2" y="698.0" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D′</text>
+<rect x="466.6" y="784.6" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="482.3" y="801.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰</text>
+<rect x="541.5" y="784.6" width="57.2" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="570.1" y="801.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
+<rect x="535.7" y="888.0" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="551.4" y="904.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N′</text>
+<rect x="535.7" y="938.4" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="551.4" y="955.2" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰</text>
+<text x="466.59520238886336" y="1023.7135756579837" font-size="13" font-weight="700" fill="#333">XP mode · the-cat</text><text x="466.59520238886336" y="1039.7135756579837" font-size="12" fill="#667">3 pieces · 96 × 132 mm</text>
+<line x1="482.3" y1="1081.0" x2="482.3" y2="1165.0" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="482.3" cy="1081.0" r="3.4" fill="#4a5164"/>
+<text x="489.3" y="1123.0" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<line x1="515.9" y1="1081.0" x2="551.4" y2="1157.1" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="515.9" cy="1081.0" r="3.4" fill="#4a5164"/>
+<text x="540.7" y="1119.1" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<rect x="470.5" y="1053.7" width="57.2" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="499.1" y="1070.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
+<rect x="466.6" y="1165.0" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="482.3" y="1181.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
+<rect x="535.7" y="1157.1" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="551.4" y="1173.9" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
+<text x="466.59520238886336" y="1250.3135756579836" font-size="13" font-weight="700" fill="#333">XP mode · the-fluffy-cat-will-jump</text><text x="466.59520238886336" y="1266.3135756579836" font-size="12" fill="#667">9 pieces · 247 × 257 mm</text>
+<line x1="599.0" y1="1307.6" x2="534.6" y2="1361.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="599.0" cy="1307.6" r="3.4" fill="#4a5164"/>
+<text x="559.8" y="1334.6" font-size="7.0" fill="#334" text-anchor="end">-50°</text>
+<line x1="517.8" y1="1388.9" x2="482.3" y2="1465.0" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="517.8" cy="1388.9" r="3.4" fill="#4a5164"/>
+<text x="493.1" y="1427.0" font-size="7.0" fill="#334" text-anchor="end">-25°</text>
+<line x1="534.6" y1="1388.9" x2="534.6" y2="1472.9" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="534.6" cy="1388.9" r="3.4" fill="#4a5164"/>
+<text x="541.6" y="1430.9" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<line x1="534.6" y1="1500.2" x2="534.6" y2="1523.3" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="534.6" cy="1500.2" r="3.4" fill="#4a5164"/>
+<line x1="551.4" y1="1388.9" x2="586.9" y2="1465.0" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="551.4" cy="1388.9" r="3.4" fill="#4a5164"/>
+<text x="576.2" y="1427.0" font-size="7.0" fill="#334" text-anchor="start">+25°</text>
+<line x1="615.8" y1="1307.6" x2="615.8" y2="1391.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="615.8" cy="1307.6" r="3.4" fill="#4a5164"/>
+<text x="622.8" y="1349.6" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<line x1="632.6" y1="1307.6" x2="696.9" y2="1361.6" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="632.6" cy="1307.6" r="3.4" fill="#4a5164"/>
+<text x="671.8" y="1334.6" font-size="7.0" fill="#334" text-anchor="start">+50°</text>
+<line x1="696.9" y1="1388.9" x2="696.9" y2="1472.9" stroke="#7a8296" stroke-width="5.2" stroke-linecap="round"/>
+<circle cx="696.9" cy="1388.9" r="3.4" fill="#4a5164"/>
+<text x="703.9" y="1430.9" font-size="7.0" fill="#334" text-anchor="start">+0°</text>
+<rect x="587.2" y="1280.3" width="57.2" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
+<text x="615.8" y="1297.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">TP</text>
+<rect x="506.0" y="1361.6" width="57.2" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="534.6" y="1378.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">NP</text>
+<rect x="466.6" y="1465.0" width="31.5" height="27.3" rx="4.2" fill="#d84a3b" stroke="#822c23" stroke-width="1"/>
+<text x="482.3" y="1481.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">D⁰*</text>
+<rect x="518.9" y="1472.9" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
+<text x="534.6" y="1489.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">AdjP</text>
+<rect x="518.9" y="1523.3" width="31.5" height="27.3" rx="4.2" fill="#e07b39" stroke="#864a22" stroke-width="1"/>
+<text x="534.6" y="1540.1" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">Adj⁰*</text>
+<rect x="571.2" y="1465.0" width="31.5" height="27.3" rx="4.2" fill="#3f8fd0" stroke="#26567d" stroke-width="1"/>
+<text x="586.9" y="1481.8" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">N⁰*</text>
+<rect x="600.0" y="1391.6" width="31.5" height="27.3" rx="4.2" fill="#3f9d5c" stroke="#265e37" stroke-width="1"/>
+<text x="615.8" y="1408.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">T⁰*</text>
+<rect x="668.3" y="1361.6" width="57.2" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
+<text x="696.9" y="1378.4" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">VP</text>
+<rect x="681.2" y="1472.9" width="31.5" height="27.3" rx="4.2" fill="#e2657c" stroke="#883d4a" stroke-width="1"/>
+<text x="696.9" y="1489.7" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">V⁰*</text>
 </svg>

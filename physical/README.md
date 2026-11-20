@@ -17,6 +17,9 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `arms.py` | Lays out every game tree with real piece sizes to find the arm design; checks all 14 trees and draws the results. |
 | `ARMS.md` | Generated: the arm design, why these numbers, tree sizes, and what is still open. |
 | `out/arms_piece.*`, `out/arms_trees.*` | Drawings: one three-arm piece to scale, and the game's trees built with the chosen arms. |
+| `hinge.py` | Designs the arm hinge: works out the torque it must hold from the game's trees, models the detent, builds the printable parts and checks the real meshes. |
+| `HINGE.md` | Generated: the hinge design, the numbers, how to print and test it, and what is still open. |
+| `hinge/` | The hinge coupon: `hinge_housing.stl`, `hinge_hub_arm.stl`, three lid thicknesses `hinge_lid_t*.stl`, plus `torque.png` and `parts.png`. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):

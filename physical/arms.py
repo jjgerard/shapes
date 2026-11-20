@@ -32,9 +32,9 @@ OUT = os.path.join(HERE, 'out')
 # --- piece sizes (mm), front view ---------------------------------------------
 BODY_W0 = 30.0       # narrowest body: holds the 28 mm socket cup
 BODY_H = 26.0
-PIVOT_PITCH = 13.0   # between neighbouring arm hinges on one body
-HUB = 12.0           # width of a hinge hub
-ARM_T = 7.0          # arm width and thickness
+PIVOT_PITCH = 16.0   # between neighbouring arm hinges on one body (see HINGE.md)
+HUB = 14.5           # width of a hinge housing (12 mm hub, 1 mm wall)
+ARM_T = 5.0          # arm width in the plane of the tree (it is 9 mm thick the other way)
 GAP = 5.0            # least clear space between parts of different subtrees
 OVERLAP = 2 * ARM_T  # telescoping arm: slider stays this far inside the sleeve at full reach
 
@@ -190,13 +190,15 @@ def evaluate(trees, S, drop=40.0):
 
 # --- the design ---------------------------------------------------------------
 STUB = settings([22], [0])                                   # single-slot pieces: short fixed stub
-ARM = settings([72], [-50, -25, 0, 25, 50])                  # two- and three-slot pieces
+ARM_LEN = 80.0
+ARM = settings([ARM_LEN], [-50, -25, 0, 25, 50])             # two- and three-slot pieces
 CHOSEN = {1: STUB, 2: ARM, 3: ARM}
 
 ALTERNATIVES = [
     ('fixed 64 mm, hinge 0 / ±30 / ±60', {1: STUB, 2: settings([64], [-60, -30, 0, 30, 60]), 3: settings([64], [-60, -30, 0, 30, 60])}),
     ('fixed 72 mm, hinge 0 / ±30 / ±60', {1: STUB, 2: settings([72], [-60, -30, 0, 30, 60]), 3: settings([72], [-60, -30, 0, 30, 60])}),
-    ('fixed 72 mm, hinge 0 / ±25 / ±50  (chosen)', CHOSEN),
+    (f'fixed {ARM_LEN:.0f} mm, hinge 0 / ±25 / ±50  (chosen)', CHOSEN),
+    ('fixed 72 mm, hinge 0 / ±25 / ±50  (the earlier design)', {1: STUB, 2: settings([72], [-50, -25, 0, 25, 50]), 3: settings([72], [-50, -25, 0, 25, 50])}),
     ('fixed 66 mm, hinge 0 / ±25 / ±50 / ±70', {1: STUB, 2: settings([66], [-70, -50, -25, 0, 25, 50, 70]), 3: settings([66], [-70, -50, -25, 0, 25, 50, 70])}),
     ('telescoping 44 or 72 mm, hinge 0 / ±25 / ±50', {1: STUB, 2: settings([44, 72], [-50, -25, 0, 25, 50]), 3: settings([44, 72], [-50, -25, 0, 25, 50])}),
     ('telescoping 44 / 58 / 72 mm, hinge 0 / ±25 / ±50', {1: STUB, 2: settings([44, 58, 72], [-50, -25, 0, 25, 50]), 3: settings([44, 58, 72], [-50, -25, 0, 25, 50])}),
@@ -278,7 +280,7 @@ def anatomy_svg(cats, path):
     for px in pivots:
         for ang in (-50, -25, 0, 25, 50):
             a = math.radians(ang)
-            ex, ey = cx + (px + 72 * math.sin(a)) * s, base_y + 72 * math.cos(a) * s
+            ex, ey = cx + (px + ARM[0].length * math.sin(a)) * s, base_y + ARM[0].length * math.cos(a) * s
             out.append(f'<line x1="{cx + px * s}" y1="{base_y}" x2="{ex:.1f}" y2="{ey:.1f}" stroke="#c6ccdb" stroke-width="1.4" stroke-dasharray="4 5"/>')
             out.append(f'<circle cx="{ex:.1f}" cy="{ey:.1f}" r="{11.35 * s:.1f}" fill="none" stroke="#e2e6ef" stroke-width="1"/>')
     # a typical pose: spec NP out to the left, T head down the middle, VP out to the right
@@ -286,8 +288,8 @@ def anatomy_svg(cats, path):
     names = {0: 'to the NP', 1: 'to T⁰', 2: 'to the VP'}
     for i, ang in pose.items():
         a = math.radians(ang)
-        x0, ex = cx + pivots[i] * s, cx + (pivots[i] + 72 * math.sin(a)) * s
-        ey = base_y + 72 * math.cos(a) * s
+        x0, ex = cx + pivots[i] * s, cx + (pivots[i] + ARM[0].length * math.sin(a)) * s
+        ey = base_y + ARM[0].length * math.cos(a) * s
         out.append(f'<line x1="{x0}" y1="{base_y}" x2="{ex:.1f}" y2="{ey:.1f}" stroke="#7a8296" stroke-width="{ARM_T * s}" stroke-linecap="round"/>')
         out.append(f'<circle cx="{ex:.1f}" cy="{ey:.1f}" r="{11.35 * s:.1f}" fill="{sp.shade(color, .35)}" stroke="{sp.shade(color, -.4)}" stroke-width="1.5"/>')
         out.append(f'<text x="{ex:.1f}" y="{ey + 5:.1f}" text-anchor="middle" font-size="13" fill="#333">{names[i]} {ang:+d}°</text>')
@@ -306,7 +308,7 @@ def anatomy_svg(cats, path):
              f'Body {bw:.0f} × {BODY_H:.0f} mm (two-arm pieces {body_width(2):.0f} mm, one-arm pieces {body_width(1):.0f} mm).',
              'Dashed lines and rings: every position an arm can click into.',
              'Unused arms have to stow out of the way: the plug is wider than',
-             'the 13 mm hinge pitch, so a dangling arm would hit its neighbour.']
+             'the hinge pitch, so a dangling arm would hit its neighbour.']
     for j, t in enumerate(notes):
         out.append(f'<text x="960" y="{150 + j * 24}" font-size="14" fill="#333">{t}</text>')
     out.append('</svg>')
@@ -403,7 +405,7 @@ def write_doc(res, ext, npieces, use, table, problems):
          'and `physical/out/arms_trees.svg` (trees built with these arms).\n',
          '## The design\n',
          f'- **Two- and three-slot pieces** (TP, VP, NP, PP, CP, and every bar): each slot has a hinged arm, **{ARM[0].length:.0f} mm long**, '
-         f'{ARM_T:.0f} × {ARM_T:.0f} mm in section, that **clicks at {", ".join(f"{a:+.0f}°" for a in sorted({s.angle for s in ARM}) if a > 0)[:0]}'
+         f'{ARM_T:.0f} mm wide, that **clicks at {", ".join(f"{a:+.0f}°" for a in sorted({s.angle for s in ARM}) if a > 0)[:0]}'
          f'0°, ±25° and ±50°** from straight down. **No sliding part.**',
          f'- **Single-slot pieces** (DP, N′, AdjP, AdvP): a fixed {STUB[0].length:.0f} mm stub, straight down, no hinge. They only ever have one child, '
          'so they never need to reach sideways.',
@@ -419,14 +421,12 @@ def write_doc(res, ext, npieces, use, table, problems):
         ok = 'all 14' if nbad == 0 else f'**{14 - nbad} of 14**'
         L.append(f'| {name} | {ok} | {fw:.0f} × {fh:.0f} mm | ' + (f'{xw:.0f} × {xh:.0f} mm' if xh else '—') + ' |')
     L += ['', 'Findings:',
-          '- The reach needed is modest (at most about 45 mm sideways) **because the parent can sit centred over its children**. '
+          '- The reach needed is modest because **the parent can sit centred over its children**. '
           'My first attempt, which hung children from one side, needed arms over a metre long.',
-          '- A fixed arm is enough. Telescoping (44 or 72 mm) shrinks the biggest trees by roughly 15 to 20 percent, '
-          'but adds a sliding part, which is the most likely thing to wobble or snap, and the arm must overlap its sleeve by at least '
-          f'{OVERLAP:.0f} mm, so a telescoping arm\'s longest length cannot exceed twice its shortest minus {OVERLAP:.0f} mm. I would only add it if the '
-          'biggest trees turn out to be too big for your tables.',
-          '- Not every set of clicks works: with the short single-slot stubs, 0 / ±30° / ±60° fails on two trees at 64 mm and at 72 mm, '
-          'and adding ±70° at 66 mm works but needs a seventh click.\n',
+          '- A fixed arm is enough. The telescoping rows show what a sliding arm would buy; it adds a sliding part, which is the most likely thing to wobble or snap, and '
+          f'the arm must overlap its sleeve by at least {OVERLAP:.0f} mm. I would only add it if the biggest trees turn out to be too big for your tables.',
+          '- Not every set of clicks works: see the "Trees that can be built" column. The hinge design (HINGE.md) set the hinge pitch and arm width; with those, '
+          'the 72 mm arm of the earlier design no longer builds the biggest X-bar tree, and an 80 mm arm does. Shorter arms (64 to 72 mm) also build every tree with clicks at 0 / ±30° / ±60°, but the housing cannot swing an arm that far and still hold the hub in (HINGE.md), so I kept ±50° and the longer arm.\n',
           '## Which clicks the three-slot pieces use\n', '| Piece and arm | Clicks used in the game\'s trees |', '|---|---|']
     for (t, sl), c in sorted(use.items()):
         L.append(f'| {sp.label(t)} {sl} | ' + ', '.join(f'{a:+d}° × {n}' for a, n in sorted(c.items())) + ' |')
@@ -442,9 +442,8 @@ def write_doc(res, ext, npieces, use, table, problems):
           'game\'s trees; TP leaves its middle arm empty in every X-bar tree). A plug is 22.7 mm wide and hinges are 13 mm apart, so a dangling '
           'arm would hit its neighbour. Options: fold the arm up flat against the back of the body (the body would need to be about 40 mm deep), '
           'or make arms removable on a keyed hub. I have not designed this yet.',
-          '- **The hinge has to hold a hanging phrase.** A phrase of about 150 g on a 72 mm arm at 50° is roughly 80 to 110 N·mm at the hinge. '
-          'A single printed click will not hold that; the detent needs real teeth or a clamp. This is the next thing to prototype.',
-          '- **Arm strength.** A 7 × 7 mm arm carries that load comfortably in bending (about 2 MPa); the hinge and the plug joint are the weak points, not the arm.']
+          '- **The hinge has to hold a hanging phrase.** HINGE.md works out the torque from these trees and designs a detent hinge for it.',
+          '- **Arm strength.** The 5 × 9 mm arm carries the load comfortably in bending; the hinge and the plug joint are the weak points, not the arm.']
     open(os.path.join(HERE, 'ARMS.md'), 'w').write('\n'.join(L) + '\n')
 
 
