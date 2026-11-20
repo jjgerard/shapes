@@ -35,6 +35,7 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `SLIDE_COUPON.md` | Generated: what to print, what to test and write down, how to read the results. STLs in `slide_coupon/`. |
 | `body.py` | Builds the 27 piece bodies (socket, arm grooves, posts) and 27 plug inserts, and checks on the meshes: arms fit, every plug seats in every child it is meant for and in no other. |
 | `BODY.md` | Generated: body design, sizes and masses, checks, what is not settled. STLs in `body/`. |
+| `assemble.py` | Assembles a game tree from the real meshes (bodies, arm stacks at the layout's positions, inserts) and renders it: `out/assembled_*.png`. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):
