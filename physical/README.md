@@ -20,6 +20,8 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `hinge.py` | Designs the arm hinge: works out the torque it must hold from the game's trees, models the detent, builds the printable parts and checks the real meshes. |
 | `HINGE.md` | Generated: the hinge design, the numbers, how to print and test it, and what is still open. |
 | `hinge/` | The hinge coupon: `hinge_housing.stl`, `hinge_hub_arm.stl`, three lid thicknesses `hinge_lid_t*.stl`, plus `torque.png` and `parts.png`. |
+| `stow.py` | What to do with unused arms: tests leaving them on, designs a snap-in arm, builds and checks the parts, and measures the tilting-children problem. |
+| `STOW.md` | Generated: the findings and the snap-in arm design. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):

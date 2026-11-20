@@ -470,6 +470,7 @@ def write_doc(res, ext, npieces, use, table, problems):
     L += ['', f'Independent check: for each tree the distances between parts were measured directly (not just by the placement routine): '
           + ('**no clashes**.' if not problems else f'**{len(problems)} problems**: {problems[:5]}'),
           '', '## Things this does not settle\n',
+          '- **Children are assumed to hang upright.** Every layout and size above assumes the child hangs plumb from the end of its arm. A plug fixed to the arm would tilt the child with the arm and the trees would sprawl (STOW.md measures it), so the arm tip needs a swivel that keeps it upright. That is not designed yet.',
           '- **Big X-bar trees are big.** The Level 1 target (37 pieces) and the question sentences are about 0.4 m wide and 0.65 to 1 m tall. '
           'They are fine on a floor or a long table, and impractical to lift whole. Single phrases (a DP, a VP) are small enough to pick up.',
           '- **Unused arms must stow.** The three-slot pieces are often used with one or two arms (NP uses only one of its three 16 times in the '
