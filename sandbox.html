@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sandbox · Shapes and Language</title>
+<link rel="stylesheet" href="sandbox.css?v=1">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<meta name="theme-color" content="#4b2340">
+</head>
+<body>
+<div id="sb">
+
+  <header id="bar">
+    <span class="brand">Shapes and Language · Sandbox</span>
+    <span class="seg" id="seg-mode" title="XP or X′ mode decides which pieces are on the shelf and what may join what">
+      <button data-mode="prex" title="XP mode: flat phrase structure, as in Tree basics">XP mode</button><button data-mode="xbar" title="X′ mode: with the bar level, as in X-bar">X′ mode</button>
+    </span>
+    <span class="seg" id="seg-labels" title="How the pieces are labelled">
+      <button data-labels="letters">NP · N′ · N⁰</button><button data-labels="numbers">1 · 1.5 · 2</button>
+    </span>
+    <button class="tool" id="btn-undo" title="Undo (Ctrl+Z)">↶ Undo</button>
+    <button class="tool" id="btn-redo" title="Redo (Ctrl+Shift+Z)">↷ Redo</button>
+    <span class="spacer"></span>
+    <button class="tool" id="btn-export" title="Download the current board as a picture (SVG)">Save picture</button>
+    <button class="tool" id="btn-clear" title="Clear the current board">Clear board</button>
+    <button class="tool" id="btn-help">How it works</button>
+    <a href="index.html">← the game</a>
+    <a href="https://jjgerard.github.io/games/">All games</a>
+  </header>
+
+  <div id="main">
+
+    <aside id="parts">
+      <div class="head">Parts <small>every piece, loose</small></div>
+      <div class="scroll" id="parts-scroll"></div>
+    </aside>
+
+    <section id="stage">
+      <div id="tabs">
+        <button data-tab="bench">Workbench</button><button data-tab="table">Table</button>
+      </div>
+      <div id="status" title="Pieces in a wrong join glow red"></div>
+      <div id="view">
+        <button id="btn-zoom-out" title="Zoom out">−</button>
+        <button id="btn-zoom-in" title="Zoom in">+</button>
+        <button id="btn-fit" title="Fit everything on screen">Fit</button>
+      </div>
+      <svg id="board" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+            <path d="M64 0H0V64" fill="none" class="grid-line"/>
+          </pattern>
+        </defs>
+        <g id="world">
+          <rect id="grid-rect" x="-6000" y="-6000" width="12000" height="12000" fill="url(#grid)"/>
+          <g id="layer-pieces"></g>
+          <g id="layer-sticks"></g>
+          <g id="layer-words"></g>
+          <g id="layer-ghost"></g>
+        </g>
+      </svg>
+      <div id="sel-bar">
+        <button class="primary" id="sel-box">Put in the box</button>
+        <button id="sel-dup">Duplicate</button>
+        <button id="sel-cross">Cross out</button>
+        <button id="sel-del">Delete</button>
+      </div>
+    </section>
+
+    <aside id="box">
+      <div class="head">Box <small>assembled pieces</small></div>
+      <div class="scroll"><div id="box-list"></div></div>
+    </aside>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<dialog id="help" style="max-width:560px;border:1px solid #d8d3c7;border-radius:12px;padding:18px 22px;font-size:14px;line-height:1.5">
+  <h3 style="margin:0 0 8px">How the sandbox works</h3>
+  <p><b>Parts</b> (left) holds every piece as a separate loose piece. Drag one onto the board. Drag it back onto the Parts shelf to put it away.</p>
+  <p><b>XP or X′ mode.</b> Pick a mode at the top. It decides which pieces are on the shelf <i>and what may join what</i>: the same rules as the game, flat phrase structure in XP mode and the bar level in X′ mode. The number of cups on a piece also depends on the mode.</p>
+  <p><b>Joining.</b> Every piece has little cups (the pale circles). Drag a piece so its <i>top</i> cup is near a <i>bottom</i> cup of another piece (or the other way round) and let go: they join with a stick, which comes in three lengths (20, 40 and 60&nbsp;mm), so the piece settles at the nearest of those distances. You can join anything to anything, but <b>a wrong join makes both pieces glow red</b> (and so does a word under something that is not a head or a triangle). <b>A structure with a red join can’t be put in the box.</b> Changing mode re-checks everything.</p>
+  <p><b>Moving.</b> Drag a piece to move it together with everything hanging from it. Dragging a piece that hangs from another pulls it off.</p>
+  <p><b>Words</b> are loose magnets. Drop one under a head (or under an abbreviation triangle) and it stays with it. Double-click a word to cross it out, for a trace.</p>
+  <p><b>Workbench → Box → Table.</b> Build a piece of structure on the <b>Workbench</b>, select it and press <b>Put in the box</b> (or drag it onto the Box). It is saved there with a name you can change. Switch to the <b>Table</b> and drag copies out of the Box to assemble whole trees. Pieces from the shelf work on either board.</p>
+  <p>Everything is saved in this browser. <b>Save picture</b> downloads the board as an image.</p>
+  <form method="dialog" style="text-align:right"><button style="padding:6px 16px">Got it</button></form>
+</dialog>
+
+<script src="data.js"></script>
+<script src="shapes.js"></script>
+<script src="sandbox.js?v=1"></script>
+</body>
+</html>

@@ -216,6 +216,7 @@ button { font-family: inherit; cursor: pointer; }
    what the setting currently IS. */
 .menu-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
 .menu-item { width: 100%; text-align: left; }
+a.menu-item { display: block; box-sizing: border-box; text-decoration: none; color: inherit; }
 
 .field-help { font-size: 0.82rem; color: var(--muted); margin: 10px 0 0; line-height: 1.4; }
 /* Errors go inline, right under the fields they're about. A toast at the
