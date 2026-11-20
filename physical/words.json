@@ -1,0 +1,946 @@
+{
+ "prex:L2 the-cat": {
+  "s": "N",
+  "n": 1,
+  "w": null,
+  "silent": false,
+  "trace": false,
+  "c": [
+   {
+    "s": "D",
+    "n": 2,
+    "w": "the",
+    "silent": false,
+    "trace": false,
+    "c": []
+   },
+   {
+    "s": "N",
+    "n": 2,
+    "w": "cat",
+    "silent": false,
+    "trace": false,
+    "c": []
+   }
+  ]
+ },
+ "prex:L2 the-cat-chased-the-mouse": {
+  "s": "T",
+  "n": 1,
+  "w": null,
+  "silent": false,
+  "trace": false,
+  "c": [
+   {
+    "s": "N",
+    "n": 1,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "D",
+      "n": 2,
+      "w": "the",
+      "silent": false,
+      "trace": false,
+      "c": []
+     },
+     {
+      "s": "N",
+      "n": 2,
+      "w": "cat",
+      "silent": false,
+      "trace": false,
+      "c": []
+     }
+    ]
+   },
+   {
+    "s": "T",
+    "n": 2,
+    "w": null,
+    "silent": true,
+    "trace": false,
+    "c": []
+   },
+   {
+    "s": "V",
+    "n": 1,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "V",
+      "n": 2,
+      "w": "chased",
+      "silent": false,
+      "trace": false,
+      "c": []
+     },
+     {
+      "s": "N",
+      "n": 1,
+      "w": null,
+      "silent": false,
+      "trace": false,
+      "c": [
+       {
+        "s": "D",
+        "n": 2,
+        "w": "the",
+        "silent": false,
+        "trace": false,
+        "c": []
+       },
+       {
+        "s": "N",
+        "n": 2,
+        "w": "mouse",
+        "silent": false,
+        "trace": false,
+        "c": []
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "prex:L2 the-fluffy-cat-will-jump": {
+  "s": "T",
+  "n": 1,
+  "w": null,
+  "silent": false,
+  "trace": false,
+  "c": [
+   {
+    "s": "N",
+    "n": 1,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "D",
+      "n": 2,
+      "w": "the",
+      "silent": false,
+      "trace": false,
+      "c": []
+     },
+     {
+      "s": "Adj",
+      "n": 1,
+      "w": null,
+      "silent": false,
+      "trace": false,
+      "c": [
+       {
+        "s": "Adj",
+        "n": 2,
+        "w": "fluffy",
+        "silent": false,
+        "trace": false,
+        "c": []
+       }
+      ]
+     },
+     {
+      "s": "N",
+      "n": 2,
+      "w": "cat",
+      "silent": false,
+      "trace": false,
+      "c": []
+     }
+    ]
+   },
+   {
+    "s": "T",
+    "n": 2,
+    "w": "will",
+    "silent": false,
+    "trace": false,
+    "c": []
+   },
+   {
+    "s": "V",
+    "n": 1,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "V",
+      "n": 2,
+      "w": "jump",
+      "silent": false,
+      "trace": false,
+      "c": []
+     }
+    ]
+   }
+  ]
+ },
+ "prex:L2 the-fluffy-cat-quickly-jumped-on-the-table": {
+  "s": "T",
+  "n": 1,
+  "w": null,
+  "silent": false,
+  "trace": false,
+  "c": [
+   {
+    "s": "N",
+    "n": 1,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "D",
+      "n": 2,
+      "w": "the",
+      "silent": false,
+      "trace": false,
+      "c": []
+     },
+     {
+      "s": "Adj",
+      "n": 1,
+      "w": null,
+      "silent": false,
+      "trace": false,
+      "c": [
+       {
+        "s": "Adj",
+        "n": 2,
+        "w": "fluffy",
+        "silent": false,
+        "trace": false,
+        "c": []
+       }
+      ]
+     },
+     {
+      "s": "N",
+      "n": 2,
+      "w": "cat",
+      "silent": false,
+      "trace": false,
+      "c": []
+     }
+    ]
+   },
+   {
+    "s": "T",
+    "n": 2,
+    "w": null,
+    "silent": true,
+    "trace": false,
+    "c": []
+   },
+   {
+    "s": "V",
+    "n": 1,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "Adv",
+      "n": 1,
+      "w": null,
+      "silent": false,
+      "trace": false,
+      "c": [
+       {
+        "s": "Adv",
+        "n": 2,
+        "w": "quickly",
+        "silent": false,
+        "trace": false,
+        "c": []
+       }
+      ]
+     },
+     {
+      "s": "V",
+      "n": 2,
+      "w": "jumped",
+      "silent": false,
+      "trace": false,
+      "c": []
+     },
+     {
+      "s": "P",
+      "n": 1,
+      "w": null,
+      "silent": false,
+      "trace": false,
+      "c": [
+       {
+        "s": "P",
+        "n": 2,
+        "w": "on",
+        "silent": false,
+        "trace": false,
+        "c": []
+       },
+       {
+        "s": "N",
+        "n": 1,
+        "w": null,
+        "silent": false,
+        "trace": false,
+        "c": [
+         {
+          "s": "D",
+          "n": 2,
+          "w": "the",
+          "silent": false,
+          "trace": false,
+          "c": []
+         },
+         {
+          "s": "N",
+          "n": 2,
+          "w": "table",
+          "silent": false,
+          "trace": false,
+          "c": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "xbar:L2 the-cat": {
+  "s": "D",
+  "n": 1,
+  "w": null,
+  "silent": false,
+  "trace": false,
+  "c": [
+   {
+    "s": "D",
+    "n": 1.5,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "D",
+      "n": 2,
+      "w": "the",
+      "silent": false,
+      "trace": false,
+      "c": []
+     },
+     {
+      "s": "N",
+      "n": 1,
+      "w": null,
+      "silent": false,
+      "trace": false,
+      "c": [
+       {
+        "s": "N",
+        "n": 1.5,
+        "w": null,
+        "silent": false,
+        "trace": false,
+        "c": [
+         {
+          "s": "N",
+          "n": 2,
+          "w": "cat",
+          "silent": false,
+          "trace": false,
+          "c": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "xbar:L2 the-cat-chased-the-mouse": {
+  "s": "T",
+  "n": 1,
+  "w": null,
+  "silent": false,
+  "trace": false,
+  "c": [
+   {
+    "s": "D",
+    "n": 1,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "D",
+      "n": 1.5,
+      "w": null,
+      "silent": false,
+      "trace": false,
+      "c": [
+       {
+        "s": "D",
+        "n": 2,
+        "w": "the",
+        "silent": false,
+        "trace": false,
+        "c": []
+       },
+       {
+        "s": "N",
+        "n": 1,
+        "w": null,
+        "silent": false,
+        "trace": false,
+        "c": [
+         {
+          "s": "N",
+          "n": 1.5,
+          "w": null,
+          "silent": false,
+          "trace": false,
+          "c": [
+           {
+            "s": "N",
+            "n": 2,
+            "w": "cat",
+            "silent": false,
+            "trace": false,
+            "c": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "s": "T",
+    "n": 1.5,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "T",
+      "n": 2,
+      "w": null,
+      "silent": true,
+      "trace": false,
+      "c": []
+     },
+     {
+      "s": "V",
+      "n": 1,
+      "w": null,
+      "silent": false,
+      "trace": false,
+      "c": [
+       {
+        "s": "V",
+        "n": 1.5,
+        "w": null,
+        "silent": false,
+        "trace": false,
+        "c": [
+         {
+          "s": "V",
+          "n": 2,
+          "w": "chased",
+          "silent": false,
+          "trace": false,
+          "c": []
+         },
+         {
+          "s": "D",
+          "n": 1,
+          "w": null,
+          "silent": false,
+          "trace": false,
+          "c": [
+           {
+            "s": "D",
+            "n": 1.5,
+            "w": null,
+            "silent": false,
+            "trace": false,
+            "c": [
+             {
+              "s": "D",
+              "n": 2,
+              "w": "the",
+              "silent": false,
+              "trace": false,
+              "c": []
+             },
+             {
+              "s": "N",
+              "n": 1,
+              "w": null,
+              "silent": false,
+              "trace": false,
+              "c": [
+               {
+                "s": "N",
+                "n": 1.5,
+                "w": null,
+                "silent": false,
+                "trace": false,
+                "c": [
+                 {
+                  "s": "N",
+                  "n": 2,
+                  "w": "mouse",
+                  "silent": false,
+                  "trace": false,
+                  "c": []
+                 }
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "xbar:L2 did-the-cat-chase-the-mouse": {
+  "s": "C",
+  "n": 1,
+  "w": null,
+  "silent": false,
+  "trace": false,
+  "c": [
+   {
+    "s": "C",
+    "n": 1.5,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "C",
+      "n": 2,
+      "w": "did",
+      "silent": false,
+      "trace": false,
+      "c": []
+     },
+     {
+      "s": "T",
+      "n": 1,
+      "w": null,
+      "silent": false,
+      "trace": false,
+      "c": [
+       {
+        "s": "D",
+        "n": 1,
+        "w": null,
+        "silent": false,
+        "trace": false,
+        "c": [
+         {
+          "s": "D",
+          "n": 1.5,
+          "w": null,
+          "silent": false,
+          "trace": false,
+          "c": [
+           {
+            "s": "D",
+            "n": 2,
+            "w": "the",
+            "silent": false,
+            "trace": false,
+            "c": []
+           },
+           {
+            "s": "N",
+            "n": 1,
+            "w": null,
+            "silent": false,
+            "trace": false,
+            "c": [
+             {
+              "s": "N",
+              "n": 1.5,
+              "w": null,
+              "silent": false,
+              "trace": false,
+              "c": [
+               {
+                "s": "N",
+                "n": 2,
+                "w": "cat",
+                "silent": false,
+                "trace": false,
+                "c": []
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "s": "T",
+        "n": 1.5,
+        "w": null,
+        "silent": false,
+        "trace": false,
+        "c": [
+         {
+          "s": "T",
+          "n": 2,
+          "w": "did",
+          "silent": false,
+          "trace": true,
+          "c": []
+         },
+         {
+          "s": "V",
+          "n": 1,
+          "w": null,
+          "silent": false,
+          "trace": false,
+          "c": [
+           {
+            "s": "V",
+            "n": 1.5,
+            "w": null,
+            "silent": false,
+            "trace": false,
+            "c": [
+             {
+              "s": "V",
+              "n": 2,
+              "w": "chase",
+              "silent": false,
+              "trace": false,
+              "c": []
+             },
+             {
+              "s": "D",
+              "n": 1,
+              "w": null,
+              "silent": false,
+              "trace": false,
+              "c": [
+               {
+                "s": "D",
+                "n": 1.5,
+                "w": null,
+                "silent": false,
+                "trace": false,
+                "c": [
+                 {
+                  "s": "D",
+                  "n": 2,
+                  "w": "the",
+                  "silent": false,
+                  "trace": false,
+                  "c": []
+                 },
+                 {
+                  "s": "N",
+                  "n": 1,
+                  "w": null,
+                  "silent": false,
+                  "trace": false,
+                  "c": [
+                   {
+                    "s": "N",
+                    "n": 1.5,
+                    "w": null,
+                    "silent": false,
+                    "trace": false,
+                    "c": [
+                     {
+                      "s": "N",
+                      "n": 2,
+                      "w": "mouse",
+                      "silent": false,
+                      "trace": false,
+                      "c": []
+                     }
+                    ]
+                   }
+                  ]
+                 }
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "xbar:L2 which-mouse-did-the-cat-chase": {
+  "s": "C",
+  "n": 1,
+  "w": null,
+  "silent": false,
+  "trace": false,
+  "c": [
+   {
+    "s": "D",
+    "n": 1,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "D",
+      "n": 1.5,
+      "w": null,
+      "silent": false,
+      "trace": false,
+      "c": [
+       {
+        "s": "D",
+        "n": 2,
+        "w": "which",
+        "silent": false,
+        "trace": false,
+        "c": []
+       },
+       {
+        "s": "N",
+        "n": 1,
+        "w": null,
+        "silent": false,
+        "trace": false,
+        "c": [
+         {
+          "s": "N",
+          "n": 1.5,
+          "w": null,
+          "silent": false,
+          "trace": false,
+          "c": [
+           {
+            "s": "N",
+            "n": 2,
+            "w": "mouse",
+            "silent": false,
+            "trace": false,
+            "c": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "s": "C",
+    "n": 1.5,
+    "w": null,
+    "silent": false,
+    "trace": false,
+    "c": [
+     {
+      "s": "C",
+      "n": 2,
+      "w": "did",
+      "silent": false,
+      "trace": false,
+      "c": []
+     },
+     {
+      "s": "T",
+      "n": 1,
+      "w": null,
+      "silent": false,
+      "trace": false,
+      "c": [
+       {
+        "s": "D",
+        "n": 1,
+        "w": null,
+        "silent": false,
+        "trace": false,
+        "c": [
+         {
+          "s": "D",
+          "n": 1.5,
+          "w": null,
+          "silent": false,
+          "trace": false,
+          "c": [
+           {
+            "s": "D",
+            "n": 2,
+            "w": "the",
+            "silent": false,
+            "trace": false,
+            "c": []
+           },
+           {
+            "s": "N",
+            "n": 1,
+            "w": null,
+            "silent": false,
+            "trace": false,
+            "c": [
+             {
+              "s": "N",
+              "n": 1.5,
+              "w": null,
+              "silent": false,
+              "trace": false,
+              "c": [
+               {
+                "s": "N",
+                "n": 2,
+                "w": "cat",
+                "silent": false,
+                "trace": false,
+                "c": []
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "s": "T",
+        "n": 1.5,
+        "w": null,
+        "silent": false,
+        "trace": false,
+        "c": [
+         {
+          "s": "T",
+          "n": 2,
+          "w": "did",
+          "silent": false,
+          "trace": true,
+          "c": []
+         },
+         {
+          "s": "V",
+          "n": 1,
+          "w": null,
+          "silent": false,
+          "trace": false,
+          "c": [
+           {
+            "s": "V",
+            "n": 1.5,
+            "w": null,
+            "silent": false,
+            "trace": false,
+            "c": [
+             {
+              "s": "V",
+              "n": 2,
+              "w": "chase",
+              "silent": false,
+              "trace": false,
+              "c": []
+             },
+             {
+              "s": "D",
+              "n": 1,
+              "w": null,
+              "silent": false,
+              "trace": false,
+              "c": [
+               {
+                "s": "D",
+                "n": 1.5,
+                "w": null,
+                "silent": false,
+                "trace": false,
+                "c": [
+                 {
+                  "s": "D",
+                  "n": 2,
+                  "w": "which",
+                  "silent": false,
+                  "trace": true,
+                  "c": []
+                 },
+                 {
+                  "s": "N",
+                  "n": 1,
+                  "w": null,
+                  "silent": false,
+                  "trace": false,
+                  "c": [
+                   {
+                    "s": "N",
+                    "n": 1.5,
+                    "w": null,
+                    "silent": false,
+                    "trace": false,
+                    "c": [
+                     {
+                      "s": "N",
+                      "n": 2,
+                      "w": "mouse",
+                      "silent": false,
+                      "trace": true,
+                      "c": []
+                     }
+                    ]
+                   }
+                  ]
+                 }
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

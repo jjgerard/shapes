@@ -54,7 +54,12 @@ def prep(tree, words=None):
         for c in n['c']: walk(c)
     walk(tree)
     for i, n in enumerate(leaves):
-        n['word'] = words[i] if (words and i < len(words)) else None        # L1 trees have no words; empty heads get no word magnet
+        if n.get('winfo') is not None:                       # words straight from the game's sentence: (word, silent, trace)
+            wd, silent, trace = n['winfo']
+            n['word'] = 'Ø' if silent else wd
+            n['trace'] = trace
+        else:
+            n['word'] = words[i] if (words and i < len(words)) else None        # L1 trees have no words; empty heads get no word magnet
     return tree
 
 

@@ -40,6 +40,7 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `concept.py` | Concept pictures for the whiteboard kit: a tree on a board (`out/concept_board.png`) and a close-up of tiles, ball-and-cup stick and a word magnet from real meshes (`out/concept_joint.png`). |
 | `whiteboard.py` | Designs the whiteboard kit: lays out all 10 trees with the real tiles, cups, word magnets and stick lengths, finds which stick lengths are needed, checks the assembled meshes, exports the tiles and sticks, renders `out/whiteboard_trees.png`. |
 | `WHITEBOARD.md` | Generated: the parts, the stick lengths, a student's set, what was checked, what is not settled. STLs in `whiteboard/`. |
+| `boardviews.py` | Renders the game's real sentences (with words, silent heads and traces from `words.json`, dumped by `dump_words.js`) on a whiteboard background: `out/board_*.png`. |
 | `whiteboard_coupon.py` | Builds the whiteboard test coupon (cup, magnet-pocket, board-pocket and ball-hole variants, plus real parts) and writes `WHITEBOARD_COUPON.md`: what to print, buy, test, and an order sheet. STLs in `whiteboard_coupon/`. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
