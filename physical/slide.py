@@ -58,6 +58,16 @@ FOOT_W = 14.0            # foot width along the slide
 DROP = 34.0              # body underside to the plug's base face (the child's top)
 BORE_R = 3.8             # insert bore
 SHANK_R = 3.7
+FLAT = 2.9               # the bore and the shank are D-shaped: the flat is at +x of the bore's axis, so the insert cannot turn
+WIDTH2 = 64.0            # a two-slot body is wider than the layout model's first guess, so A's groove has a closed end
+_orig_body_width = A.body_width
+
+
+def body_width(n):
+    return WIDTH2 if n == 2 else _orig_body_width(n)
+
+
+A.body_width = body_width
 BORE_TOP = 24.0
 # detent
 BEAM_X0, BEAM_X1 = 1.5, 18.0      # flexure beam, along the slide (rooted at BEAM_X1)
@@ -137,6 +147,17 @@ def flexure_cut(y_top, y_bot, side, pocket_from):
     return cuts
 
 
+def d_prism(r, y0, y1, x=0.0, z=0.0, flat=FLAT):
+    """A cylinder of radius r along y from y0 to y1 with a flat on its +x side (a D), centred at (x, z)."""
+    from shapely.geometry import Point
+    poly = Point(0, 0).buffer(r, 48).intersection(sbox(-r - 1, -r - 1, flat * r / BORE_R, r + 1))
+    m = extrude_polygon(poly, y1 - y0, engine='earcut')        # local (x, y_l, z_l); rot_x(90) turns y_l into z and z_l into -y
+    m.apply_transform(H.rot_x(90))
+    m.apply_translation([x, y1, z])
+    return H.fix(m)
+
+
+
 def part_A():
     """The fixed bar. It slides into a dovetail groove under the body from the outer side (no screws) and a
     detent beam on its top face clicks into a dimple in the body; its underside carries the groove for S1."""
@@ -170,8 +191,7 @@ def slider(y_top, with_tongue, lane_beam_side, lane_dimple_side, foot=False):
         fz0, fz1 = -ZC - 7.0, 7.0
         parts.append(H.slab(FOOT_X - FOOT_W / 2, FOOT_X + FOOT_W / 2, y_bot, DROP, fz0, fz1))
         parts.append(H.slab(FOOT_X - FOOT_W / 2, FOOT_X + FOOT_W / 2, y_bot - 0.02, y_bot + 0.02, -W / 2, W / 2))   # a sliver of overlap so the union fuses
-        bore = cylinder(radius=BORE_R, height=DROP - BORE_TOP + 0.5, sections=48); bore.apply_transform(H.rot_x(90))
-        bore.apply_translation([FOOT_X, (DROP + BORE_TOP) / 2 + 0.25, -ZC]); cuts.append(bore)
+        cuts.append(d_prism(BORE_R, BORE_TOP, DROP + 0.5, FOOT_X, -ZC))
         ring = cylinder(radius=BORE_R + 0.45, height=1.2, sections=48); ring.apply_transform(H.rot_x(90))
         ring.apply_translation([FOOT_X, BORE_TOP + 4.6, -ZC]); cuts.append(ring)
     return H.fix(difference([union(parts, engine=ENGINE)] + cuts, engine=ENGINE))
@@ -185,17 +205,18 @@ def part_S2():
     return slider(Y_S2, False, -1, 0, foot=True)
 
 
-def part_insert(geo, code):
-    """The keyed plug on a round shank with a snap ring; the plug's base is at y = DROP."""
-    shank = cylinder(radius=SHANK_R, height=DROP - BORE_TOP, sections=48); shank.apply_transform(H.rot_x(90))
-    shank.apply_translation([0, (DROP + BORE_TOP) / 2, 0])
+def part_insert(geo, code, turn=0.0):
+    """The keyed plug on a D-shaped shank with a snap ring; the plug's base is at y = DROP. `turn` turns the plug
+    about its own axis relative to the shank's flat: a left arm is the right arm turned 180 degrees, so its
+    insert is made with the plug turned 180 degrees and the plug points the same way in the finished piece."""
+    shank = d_prism(SHANK_R, BORE_TOP, DROP, 0.0, 0.0, flat=FLAT - 0.15)
     ring = cylinder(radius=BORE_R + 0.25, height=0.9, sections=48); ring.apply_transform(H.rot_x(90))
     ring.apply_translation([0, BORE_TOP + 4.6, 0])
-    ringc = cylinder(radius=BORE_R + 0.05, height=2.4, sections=48); ringc.apply_transform(H.rot_x(90))
-    ringc.apply_translation([0, BORE_TOP + 4.6, 0])
     plug = C.plug_solid(geo, code)
     plug.apply_transform(H.rot_x(90))                       # tip toward +y
     plug.apply_translation([0, DROP + C.PLUG_LEN, 0])
+    if turn:
+        plug.apply_transform(H.rot_y(turn))
     m = H.fix(union([shank, ring, plug], engine=ENGINE))
     m.apply_translation([FOOT_X, 0, -ZC])
     return m
@@ -490,7 +511,7 @@ Dimensions: each slider is 14 mm wide and 48 mm long with a 6 mm base; the dovet
 
 ![across the piece](cross.png)
 
-The left and right stacks sit side by side in z (their centre lines 21 mm apart), with the fixed middle post between them, so **every two- and three-slot body is 35 mm thick** (heads and one-slot pieces can stay at 24 mm: the plug is always at the centre plane).
+The left and right stacks sit side by side in z (their centre lines 21 mm apart), with the fixed middle post between them, so **every two- and three-slot body is 35 mm thick** (heads, bars and one-slot pieces are 30 mm thick; the plug is always at the centre plane). **A two-slot body is 64 mm wide**, so each arm's inboard end stays inside it and the groove can be closed; `BODY.md` has the bodies.
 
 ![parts](parts.png)
 
@@ -505,7 +526,7 @@ The left and right stacks sit side by side in z (their centre lines 21 mm apart)
 
 ## Loads
 
-The weights come from the same 10 trees laid out with this arm, with real masses: one arm {M['arm']:.1f} g (A {M['arm'] - M['S1'] - M['S2_ins']:.1f}, S1 {M['S1']:.1f}, S2 with foot and plug {M['S2_ins']:.1f}), a three-slot piece {M['pieces'][3]:.0f} g and a two-slot piece {M['pieces'][2]:.0f} g, at 50% fill in PETG. The weight hanging from one of the {R['loads']['n_arms']} moving arms: median {g['median']:.0f} g, 90th percentile {g['p90']:.0f} g, largest {g['max']:.0f} g. Stress is at the weakest section of the stage that carries most (S1 where A's tongue ends), at full extension:
+The weights come from the same 10 trees laid out with this arm, with real masses: one arm {M['arm']:.1f} g (A {M['arm'] - M['S1'] - M['S2_ins']:.1f}, S1 {M['S1']:.1f}, S2 with foot and plug {M['S2_ins']:.1f}), a head {M['pieces'][0]:.0f} g, a one-slot piece {M['pieces'][1]:.0f} g, a two-slot piece {M['pieces'][2]:.0f} g and a three-slot piece {M['pieces'][3]:.0f} g (bodies and arms; masses from {M['source']}), at 50% fill in PETG. The weight hanging from one of the {R['loads']['n_arms']} moving arms: median {g['median']:.0f} g, 90th percentile {g['p90']:.0f} g, largest {g['max']:.0f} g. Stress is at the weakest section of the stage that carries most (S1 where A's tongue ends), at full extension:
 
 | Hanging weight | S1 bending | S2 bending | Tongue shear | Dovetail twist (from the foot's 10.5 mm offset) |
 |---|---|---|---|---|
@@ -513,7 +534,7 @@ The weights come from the same 10 trees laid out with this arm, with real masses
 
 (The *abuse* row is a hand pulling down 15 N on the carriage, the same shove used in `FORTIFY.md`.) A base of 5 mm gave a safety factor of 0.9 at that shove, so **the layers are 6 mm** and the stack is 1 mm taller; the safety factor is now **1.3**, still the first place I would look for a break.
 
-**Holding.** Along the slide, a stage has to resist the weight of everything below it only if the slide is tilted. With the slide pointing *straight down* (the worst case, which a phrase held by its top piece never reaches), a stage holds **{hv['0.0']:.0f}% / {hv['0.3']:.0f}% / {hv['0.45']:.0f}%** of the arms at friction 0 / 0.3 / 0.45. At friction 0.3 the heaviest arm is only just inside the limit ({D['force']['0.3']:.2f} N push-out against {(g['max'] + M['S1'] + M['S2_ins']) * 9.81e-3:.2f} N). **Friction is the number I cannot calculate**: it is the first thing to measure on a printed coupon.
+**Holding.** Along the slide, a stage has to resist the weight of everything below it only if the slide is tilted. With the slide pointing *straight down* (the worst case, which a phrase held by its top piece never reaches), a stage holds **{hv['0.0']:.0f}% / {hv['0.3']:.0f}% / {hv['0.45']:.0f}%** of the arms at friction 0 / 0.3 / 0.45. At friction 0.3 the heaviest arms are beyond what a stage holds pointing straight down: the push-out force is {D['force']['0.3']:.1f} N and the heaviest phrase weighs {(g['max'] + M['S1'] + M['S2_ins']) * 9.81e-3:.1f} N. Held at 60° from level the stage holds {R['hold_cover']['60']:.0f}% of the arms. The lever is the body's weight (`BODY.md`): lower infill or hollowing, or a stronger detent, both raise the share. **Friction is the number I cannot calculate**: it is the first thing to measure on a printed coupon.
 
 ## Layouts
 
@@ -537,15 +558,14 @@ The weights come from the same 10 trees laid out with this arm, with real masses
 | Child upright? | only if twisted back at every setting | **always** |
 | Trees built | 9 of 10 | **{L['built']} of {L['of']}** |
 | Settings | 5 angles, then a second setting | 3 distances, two stops each |
-| Body thickness | 24 mm | **35 mm** (slotted pieces) |
+| Body thickness | 24 mm | **35 mm** (slotted pieces), 30 mm (others) |
 
 ## What this does not settle
 
 - **Nothing has been printed.** The clearances (0.25 mm), the 0.4 mm detent engagement and the friction are all assumptions; the first print should be a short coupon of A, S1 and S2 at 1/3 length to tune them.
-- **The body is not designed.** `slide_body_stub.stl` gives only the underside. The body must also hold the sockets, be 35 mm thick, and be strong at the two grooves (they are 1.6 mm deep and sit in a 26 mm tall block).
+- **The bodies are designed in `BODY.md`** (the stub here is only the underside of a three-slot one).
 - **Print orientation** (a suggestion): each slider lying on one of its 14 mm faces, so the dovetail flanks are 45° overhangs, the layer lines run along the beam and the flexure beams bend within a layer.
 - The model of the loads ignores dynamic effects (dropping a phrase) and a real shove sideways (z); the foot's jog gives a twist on the dovetail that is small but not checked on a print.
-- A 2-slot piece's A bars reach 13 mm past the body's edge (the layout test includes this).
 - The foot is solid and heavy (7.6 g with the plug); a ribbed foot would save about 2 g per arm.
 """
     open(path, 'w').write(out)
@@ -642,8 +662,18 @@ def main():
     m_s1 = P[1].volume * DENS * FILL
     BODY, POST = 10.0, 2.0
     MASS = {0: 8.0, 1: 9.0, 2: BODY + 2 * m_arm, 3: BODY + 2 * m_arm + POST}
-    print(f'   masses: one arm {m_arm:.1f} g (A {P[0].volume * DENS * FILL:.1f}, S1 {m_s1:.1f}, S2 with foot and plug {m_s2:.1f}); pieces {{heads 8, one-slot 9, two-slot {MASS[2]:.0f}, three-slot {MASS[3]:.0f}}} g')
-    R['mass'] = dict(arm=m_arm, S1=m_s1, S2_ins=m_s2, pieces=MASS)
+    mass_src = 'assumed bodies of 8 / 9 / 10 g (heads / one-slot / slotted)'
+    bj = os.path.join(HERE, 'body', 'body.json')
+    if os.path.exists(bj):                                   # real body masses, from body.py
+        B = json.load(open(bj))
+        by = defaultdict(list)
+        for r in B['bodies']: by[r['slots']].append(r['mm3'] * DENS * FILL)
+        mean = lambda n: sum(by[n]) / len(by[n])
+        ins = B['mass']['insert_mean']
+        MASS = {0: mean(0), 1: mean(1) + ins, 2: mean(2) + 2 * m_arm, 3: mean(3) + 2 * m_arm + ins}
+        mass_src = 'the real bodies from `BODY.md`'
+    print(f'   masses: one arm {m_arm:.1f} g (A {P[0].volume * DENS * FILL:.1f}, S1 {m_s1:.1f}, S2 with foot and plug {m_s2:.1f}); pieces {{head {MASS[0]:.0f}, one-slot {MASS[1]:.0f}, two-slot {MASS[2]:.0f}, three-slot {MASS[3]:.0f}}} g ({mass_src})')
+    R['mass'] = dict(arm=m_arm, S1=m_s1, S2_ins=m_s2, pieces=MASS, source=mass_src)
 
     print('== layouts (the game\'s ten trees)')
     import arm_options as O
@@ -749,7 +779,7 @@ def main():
     R['hold_cover_vertical_by_mu'] = {str(k): v for k, v in cov_mu.items()}
     print('   share of arms whose stage still holds with the slide pointing straight down (mu 0 / 0.3 / 0.45): ' + ' / '.join(f'{cov_mu[m]:.0f}%' for m in MU))
     print(f'   hold (mu 0.3): tilt of the slide from level that a stage still holds, over all arms: 10% {pc(ang, .1):.0f}, median {pc(ang, .5):.0f} degrees; share holding at 15/30/60/90 degrees: ' + ' / '.join(f'{cov[t]:.0f}%' for t in cov))
-    R['hold_cover'] = cov
+    R['hold_cover'] = {str(k): v for k, v in cov.items()}
     print('== figures')
     figure_sections(P, stub, post, os.path.join(OUT, 'sections.png'))
     figure_cross(P, stub, post, os.path.join(OUT, 'cross.png'))

@@ -33,6 +33,8 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `SLIDE.md` | Generated: why a telescope, how it works, checks, loads, layouts, what is not settled. Parts in `hinge/slide/`. |
 | `slide_coupon.py` | Builds the slide test coupon: the sliding arm at a third of the length in three clearance sets, plus a mount block. Print this first. |
 | `SLIDE_COUPON.md` | Generated: what to print, what to test and write down, how to read the results. STLs in `slide_coupon/`. |
+| `body.py` | Builds the 27 piece bodies (socket, arm grooves, posts) and 27 plug inserts, and checks on the meshes: arms fit, every plug seats in every child it is meant for and in no other. |
+| `BODY.md` | Generated: body design, sizes and masses, checks, what is not settled. STLs in `body/`. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):

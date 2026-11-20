@@ -10,7 +10,7 @@ The swinging arm needed a hinge cartridge and a swivel cartridge on every arm (`
 
 | Slide | Trees built | Widest tree | Tallest tree |
 |---|---|---|---|
-| beam drawn only out to the carriage (the earlier test) | **10 of 10** | 510 mm | 722 mm |
+| beam drawn only out to the carriage (the earlier test) | **10 of 10** | 519 mm | 722 mm |
 | fixed rail that stays out at full reach | **3 of 10** | 330 mm | 242 mm |
 | single bar that slides, with its tail | **7 of 10** | 518 mm | 602 mm |
 | two-stage telescope (this design) | **10 of 10** | 519 mm | 722 mm |
@@ -35,7 +35,7 @@ Dimensions: each slider is 14 mm wide and 48 mm long with a 6 mm base; the dovet
 
 ![across the piece](cross.png)
 
-The left and right stacks sit side by side in z (their centre lines 21 mm apart), with the fixed middle post between them, so **every two- and three-slot body is 35 mm thick** (heads and one-slot pieces can stay at 24 mm: the plug is always at the centre plane).
+The left and right stacks sit side by side in z (their centre lines 21 mm apart), with the fixed middle post between them, so **every two- and three-slot body is 35 mm thick** (heads, bars and one-slot pieces are 30 mm thick; the plug is always at the centre plane). **A two-slot body is 64 mm wide**, so each arm's inboard end stays inside it and the groove can be closed; `BODY.md` has the bodies.
 
 ![parts](parts.png)
 
@@ -50,18 +50,18 @@ The left and right stacks sit side by side in z (their centre lines 21 mm apart)
 
 ## Loads
 
-The weights come from the same 10 trees laid out with this arm, with real masses: one arm 12.7 g (A 2.8, S1 2.3, S2 with foot and plug 7.6), a three-slot piece 37 g and a two-slot piece 35 g, at 50% fill in PETG. The weight hanging from one of the 108 moving arms: median 53 g, 90th percentile 231 g, largest 640 g. Stress is at the weakest section of the stage that carries most (S1 where A's tongue ends), at full extension:
+The weights come from the same 10 trees laid out with this arm, with real masses: one arm 12.7 g (A 2.8, S1 2.3, S2 with foot and plug 7.6), a head 13 g, a one-slot piece 17 g, a two-slot piece 60 g and a three-slot piece 59 g (bodies and arms; masses from the real bodies from `BODY.md`), at 50% fill in PETG. The weight hanging from one of the 108 moving arms: median 84 g, 90th percentile 382 g, largest 1062 g. Stress is at the weakest section of the stage that carries most (S1 where A's tongue ends), at full extension:
 
 | Hanging weight | S1 bending | S2 bending | Tongue shear | Dovetail twist (from the foot's 10.5 mm offset) |
 |---|---|---|---|---|
-| median (53 g) | 0.7 MPa (safety 30.6) | 0.4 MPa (safety 56.9) | 0.2 MPa (safety 61.7) | 1.0 N per flank |
-| 90% (231 g) | 2.5 MPa (safety 8.0) | 1.3 MPa (safety 14.9) | 0.7 MPa (safety 16.2) | 3.9 N per flank |
-| max (640 g) | 6.7 MPa (safety 3.0) | 3.6 MPa (safety 5.5) | 2.0 MPa (safety 6.0) | 10.6 N per flank |
+| median (84 g) | 1.0 MPa (safety 20.7) | 0.5 MPa (safety 38.4) | 0.3 MPa (safety 41.6) | 1.5 N per flank |
+| 90% (382 g) | 4.0 MPa (safety 5.0) | 2.2 MPa (safety 9.2) | 1.2 MPa (safety 10.0) | 6.4 N per flank |
+| max (1062 g) | 11.0 MPa (safety 1.8) | 5.9 MPa (safety 3.4) | 3.3 MPa (safety 3.6) | 17.5 N per flank |
 | abuse (1529 g) | 15.8 MPa (safety 1.3) | 8.5 MPa (safety 2.4) | 4.7 MPa (safety 2.6) | 25.0 N per flank |
 
 (The *abuse* row is a hand pulling down 15 N on the carriage, the same shove used in `FORTIFY.md`.) A base of 5 mm gave a safety factor of 0.9 at that shove, so **the layers are 6 mm** and the stack is 1 mm taller; the safety factor is now **1.3**, still the first place I would look for a break.
 
-**Holding.** Along the slide, a stage has to resist the weight of everything below it only if the slide is tilted. With the slide pointing *straight down* (the worst case, which a phrase held by its top piece never reaches), a stage holds **92% / 100% / 100%** of the arms at friction 0 / 0.3 / 0.45. At friction 0.3 the heaviest arm is only just inside the limit (6.39 N push-out against 6.38 N). **Friction is the number I cannot calculate**: it is the first thing to measure on a printed coupon.
+**Holding.** Along the slide, a stage has to resist the weight of everything below it only if the slide is tilted. With the slide pointing *straight down* (the worst case, which a phrase held by its top piece never reaches), a stage holds **84% / 94% / 100%** of the arms at friction 0 / 0.3 / 0.45. At friction 0.3 the heaviest arms are beyond what a stage holds pointing straight down: the push-out force is 6.4 N and the heaviest phrase weighs 10.5 N. Held at 60° from level the stage holds 97% of the arms. The lever is the body's weight (`BODY.md`): lower infill or hollowing, or a stronger detent, both raise the share. **Friction is the number I cannot calculate**: it is the first thing to measure on a printed coupon.
 
 ## Layouts
 
@@ -73,7 +73,7 @@ The weights come from the same 10 trees laid out with this arm, with real masses
 | prex · L1 one-more-branch | 376 × 518 | 406 × 266 |
 | prex · L2 the-cat | 96 × 160 | 98 × 86 |
 | prex · L2 the-fluffy-cat-will-jump | 247 × 313 | 234 × 194 |
-| xbar · L1 four-pieces | 188 × 406 | 166 × 206 |
+| xbar · L1 four-pieces | 188 × 406 | 192 × 206 |
 | xbar · L1 one-more-branch | cannot build | 519 × 722 |
 | xbar · L2 the-cat | 126 × 375 | 107 × 242 |
 | xbar · L2 the-cat-chased-the-mouse | 346 × 860 | 315 × 482 |
@@ -94,13 +94,12 @@ The weights come from the same 10 trees laid out with this arm, with real masses
 | Child upright? | only if twisted back at every setting | **always** |
 | Trees built | 9 of 10 | **10 of 10** |
 | Settings | 5 angles, then a second setting | 3 distances, two stops each |
-| Body thickness | 24 mm | **35 mm** (slotted pieces) |
+| Body thickness | 24 mm | **35 mm** (slotted pieces), 30 mm (others) |
 
 ## What this does not settle
 
 - **Nothing has been printed.** The clearances (0.25 mm), the 0.4 mm detent engagement and the friction are all assumptions; the first print should be a short coupon of A, S1 and S2 at 1/3 length to tune them.
-- **The body is not designed.** `slide_body_stub.stl` gives only the underside. The body must also hold the sockets, be 35 mm thick, and be strong at the two grooves (they are 1.6 mm deep and sit in a 26 mm tall block).
+- **The bodies are designed in `BODY.md`** (the stub here is only the underside of a three-slot one).
 - **Print orientation** (a suggestion): each slider lying on one of its 14 mm faces, so the dovetail flanks are 45° overhangs, the layer lines run along the beam and the flexure beams bend within a layer.
 - The model of the loads ignores dynamic effects (dropping a phrase) and a real shove sideways (z); the foot's jog gives a twist on the dovetail that is small but not checked on a print.
-- A 2-slot piece's A bars reach 13 mm past the body's edge (the layout test includes this).
 - The foot is solid and heavy (7.6 g with the plug); a ribbed foot would save about 2 g per arm.
