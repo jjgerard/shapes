@@ -13,7 +13,10 @@ a **Parts** shelf of every loose piece (the game's own shapes, the abbreviation 
 a **Workbench** and a **Table** to build on, and a **Box** of saved assemblies. Build a phrase on the
 Workbench, put it in the Box, and drag copies out onto the Table to assemble whole trees. Pieces join with
 sticks of three lengths (20, 40 and 60 mm), as in the physical whiteboard kit (`physical/WHITEBOARD.md`).
-It reuses `data.js` and `shapes.js`, saves in the browser, and can download a board as an SVG picture.
+**XP mode** or **X′ mode** (the switch at the top) decides which pieces are on the shelf and what may join
+what, using the game's own legal edges; a wrong join makes both pieces glow red, and a structure with a
+wrong join can't be put in the box. It reuses `data.js` and `shapes.js`, saves in the browser, and can
+download a board as an SVG picture.
 Open it at `sandbox.html` next to the game.
 
 ## Get it on a phone

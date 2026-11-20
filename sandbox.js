@@ -26,14 +26,16 @@ const SHAPE_BOUNDS = {
 
 const levelKind = lv => (lv === 1 ? 'phrase' : lv === 1.5 ? 'bar' : 'head');
 
-// bottom cups per piece: the most children any game structure gives that piece, over both modes
+// bottom cups per piece, per mode: the most children any structure of that mode gives the piece (the game's own fragments)
 const PORTS = {};
 for (const id of Object.keys(MODES)) {
+  PORTS[id] = {};
   for (const st of MODES[id].structures) {
     const k = st.shape + st.number;
-    PORTS[k] = Math.max(PORTS[k] || 0, st.children.length);
+    PORTS[id][k] = Math.max(PORTS[id][k] || 0, st.children.length);
   }
 }
+const MODE_NAME = { prex: 'XP mode', xbar: 'X′ mode' };
 
 // ------------------------------------------------------------------ state
 let state = null;     // { mode, labels, tab, boards:{bench,table}, box:[], nextId }
@@ -83,7 +85,7 @@ function geom(it) {
   const r = MM(R_MM[levelKind(it.level)]);
   const sb = SHAPE_BOUNDS[CATEGORIES[it.cat].shape];
   const b = sb.map(v => v * r);
-  const n = PORTS[it.cat + it.level] || 0;
+  const n = PORTS[state.mode][it.cat + it.level] || 0;
   const pitch = Math.min(MM(9), 0.3 * (b[2] - b[0]));
   const bots = [];
   for (let i = 0; i < n; i++) bots.push({ x: (i - (n - 1) / 2) * pitch, y: b[3] - MM(3.2) });
@@ -92,7 +94,8 @@ function geom(it) {
 const isTile = it => it.kind === 'tile' || it.kind === 'abbr';
 const portPos = (it, which) => {
   const g = geom(it);
-  const p = which === 'top' ? g.top : g.bots[which];
+  // a stick left in a cup that this mode does not give the piece hangs from the middle of its bottom edge
+  const p = which === 'top' ? g.top : (g.bots[which] || { x: 0, y: g.b[3] - MM(3.2) });
   return { x: it.x + p.x, y: it.y + p.y };
 };
 const childrenOf = id => items().filter(i => isTile(i) && i.parent && i.parent.id === id);
@@ -120,6 +123,33 @@ function layoutWords() {
     for (const w of ws) { const ww = wordW(w.text); w.x = x + ww / 2; w.y = y; x += ww + MM(4); }
   }
 }
+
+// ------------------------------------------------------------------ what may join what
+// The game's own legal edges for the chosen mode (data.js): XP mode is flat phrase structure, X′ mode has the bar level.
+const keyOf = it => it.cat + it.level;
+function edgeLegal(parent, child) {
+  const edges = MODES[state.mode].legalEdges, pk = keyOf(parent);
+  if (child.kind === 'abbr') return Object.keys(CATEGORIES).some(c => edges.has(pk + '>' + c + '1'));   // a triangle stands in for a phrase
+  return edges.has(pk + '>' + keyOf(child));
+}
+function slotExists(parent, slot) { return slot < geom(parent).bots.length; }
+// every item that sits in a wrong join (and the number of wrong joins) on the current board
+function analyze(list = items()) {
+  const bad = new Set(), badEdges = new Set();
+  const get = id => list.find(i => i.id === id);
+  for (const it of list) {
+    if (isTile(it) && it.parent) {
+      const p = get(it.parent.id);
+      if (!p) continue;
+      if (p.kind === 'abbr' || !edgeLegal(p, it) || !slotExists(p, it.parent.slot)) { bad.add(p.id); bad.add(it.id); badEdges.add(it.id); }
+    } else if (it.kind === 'word' && it.owner) {
+      const o = get(it.owner);
+      if (o && !(o.kind === 'abbr' || (o.kind === 'tile' && o.level === 2))) { bad.add(it.id); bad.add(o.id); }   // words go under heads and triangles
+    }
+  }
+  return { bad, badEdges, count: badEdges.size + list.filter(i => i.kind === 'word' && bad.has(i.id)).length };
+}
+const subtreeBad = ids => { const a = analyze(); return [...ids].some(id => a.bad.has(id)); };
 
 // ------------------------------------------------------------------ building the SVG pieces
 function buildPiece(it) {
@@ -156,6 +186,7 @@ function applyView() {
 function render() {
   layoutWords();
   const list = items();
+  const A = analyze(list);
   const live = new Set(list.map(i => i.id));
   for (const [id, node] of nodeCache) if (!live.has(id)) { node.remove(); nodeCache.delete(id); }
   for (const it of list) {
@@ -168,6 +199,7 @@ function render() {
     }
     node.setAttribute('transform', `translate(${it.x},${it.y})`);
     node.classList.toggle('selected', sel === it.id);
+    node.classList.toggle('bad', A.bad.has(it.id));
     node.classList.toggle('dragging', !!(drag && drag.ids && drag.ids.has(it.id) && drag.moved));
   }
   // sticks
@@ -177,12 +209,16 @@ function render() {
     const p = byId(it.parent.id);
     if (!p) continue;
     const a = portPos(p, it.parent.slot), b = portPos(it, 'top');
-    layerSticks.appendChild(svgEl('line', { class: 'stick', x1: a.x, y1: a.y, x2: b.x, y2: b.y, 'stroke-width': MM(4) }));
+    const wrong = A.badEdges.has(it.id);
+    layerSticks.appendChild(svgEl('line', { class: 'stick' + (wrong ? ' bad' : ''), x1: a.x, y1: a.y, x2: b.x, y2: b.y, 'stroke-width': MM(4) }));
     for (const q of [a, b]) {
-      layerSticks.appendChild(svgEl('circle', { class: 'ball', cx: q.x, cy: q.y, r: MM(3) }));
+      layerSticks.appendChild(svgEl('circle', { class: 'ball' + (wrong ? ' bad' : ''), cx: q.x, cy: q.y, r: MM(3) }));
       layerSticks.appendChild(svgEl('circle', { class: 'ball-hi', cx: q.x - MM(.9), cy: q.y - MM(.9), r: MM(.9) }));
     }
   }
+  const chip = $('status');
+  chip.className = A.count ? 'bad' : (list.length ? 'ok' : '');
+  chip.textContent = A.count ? (A.count === 1 ? `⚠ 1 join doesn’t fit ${MODE_NAME[state.mode]}` : `⚠ ${A.count} joins don’t fit ${MODE_NAME[state.mode]}`) : (list.some(i => i.parent || i.owner) ? `✓ every join fits ${MODE_NAME[state.mode]}` : '');
   updateSelBar();
   $('btn-undo').disabled = !undoStack.length;
   $('btn-redo').disabled = !redoStack.length;
@@ -303,6 +339,8 @@ function renderBox() {
   for (const entry of state.box) {
     const d = document.createElement('div'); d.className = 'boxed';
     d.appendChild(boxThumb(entry));
+    const tag = document.createElement('span'); tag.className = 'tag' + (entry.mode && entry.mode !== state.mode ? ' other' : ''); tag.textContent = entry.mode === 'xbar' ? 'X′' : 'XP'; tag.title = 'built in ' + MODE_NAME[entry.mode || 'xbar'];
+    d.appendChild(tag);
     const nm = document.createElement('input'); nm.className = 'name'; nm.value = entry.name; nm.title = 'Rename';
     nm.addEventListener('pointerdown', e => e.stopPropagation());
     nm.addEventListener('input', () => { entry.name = nm.value; save(); });
@@ -376,10 +414,11 @@ function describe(rootId) {
   return words.length ? `${name}: ${words.join(' ')}` : name;
 }
 function saveToBox(rootId, preSnap) {
-  const root = byId(rootId); if (!root) return;
+  const root = byId(rootId); if (!root) return false;
   const ids = subtree(rootId);
+  if (subtreeBad(ids)) { toast('Fix the red joins first: a structure with a wrong join can’t go in the box'); return false; }
   const pre = preSnap || snap();
-  const entry = { id: 'b' + newId(), name: describe(rootId), items: [] };
+  const entry = { id: 'b' + newId(), name: describe(rootId), mode: state.mode, items: [] };
   const map = new Map();
   const list = items().filter(i => ids.has(i.id));
   list.forEach((i, n) => map.set(i.id, n + 1));
@@ -395,6 +434,7 @@ function saveToBox(rootId, preSnap) {
   pushUndo(pre); sel = null;
   renderBox(); render(); save();
   toast('Put in the box: ' + entry.name);
+  return true;
 }
 function instantiate(entry, x, y) {
   const map = new Map();
@@ -478,7 +518,7 @@ function onUp(e) {
   if (it && (target === 'parts' || (target === 'box' && it.kind === 'word'))) {                // put away
     deleteTree(d.id);
   } else if (it && target === 'box' && isTile(it)) {
-    saveToBox(d.id, d.pre);                      // undo goes back to before the drag
+    if (!saveToBox(d.id, d.pre)) { restore(d.pre); render(); save(); }      // a wrong join: it goes back where it was
     return;
   } else if (it) {
     if (it.kind === 'word') attachWord(it); else if (d.snapTo) applySnap(d.snapTo, d.ids);
@@ -520,7 +560,12 @@ function findSnap() {
 }
 function showGhost() {
   layerGhost.textContent = '';
-  if (drag && drag.snapTo) layerGhost.appendChild(svgEl('circle', { class: 'snap-ghost', cx: drag.snapTo.at.x, cy: drag.snapTo.at.y, r: MM(7) }));
+  if (drag && drag.snapTo) {
+    const c = drag.snapTo;
+    const par = byId(c.parent), chi = byId(c.kind === 'child' ? c.root : c.child);
+    const ok = par && chi && par.kind !== 'abbr' && edgeLegal(par, chi) && slotExists(par, c.slot);
+    layerGhost.appendChild(svgEl('circle', { class: 'snap-ghost' + (ok ? '' : ' bad'), cx: c.at.x, cy: c.at.y, r: MM(7) }));
+  }
 }
 function nearestLength(d) { return LENGTHS.reduce((a, b) => (Math.abs(b - d) < Math.abs(a - d) ? b : a)); }
 function applySnap(c, dset) {
@@ -663,7 +708,7 @@ function syncControls() {
   for (const b of document.querySelectorAll('#seg-labels button')) b.classList.toggle('on', b.dataset.labels === state.labels);
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === state.tab);
 }
-for (const b of document.querySelectorAll('#seg-mode button')) b.addEventListener('click', () => { state.mode = b.dataset.mode; syncControls(); renderParts(); save(); });
+for (const b of document.querySelectorAll('#seg-mode button')) b.addEventListener('click', () => { state.mode = b.dataset.mode; sel = null; clearNodes(); syncControls(); renderParts(); renderBox(); render(); save(); });
 for (const b of document.querySelectorAll('#seg-labels button')) b.addEventListener('click', () => { state.labels = b.dataset.labels; syncControls(); clearNodes(); renderParts(); renderBox(); render(); save(); });
 for (const b of document.querySelectorAll('#tabs button')) b.addEventListener('click', () => { state.tab = b.dataset.tab; sel = null; clearNodes(); syncControls(); applyView(); render(); save(); });
 $('btn-undo').addEventListener('click', undo);
@@ -708,5 +753,5 @@ renderAll();
 if (!localStorage.getItem(STORE + '-seen')) { try { localStorage.setItem(STORE + '-seen', '1'); } catch (e) { /* ignore */ } setTimeout(() => $('help').showModal(), 300); }
 
 // for tests and tinkering in the console
-window.sandbox = { get state() { return state; }, items, render, geom, portPos, subtree, saveToBox, MM, S, LENGTHS, fit };
+window.sandbox = { get state() { return state; }, items, render, geom, portPos, subtree, saveToBox, analyze, edgeLegal, MM, S, LENGTHS, fit };
 })();
