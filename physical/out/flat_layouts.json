@@ -10,7 +10,7 @@
   "ok": true,
   "size": [
    489.7114317029974,
-   231.96152422706632
+   261.9615242270663
   ]
  },
  "prex:L2 the-cat": {
@@ -23,8 +23,8 @@
  "prex:L2 the-fluffy-cat-will-jump": {
   "ok": true,
   "size": [
-   218.9230484541326,
-   227.94228634059948
+   251.86533479473212,
+   180.0
   ]
  },
  "xbar:L1 four-pieces": {
@@ -37,8 +37,8 @@
  "xbar:L1 one-more-branch": {
   "ok": true,
   "size": [
-   685.6729559300637,
-   540.0
+   711.6537180435969,
+   555.0
   ]
  },
  "xbar:L2 the-cat": {
@@ -51,21 +51,21 @@
  "xbar:L2 the-cat-chased-the-mouse": {
   "ok": true,
   "size": [
-   373.8460969082653,
+   395.8076211353316,
    390.0
   ]
  },
  "xbar:L2 did-the-cat-chase-the-mouse": {
   "ok": true,
   "size": [
-   389.8076211353316,
+   411.7691453623979,
    480.0
   ]
  },
  "xbar:L2 which-mouse-did-the-cat-chase": {
   "ok": true,
   "size": [
-   531.7114317029974,
+   557.6921938165306,
    465.0
   ]
  }

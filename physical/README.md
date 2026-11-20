@@ -37,6 +37,7 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `BODY.md` | Generated: body design, sizes and masses, checks, what is not settled. STLs in `body/`. |
 | `assemble.py` | Assembles a game tree from the real meshes (bodies, arm stacks at the layout's positions, inserts) and renders it: `out/assembled_*.png`. |
 | `flat_layout.py` | Tests the flat-tile idea (tiles on a table or whiteboard, fixed 60/90 mm bonds clicking at 30° steps): lays out all 10 trees and checks them independently. Output `out/flat_layouts.png`, `out/flat_layouts.json`. |
+| `concept.py` | Concept pictures for the whiteboard kit: a tree on a board (`out/concept_board.png`) and a close-up of tiles, ball-and-cup stick and a word magnet from real meshes (`out/concept_joint.png`). |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):

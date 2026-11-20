@@ -79,13 +79,17 @@ def layout(node, lengths, angles, top_k=14, park=False):
             bg = bond_geom(pivot, off)
             if bg.intersects(translate(sub['clear'], off[0], off[1]).buffer(-GAP / 2 - 0.5)) and False: pass
             if chosen and off[0] <= chosen[-1][0][0] + 1.0: continue            # siblings read left to right
+            if chosen:                                                         # ...and so do their subtrees: every tile of this one is right of every tile of the last
+                prev = chosen[-1]
+                prev_max = max(x for t_, x, y in prev[5]); my_min = min(x + off[0] for t_, x, y in sub['tiles'])
+                if my_min <= prev_max + 1.0: continue
             bad = False
-            for (o2, p2, cl2, bg2, sh2) in chosen:
+            for (o2, p2, cl2, bg2, sh2, tl2) in chosen:
                 if cl.intersects(cl2) or bg.intersects(cl2) or bg2.intersects(cl): bad = True; break
             if bad: continue
             if bg.intersects(tgeom) and False: continue
             # the bond may not touch the other tiles inside its own child's subtree except the child's own tile
-            chosen.append((off, pivot, cl, bg, translate(sub['shape'], off[0], off[1])))
+            chosen.append((off, pivot, cl, bg, translate(sub['shape'], off[0], off[1]), [(t_, x + off[0], y + off[1]) for t_, x, y in sub['tiles']]))
             dfs(i + 1, chosen, cost + c)
             chosen.pop()
             tried += 1
@@ -112,7 +116,7 @@ def layout(node, lengths, angles, top_k=14, park=False):
     tiles, bonds, shapes, clears = [tile], [], [tgeom], [tgeom.buffer(GAP / 2)]
     for pivot, end, sh, cl in extra:
         bonds.append((pivot, end)); shapes.append(sh); clears.append(cl)
-    for (off, pivot, cl, bg, sh), sub in zip(best[0][1], subs):
+    for (off, pivot, cl, bg, sh, tl), sub in zip(best[0][1], subs):
         tiles += [(t, x + off[0], y + off[1]) for t, x, y in sub['tiles']]
         bonds += [(pivot, off)] + [((a[0] + off[0], a[1] + off[1]), (b[0] + off[0], b[1] + off[1])) for a, b in sub['bonds']]
         shapes += [sh, bg]; clears += [cl, bg]
