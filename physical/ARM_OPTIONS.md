@@ -43,7 +43,7 @@ It builds **10 of 10** trees, and the independent distance check found 0 problem
 
 This is a layout test, not a mechanism, and it is simpler than reality in ways that matter:
 
-- **The beam's tail.** A bar that slides out one side has to stay engaged in the body, so a bar reaching 72 mm needs about 85 mm of length, and when retracted its tail pokes out the other side. The test only draws the beam out to the carriage. Either the tail has to be allowed for, or the slide has to be two-stage (telescoping).
+- **The beam's tail.** A bar that slides out one side has to stay engaged in the body, so a bar reaching 72 mm needs about 85 mm of length, and when retracted its tail pokes out the other side. The test only draws the beam out to the carriage. **This is now settled in `SLIDE.md`**: a fixed rail builds 3 of the 10 trees, a bar with a tail 7, and a two-stage telescope all 10.
 - **Beams of neighbouring pieces.** Beams are only checked against bodies and stems, not against each other.
 - **The 24 mm drop** between body and child is assumed, not designed.
 - **The detent.** A sliding arm only has to resist a few newtons along the slide (the weight of a hanging phrase tilted on its side), instead of a hundred N·mm of torque, so it should be much easier to print than the hinge, but it is not designed.
@@ -52,5 +52,5 @@ This is a layout test, not a mechanism, and it is simpler than reality in ways t
 ## Where this leaves the earlier work
 
 - The **swinging arm and its hinge** (ARMS.md, HINGE.md, STOW.md) is a worked, checked design, but it needs the swivel to be correct, and the swivel is costly.
-- The **sliding arm** looks simpler and gives smaller trees, but it has not been designed.
+- The **sliding arm** is designed in `SLIDE.md`: a two-stage telescoping dovetail slide, 4 printed parts and no screws, which builds all 10 trees.
 - The **keys and the quick-release idea** (SPOKES.md) are unaffected either way.

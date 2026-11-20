@@ -228,7 +228,7 @@ def write_doc(table, net, cover, top, problems):
           '## What the sliding model leaves out\n',
           'This is a layout test, not a mechanism, and it is simpler than reality in ways that matter:\n',
           '- **The beam\'s tail.** A bar that slides out one side has to stay engaged in the body, so a bar reaching 72 mm needs about 85 mm of length, and when retracted its tail pokes out the other side. '
-          'The test only draws the beam out to the carriage. Either the tail has to be allowed for, or the slide has to be two-stage (telescoping).',
+          'The test only draws the beam out to the carriage. **This is now settled in `SLIDE.md`**: a fixed rail builds 3 of the 10 trees, a bar with a tail 7, and a two-stage telescope all 10.',
           '- **Beams of neighbouring pieces.** Beams are only checked against bodies and stems, not against each other.',
           '- **The 24 mm drop** between body and child is assumed, not designed.',
           '- **The detent.** A sliding arm only has to resist a few newtons along the slide (the weight of a hanging phrase tilted on its side), instead of a hundred N·mm of torque, '
@@ -236,7 +236,7 @@ def write_doc(table, net, cover, top, problems):
           '- **Load on the beam.** The weight hangs off the end of a cantilever; at 72 mm out, 350 g is about 250 N·mm of bending, which a bar of this size carries, and the guide in the body has to resist it as a couple.\n',
           '## Where this leaves the earlier work\n',
           '- The **swinging arm and its hinge** (ARMS.md, HINGE.md, STOW.md) is a worked, checked design, but it needs the swivel to be correct, and the swivel is costly.',
-          '- The **sliding arm** looks simpler and gives smaller trees, but it has not been designed.',
+          '- The **sliding arm** is designed in `SLIDE.md`: a two-stage telescoping dovetail slide, 4 printed parts and no screws, which builds all 10 trees.',
           '- The **keys and the quick-release idea** (SPOKES.md) are unaffected either way.']
     open(os.path.join(HERE, 'ARM_OPTIONS.md'), 'w').write('\n'.join(L) + '\n')
 

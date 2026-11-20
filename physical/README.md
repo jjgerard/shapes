@@ -29,6 +29,8 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `swivel.py` | Builds the swivel tip cartridge (arm tip, swivel hub, lids), checks free turn, detent and plumb child at every arm click, and runs the layouts. |
 | `swivel_loads.py` | Recomputes the loads with real masses and writes the "weight problem" section of `SWIVEL.md`. |
 | `SWIVEL.md` | Generated: cartridge design, checks, layout result, weight problem. Parts in `hinge/swivel/`. |
+| `slide.py` | Designs the sliding arm (two-stage telescoping dovetail slide with detents, mount and plug insert), checks all settings on the real meshes, and re-runs the layouts with its real outline. |
+| `SLIDE.md` | Generated: why a telescope, how it works, checks, loads, layouts, what is not settled. Parts in `hinge/slide/`. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):

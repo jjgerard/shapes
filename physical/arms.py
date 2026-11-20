@@ -90,6 +90,13 @@ def settings(lengths, angles):
 
 
 SLIDE_DROP, SLIDE_BEAM, SLIDE_STEM = 24.0, 8.0, 6.0   # a sliding arm: level to child top, beam height, stem width
+BEAM_FN = None   # optional: (px, py, ex, slot, nslots) -> the sliding arm's real beam outline (rail, bar with tail, ...)
+
+
+def slide_beam(px, py, ex, slot, nslots):
+    if BEAM_FN is not None:
+        return BEAM_FN(px, py, ex, slot, nslots)
+    return box(min(px, ex) - SLIDE_STEM / 2, py, max(px, ex) + SLIDE_STEM / 2, py + SLIDE_BEAM)
 
 
 def slide_settings(dxs):
@@ -159,7 +166,7 @@ def layout(node, S, stats, drop=40.0, top_k=10, park=False, tilt=False, tip=Fals
                 child = translate(sub, ex, ey)
                 if overlap_area(child, body) > 0.2:
                     continue
-                beam = box(min(px, ex) - SLIDE_STEM / 2, py, max(px, ex) + SLIDE_STEM / 2, py + SLIDE_BEAM)
+                beam = slide_beam(px, py, ex, slot, nslots)
                 stem = box(ex - SLIDE_STEM / 2, py + SLIDE_BEAM, ex + SLIDE_STEM / 2, ey)
                 check = unary_union([child, stem])             # beams of one piece sit in different planes: they never meet
                 opts.append((math.hypot(ex - tx, ey - (py + drop)), st, unary_union([check, beam]), check.buffer(GAP / 2), (px, py, ex, ey), beam, stem))
@@ -193,7 +200,7 @@ def layout(node, S, stats, drop=40.0, top_k=10, park=False, tilt=False, tip=Fals
             a = math.radians(st.angle)
             if st.dx is not None:
                 ex, ey = px + st.dx, py + SLIDE_DROP
-                arm = unary_union([box(min(px, ex) - SLIDE_STEM / 2, py, max(px, ex) + SLIDE_STEM / 2, py + SLIDE_BEAM),
+                arm = unary_union([slide_beam(px, py, ex, slot, nslots),
                                    box(ex - SLIDE_STEM / 2, py + SLIDE_BEAM, ex + SLIDE_STEM / 2, ey)])
             else:
                 ex, ey = px + st.length * math.sin(a), py + st.length * math.cos(a)
