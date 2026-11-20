@@ -21,7 +21,7 @@ import itertools, json, math, os, sys
 from dataclasses import dataclass
 from shapely.geometry import box, LineString, Point
 from shapely.ops import unary_union
-from shapely.affinity import translate
+from shapely.affinity import translate, rotate
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import spokes as sp
@@ -111,7 +111,10 @@ def target_offsets(subs, drop):
 _uid = itertools.count()
 
 
-def layout(node, S, stats, drop=40.0, top_k=10):
+PLUG_W, PLUG_LEN = 22.7, 12.0     # a dangling plug seen from the front
+
+
+def layout(node, S, stats, drop=40.0, top_k=10, park=False, tilt=False):
     """Returns (shape, ok, parts), in the node's frame: origin at the top
     centre of its body, y pointing down. Arms are snapped to the click
     settings S. parts = [(kind, geometry, info)] for drawing."""
@@ -125,7 +128,7 @@ def layout(node, S, stats, drop=40.0, top_k=10):
         return body, True, parts
     assign, _ = slot_assignment(node['t'], [k['t'] for k in kids])
     Sn = S[nslots] if isinstance(S, dict) else S          # settings for a piece with this many slots
-    subs = [layout(k, S, stats, drop, top_k) for k in kids]
+    subs = [layout(k, S, stats, drop, top_k, park, tilt) for k in kids]
     ok = all(s[1] for s in subs)
     shapes = [s[0] for s in subs]
     targets = target_offsets(shapes, drop)
@@ -139,13 +142,29 @@ def layout(node, S, stats, drop=40.0, top_k=10):
             ex, ey = px + st.length * math.sin(a), py + st.length * math.cos(a)
             if ey < py + 8:
                 continue
-            child = translate(sub, ex, ey)
+            # with tilt=True the child is rigid on the arm's end and turns with it
+            child = translate(rotate(sub, -st.angle, origin=(0, 0)) if tilt else sub, ex, ey)
             if overlap_area(child, body) > 0.2:
                 continue
             arm = LineString([(px, py), (ex, ey)]).buffer(ARM_T / 2).intersection(box(-1e4, py, 1e4, 1e4))
             shp = unary_union([child, arm])
             opts.append((math.hypot(ex - tx, ey - (py + drop)), st, shp, shp.buffer(GAP / 2), (px, py, ex, ey)))
         opts.sort(key=lambda o: o[0])
+        cands.append(opts)
+
+    # unused arms, if they stay on: each takes one click setting, with its bare plug hanging off the end
+    n_used = len(cands)
+    unused_slots = [i for i in range(nslots) if i not in assign] if park else []
+    for slot in unused_slots:
+        px, py = pivot_x(slot, nslots), BODY_H
+        opts = []
+        for st in Sn:
+            a = math.radians(st.angle)
+            ex, ey = px + st.length * math.sin(a), py + st.length * math.cos(a)
+            arm = LineString([(px, py), (ex, ey)]).buffer(ARM_T / 2).intersection(box(-1e4, py, 1e4, 1e4))
+            plug = box(ex - PLUG_W / 2, ey, ex + PLUG_W / 2, ey + PLUG_LEN)
+            shp = unary_union([arm, plug])
+            opts.append((0.0, st, shp, shp.buffer(GAP / 2), (px, py, ex, ey), plug))
         cands.append(opts)
 
     def search(k):
@@ -164,11 +183,15 @@ def layout(node, S, stats, drop=40.0, top_k=10):
     if found is None:
         for slot in assign: stats.append((node['t'], slot, nslots, Sn[-1]))
         return body, False, parts
-    for o, slot, (sub, _, sparts) in zip(found[1], assign, subs):
+    for o, slot in zip(found[1][n_used:], unused_slots):
+        st, (px, py, ex, ey) = o[1], o[4]
+        parts.append(('arm', LineString([(px, py), (ex, ey)]), (st, node['t'], slot, uid, None)))
+        parts.append(('plug', o[5], (node['t'], slot, uid)))
+    for o, slot, (sub, _, sparts) in zip(found[1][:n_used], assign, subs):
         st, (px, py, ex, ey) = o[1], o[4]
         stats.append((node['t'], slot, nslots, st))
         parts.append(('arm', LineString([(px, py), (ex, ey)]), (st, node['t'], slot, uid, sparts[0][2][1])))
-        parts += [(k, translate(g, ex, ey), i) for k, g, i in sparts]
+        parts += [(k, translate(rotate(g, -st.angle, origin=(0, 0)) if tilt else g, ex, ey), i) for k, g, i in sparts]
     return unary_union([body] + [o[2] for o in found[1]]), ok, parts
 
 
@@ -176,11 +199,11 @@ def evaluate_drop(trees, S, drop):
     return evaluate(trees, S, drop)
 
 
-def evaluate(trees, S, drop=40.0):
+def evaluate(trees, S, drop=40.0, park=False, tilt=False):
     results, stats = [], []
     for name, tr in trees:
         st = []
-        shape, ok, parts = layout(tr, S, st, drop)
+        shape, ok, parts = layout(tr, S, st, drop, park=park, tilt=tilt)
         results.append((name, ok, parts))
         stats += st
     return results, stats
@@ -223,6 +246,17 @@ def verify_parts(parts):
     for (c1, i1), (c2, i2) in itertools.combinations(arms, 2):
         if c1.distance(c2) < GAP - 0.01:
             bad.append(f'{i1[1]} arm / {i2[1]} arm only {c1.distance(c2):.1f} mm apart')
+    # bare plugs hanging off unused arms
+    for k, g, (t, slot, pu) in [p for p in parts if p[0] == 'plug']:
+        for uid, (bg, name) in bodies.items():
+            if uid != pu and g.distance(bg) < GAP - 0.01:
+                bad.append(f'bare {t} plug {g.distance(bg):.1f} mm from {name}')
+        for cap, (st, t2, slot2, pu2, cu2) in arms:
+            if (pu2, slot2) != (pu, slot) and g.distance(cap) < GAP - 0.01:
+                bad.append(f'bare {t} plug {g.distance(cap):.1f} mm from an arm')
+        for k2, g2, (t3, slot3, pu3) in [p for p in parts if p[0] == 'plug']:
+            if (pu3, slot3) != (pu, slot) and g is not g2 and g.distance(g2) < GAP - 0.01:
+                bad.append('two bare plugs too close')
     return bad
 
 

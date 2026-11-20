@@ -65,6 +65,7 @@ Independent check: for each tree the distances between parts were measured direc
 
 ## Things this does not settle
 
+- **Children are assumed to hang upright.** Every layout and size above assumes the child hangs plumb from the end of its arm. A plug fixed to the arm would tilt the child with the arm and the trees would sprawl (STOW.md measures it), so the arm tip needs a swivel that keeps it upright. That is not designed yet.
 - **Big X-bar trees are big.** The Level 1 target (37 pieces) and the question sentences are about 0.4 m wide and 0.65 to 1 m tall. They are fine on a floor or a long table, and impractical to lift whole. Single phrases (a DP, a VP) are small enough to pick up.
 - **Unused arms must stow.** The three-slot pieces are often used with one or two arms (NP uses only one of its three 16 times in the game's trees; TP leaves its middle arm empty in every X-bar tree). A plug is 22.7 mm wide and hinges are 13 mm apart, so a dangling arm would hit its neighbour. Options: fold the arm up flat against the back of the body (the body would need to be about 40 mm deep), or make arms removable on a keyed hub. I have not designed this yet.
 - **The hinge has to hold a hanging phrase.** HINGE.md works out the torque from these trees and designs a detent hinge for it.

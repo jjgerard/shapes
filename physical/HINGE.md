@@ -72,6 +72,6 @@ Test one lid thickness at a time (1.6, 2.0, 2.4 mm):
 
 - **Real hold.** The numbers above are a prediction; the test in the previous section is what decides the thickness.
 - **Assembly.** The coupon uses screws. The real piece needs a snap-on lid (or one lid carrying all three flexures) and a way for the hub to go in; and it must be strong enough that a student cannot pull the arm off.
-- **Unused arms** still need a stow position; the hinge turns ±50° and the slot opens ±82°, so a folded-back arm is not possible with this layout. The simplest answer is arms that can be taken off. With this design that means taking a lid off, so a quick-release version would have to be designed.
+- **Unused arms.** The hinge turns ±50° and the slot opens ±82°, so a folded-back arm is not possible. See STOW.md for what to do with them (arms that snap in and come off).
 - **Wear.** Printed flexures that are bent 0.5 mm every click will creep over time; the 50-cycle test in step 3 is a first look.
 - **Print resolution.** The groove is 1.2 mm wide and 0.86 mm deep, and the wedge tip is 0.5 mm; on a 0.4 mm nozzle that is two to three line widths. It may need a finer layer height or a slightly larger groove.

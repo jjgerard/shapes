@@ -268,12 +268,13 @@ Z_LO, Z_HI = -GAP, L_H + GAP                                      # housing span
 SCREWS = [(sx * 10.0, y) for sx in (-1, 1) for y in (4.0, 18.0)]
 
 
-def housing():
+def housing(slot_top=None):
+    slot_top = (ARM_Z + 0.4) if slot_top is None else slot_top
     blk = slab(-X_HALF, X_HALF, Y_MIN, Y_MAX, Z_LO, Z_HI)
     cuts = [cyl(R_B, Z_LO - 1, Z_HI + 1)]
     pts = [(0, 0)] + [(40 * math.cos(math.radians(-90 + a)), 40 * math.sin(math.radians(-90 + a)))
                       for a in np.linspace(-SLOT_HALF, SLOT_HALF, 60)]
-    sector = extrude_polygon(Polygon(pts), (ARM_Z + 0.4) - (Z_LO - 1), engine='earcut')
+    sector = extrude_polygon(Polygon(pts), slot_top - (Z_LO - 1), engine='earcut')
     sector.apply_translation([0, 0, Z_LO - 1])
     cuts.append(sector)
     cuts += [cyl(1.7, Z_LO - 1, Z_HI + 1, x, y, 24) for x, y in SCREWS]
@@ -606,8 +607,7 @@ def write_doc(req, table, clr, margin, edge, chk, corr, err, fails):
           '## What this does not settle\n',
           '- **Real hold.** The numbers above are a prediction; the test in the previous section is what decides the thickness.',
           '- **Assembly.** The coupon uses screws. The real piece needs a snap-on lid (or one lid carrying all three flexures) and a way for the hub to go in; and it must be strong enough that a student cannot pull the arm off.',
-          '- **Unused arms** still need a stow position; the hinge turns ±50° and the slot opens ±82°, so a folded-back arm is not possible with this layout. '
-          'The simplest answer is arms that can be taken off. With this design that means taking a lid off, so a quick-release version would have to be designed.',
+          '- **Unused arms.** The hinge turns ±50° and the slot opens ±82°, so a folded-back arm is not possible. See STOW.md for what to do with them (arms that snap in and come off).',
           '- **Wear.** Printed flexures that are bent 0.5 mm every click will creep over time; the 50-cycle test in step 3 is a first look.',
           '- **Print resolution.** The groove is 1.2 mm wide and 0.86 mm deep, and the wedge tip is 0.5 mm; on a 0.4 mm nozzle that is two to three line widths. It may need a finer layer height or a slightly larger groove.']
     if fails:
