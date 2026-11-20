@@ -156,6 +156,43 @@ def tile_mesh(shape, r, n_bottom, kind='phrase'):
     return H.fix(difference([m] + cuts, engine='manifold')), top, bots
 
 
+# ---------------------------------------------------------------- the abbreviation triangle
+# A wide, flat triangle for a stretch of words that is not analysed further. It hangs from a phrase by a stick to its apex, and the words
+# (word magnets) sit in a row under its base. Two sizes: small for one or two short words, large for up to about four.
+ABBR = {'small': (56.0, 26.0), 'large': (104.0, 32.0)}      # base, height (mm)
+
+
+def abbr_polys(size):
+    w, h = ABBR[size]
+    outer = Polygon([(0, -h / 2), (w / 2, h / 2), (-w / 2, h / 2)]).buffer(2.0, join_style=1)
+    return outer, None
+
+
+def abbr_top(outer):
+    return (0.0, outer.bounds[1] + 7.0)
+
+
+def tile_abbr(size):
+    """A solid triangle, 6 mm thick: a cup near the apex, board magnets in the two base corners (and one in the middle on the large one)."""
+    outer, _ = abbr_polys(size)
+    m = H.fix(extrude_polygon(outer, THICK, engine='earcut'))
+    top = abbr_top(outer)
+    cuts = []
+    sph = icosphere(subdivisions=3, radius=CUP_R); sph.apply_translation([top[0], top[1], THICK + 0.9]); cuts.append(sph)
+    jp = cylinder(radius=(MAG_JOINT + 0.2) / 2, height=3.9, sections=24); jp.apply_translation([top[0], top[1], 3.8 / 2 - 0.1]); cuts.append(jp)
+    w, h = ABBR[size]
+    ybot = outer.bounds[3]
+    py = ybot - 6.0
+    pos = []
+    for x in np.arange(w / 2, 0, -0.5):                         # as far into the corners as the outline allows
+        if outer.buffer(-1.0).contains(Point(x, py).buffer(3.1)): pos = [-x, x]; break
+    assert pos, ('no room for board magnets', size)
+    if size == 'large': pos.append(0.0)
+    for px in pos:
+        pk = cylinder(radius=3.1, height=2.2, sections=32); pk.apply_translation([px, py, 0.9]); cuts.append(pk)
+    return H.fix(difference([m] + cuts, engine='manifold')), top, outer, pos
+
+
 def stick_mesh(L):
     bar = tbox(extents=[L, STICK_W, STICK_T]); bar.apply_translation([L / 2, 0, STICK_T / 2])
     balls = []

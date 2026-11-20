@@ -8,8 +8,9 @@ This replaces the hanging design (`SLIDE.md`, `BODY.md`): small flat tiles in th
 
 | Part | What it is |
 |---|---|
-| **Tile** (`tile_<type>.stl`) | the game's silhouette, 6 mm thick: star (C), square (T), heart (V), circle (D), triangle (N), rectangle (P), pentagon (Adj), diamond (Adv). **Phrase 30 mm, bar 24 mm, head 18 mm**, so level shows in size. A cup (2.7 mm radius, 1.8 mm deep) in the front face at its top, for the stick to its parent, and one at each bottom port, for sticks to its children (1 to 3). A pocket in the back for the board magnet (8 mm, 6 mm on heads) and one behind each cup for a 3 × 1.5 mm joint magnet. 22 tile types: **both modes share the heads** |
+| **Tile** (`tile_<type>.stl`) | the game's silhouette, 6 mm thick: star (C), square (T), heart (V), circle (D), triangle (N), rectangle (P), pentagon (Adj), diamond (Adv). **Phrase 30 mm, bar 24 mm, head 18 mm**, so level shows in size. A cup (2.7 mm radius, 1.8 mm deep) in the front face at its top, for the stick to its parent, and one at each bottom port, for sticks to its children (1 to 3). A pocket in the back for the board magnet (8 mm, 6 mm on heads) and one behind each cup for a 3 × 1.5 mm joint magnet. 24 tile types including the two triangles: **both modes share the heads** |
 | **Stick** (`stick_<length>.stl`) | a bar 4 × 3 mm between two balls, **ball centres 20, 40, 60 mm apart**. Each end has a 4.8 mm hole for a **5 mm steel ball pressed in**; the ball is what drops into a cup, and the joint magnet behind the cup pulls it home. A stick turns freely in the plane about either ball, so any angle works |
+| **Abbreviation triangle** (`tile_abbr_small.stl`, `tile_abbr_large.stl`) | a wide, flat grey triangle for a stretch of words you do not analyse further ("the fluffy cat" under an NP). It hangs from a phrase by a stick into a cup near its apex, and **the word magnets sit in a row under its base**, as in the usual notation. Small: 60 mm wide, for one or two short words; large: 108 mm, for up to about four. It stands in for any phrase tile, and it joins like any other tile |
 | **Word magnet** | a loose magnet like a poetry set, about 22 to 40 mm × 10 mm, one per word; it sits under a head. It is not printed here |
 
 ## Which stick lengths
@@ -18,16 +19,16 @@ Sticks swing freely, so the layout is only limited by the lengths on offer. I la
 
 | Stick lengths | Trees built | Total area of the ten trees |
 |---|---|---|
-| 30 mm | 6 of 10 | 242k mm² |
-| 40 mm | 7 of 10 | 373k mm² |
-| 50 mm | 8 of 10 | 740k mm² |
-| 20, 40 mm | 9 of 10 | 412k mm² |
-| 20, 50 mm | 10 of 10 | 594k mm² |
-| 25, 60 mm | 10 of 10 | 695k mm² |
-| 20, 40, 60 mm | 10 of 10 | 538k mm² |
-| 30, 60, 90 mm | 10 of 10 | 745k mm² |
+| 30 mm | 6 of 10 | 239k mm² |
+| 40 mm | 7 of 10 | 370k mm² |
+| 50 mm | 8 of 10 | 734k mm² |
+| 20, 40 mm | 10 of 10 | 506k mm² |
+| 20, 50 mm | 10 of 10 | 554k mm² |
+| 25, 60 mm | 10 of 10 | 636k mm² |
+| 20, 40, 60 mm | 10 of 10 | 509k mm² |
+| 30, 60, 90 mm | 10 of 10 | 741k mm² |
 
-**Two lengths (20 and 50 mm) are enough; three (20, 40, 60 mm) make the trees about 10% smaller, and are what I chose.** One stick length alone builds at most 8 of 10.
+**Two lengths (20 and 40 mm) are enough for the game's trees.** I keep a third, 60 mm, as a spare reach for other trees (the game's trees use one of them at most). One stick length alone builds at most 8 of 10.
 
 ![trees](whiteboard_trees.png)
 
@@ -37,48 +38,39 @@ Sizes of the ten trees with sticks of 20, 40, 60 mm (mm):
 |---|---|
 | prex · L1 four-pieces | 174 × 135 |
 | prex · L1 one-more-branch | 217 × 175 |
-| prex · L2 the-cat | 69 × 65 |
-| prex · L2 the-fluffy-cat-will-jump | 156 × 195 |
+| prex · L2 the-cat | 65 × 65 |
+| prex · L2 the-fluffy-cat-will-jump | 136 × 185 |
 | xbar · L1 four-pieces | 99 × 138 |
 | xbar · L1 one-more-branch | 283 × 528 |
-| xbar · L2 the-cat | 69 × 181 |
-| xbar · L2 the-cat-chased-the-mouse | 187 × 329 |
-| xbar · L2 did-the-cat-chase-the-mouse | 197 × 437 |
-| xbar · L2 which-mouse-did-the-cat-chase | 267 × 445 |
+| xbar · L2 the-cat | 66 × 181 |
+| xbar · L2 the-cat-chased-the-mouse | 170 × 329 |
+| xbar · L2 did-the-cat-chase-the-mouse | 181 × 422 |
+| xbar · L2 which-mouse-did-the-cat-chase | 249 × 445 |
 
-## What a student's set needs
+## What a set needs
 
-The most any one tree uses (the two modes never run at once, so the sets are merged): **41 tiles**, sticks: 30 × 20 mm, 6 × 40 mm, 2 × 60 mm, plus word magnets. Mass of a tile about 1.8 g (PETG, 50% fill); a stick is under 1 g.
+The game's ten trees need at most the left column below (the two modes never run at once, so they share one count). **A set should have more, so an instructor can build other trees and options, so the recommended set (right column) has at least three of every tile type** and extra sticks. It is **78 tiles** (a mass of about 159 g of PETG at 50% fill) and 61 sticks: 40 × 20 mm, 15 × 40 mm, 6 × 60 mm. The most sticks any one game tree uses is 30 × 20 mm, 6 × 40 mm, 1 × 60 mm. Word magnets: as many as the sentences you use need, plus spare blanks to write on.
 
-| Tile | Most in one tree |
-|---|---|
-| Adj1 | 1 |
-| Adj2 | 1 |
-| Adv1 | 1 |
-| Adv2 | 1 |
-| C1 | 1 |
-| C1.5 | 1 |
-| C2 | 1 |
-| D1 | 4 |
-| D1.5 | 4 |
-| D2 | 4 |
-| N1 | 4 |
-| N1.5 | 4 |
-| N2 | 4 |
-| P1 | 1 |
-| P1.5 | 1 |
-| P2 | 1 |
-| T1 | 1 |
-| T1.5 | 1 |
-| T2 | 1 |
-| V1 | 1 |
-| V1.5 | 2 |
-| V2 | 1 |
+| Tile | Game trees need | Recommended |
+|---|---|---|
+| Adj1 | 1 | 3 |\n| Adj2 | 1 | 3 |\n| Adv1 | 1 | 3 |\n| Adv2 | 1 | 3 |\n| C1 | 1 | 3 |\n| C1.5 | 1 | 3 |\n| C2 | 1 | 3 |\n| D1 | 4 | 4 |\n| D1.5 | 4 | 4 |\n| D2 | 4 | 4 |\n| N1 | 4 | 4 |\n| N1.5 | 4 | 4 |\n| N2 | 4 | 4 |\n| P1 | 1 | 3 |\n| P1.5 | 1 | 3 |\n| P2 | 1 | 3 |\n| T1 | 1 | 3 |\n| T1.5 | 1 | 3 |\n| T2 | 1 | 3 |\n| V1 | 1 | 3 |\n| V1.5 | 2 | 3 |\n| V2 | 1 | 3 |\n| abbr_large | 0 | 3 |\n| abbr_small | 0 | 3 |
+
+![the set](whiteboard_kit.png)
+
+## More renders
+
+![more trees](whiteboard_trees_2.png)
+
+![abbreviation triangles](whiteboard_abbrev.png)
+
+![the biggest tree](whiteboard_big_tree.png)
+
+![from the side](whiteboard_angle.png)
 
 ## What the script checked on real meshes
 
-- All 22 tiles and the sticks are watertight solids.
-- **Ten trees assembled from the meshes** (tiles with their cups and pockets, sticks with their steel balls in, word magnets): 324 parts, 288 close pairs tested; the largest overlap between any two is **0.000 mm³**, with 0 problems. That includes every ball in its cup (ball 2.5 mm radius against a cup of 2.7 mm), every stick lying 0.15 mm above a tile's face, and every stick against its neighbours.
+- All 24 tiles (including the two abbreviation triangles) and the sticks are watertight solids.
+- **Ten game trees and two abbreviated variants assembled from the meshes** (tiles with their cups and pockets, sticks with their steel balls in, word magnets): 367 parts, 320 close pairs tested; the largest overlap between any two is **0.000 mm³**, with 0 problems. That includes every ball in its cup (ball 2.5 mm radius against a cup of 2.7 mm), every stick lying 0.15 mm above a tile's face, and every stick against its neighbours.
 - An independent distance check of the layouts (tiles and word magnets at least 4 mm apart, a stick touching only its own two tiles and no other stick): 0 problems for every set above.
 
 ## What this does not settle
