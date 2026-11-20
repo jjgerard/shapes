@@ -26,6 +26,9 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `ARM_OPTIONS.md` | Generated: the comparison, the swivel's load, and what the sliding model leaves out. |
 | `fortify.py` | Finds where the arm would break (hand calculations from the game's loads plus a shove) and builds and checks a fortified version. |
 | `FORTIFY.md` | Generated: break points, safety factors before and after, and what changed. Parts in `hinge/fortified/`. |
+| `swivel.py` | Builds the swivel tip cartridge (arm tip, swivel hub, lids), checks free turn, detent and plumb child at every arm click, and runs the layouts. |
+| `swivel_loads.py` | Recomputes the loads with real masses and writes the "weight problem" section of `SWIVEL.md`. |
+| `SWIVEL.md` | Generated: cartridge design, checks, layout result, weight problem. Parts in `hinge/swivel/`. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):
