@@ -132,18 +132,26 @@ def board(path):
 
 
 # ------------------------------------------------------------------ 2. the joint
-def tile_mesh(shape, r, n_bottom, color=None):
+MAG_BOARD = {'phrase': 8.0, 'bar': 8.0, 'head-x': 6.0, 'head-xp': 6.0}      # the board magnet's diameter (mm), by tile kind
+MAG_JOINT = 3.0                                                               # the joint magnet behind each cup: 3 x 1.5 mm
+
+
+def tile_mesh(shape, r, n_bottom, kind='phrase'):
+    """A tile: the game's silhouette, 6 mm thick, a shallow cup at its top port and one at each bottom port in the front face,
+    a pocket for the board magnet in the back, and a pocket for a small joint magnet behind each cup."""
     poly = shape_poly(shape, r)
-    m = extrude_polygon(poly, THICK, engine='earcut')
-    m = H.fix(m)
+    m = H.fix(extrude_polygon(poly, THICK, engine='earcut'))
     top, bots = ports(poly, n_bottom)
     cuts = []
     for (px, py) in [top] + bots:
-        s = icosphere(subdivisions=3, radius=CUP_R)
-        s.apply_translation([px, py, THICK + 0.9])          # a shallow cup (1.8 mm deep) in the front face, near the edge
-        cuts.append(s)
-    # a magnet pocket in the back
-    pocket = trimesh.creation.cylinder(radius=4.1, height=2.2, sections=40); pocket.apply_translation([0, 0, 0.6])
+        sph = icosphere(subdivisions=3, radius=CUP_R)
+        sph.apply_translation([px, py, THICK + 0.9])              # a shallow cup (1.8 mm deep) in the front face, near the edge
+        cuts.append(sph)
+        jp = cylinder(radius=(MAG_JOINT + 0.2) / 2, height=3.9, sections=24)      # from the back to 0.3 mm behind the cup floor
+        jp.apply_translation([px, py, 3.8 / 2 - 0.1])
+        cuts.append(jp)
+    d = MAG_BOARD.get(kind, 8.0)
+    pocket = cylinder(radius=(d + 0.2) / 2, height=2.2, sections=40); pocket.apply_translation([0, 0, 0.9])
     cuts.append(pocket)
     return H.fix(difference([m] + cuts, engine='manifold')), top, bots
 
@@ -167,8 +175,8 @@ def joint(path):
     def add(m, col):
         meshes.append(m); cols.append(np.tile(np.asarray(col, float), (len(m.faces), 1)))
     hexrgb = lambda hx: np.array([int(hx[i:i + 2], 16) for i in (1, 3, 5)], float) / 255
-    par, ptop, pbots = tile_mesh('square', 15, 3)             # a TP
-    chi, ctop, cbots = tile_mesh('triangle', 12, 2)           # an NP
+    par, ptop, pbots = tile_mesh('square', 15, 3, 'phrase')             # a TP
+    chi, ctop, cbots = tile_mesh('triangle', 12, 2, 'phrase')           # an NP
     px, py = 0.0, 0.0
     a = (px + pbots[1][0], py + pbots[1][1])                  # the parent's middle bottom cup
     L = 30.0
