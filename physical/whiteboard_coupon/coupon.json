@@ -1,0 +1,67 @@
+{
+ "files": {
+  "coupon_cups.stl": [
+   50.0,
+   18.0,
+   6.0
+  ],
+  "coupon_pockets.stl": [
+   50.0,
+   18.0,
+   6.0
+  ],
+  "coupon_board.stl": [
+   58.0,
+   14.0,
+   6.0
+  ],
+  "coupon_stick_47.stl": [
+   28.0,
+   4.0,
+   3.0
+  ],
+  "coupon_stick_48.stl": [
+   28.0,
+   4.0,
+   3.0
+  ],
+  "coupon_stick_49.stl": [
+   28.0,
+   4.0,
+   3.0
+  ],
+  "kit_tile_N1.stl": [
+   31.7,
+   27.7,
+   6.0
+  ],
+  "kit_tile_N2.stl": [
+   19.0,
+   16.6,
+   6.0
+  ],
+  "kit_tile_abbr_small.stl": [
+   60.0,
+   30.0,
+   6.0
+  ],
+  "kit_stick_20.stl": [
+   28.0,
+   4.0,
+   3.0
+  ],
+  "kit_stick_40.stl": [
+   48.0,
+   4.0,
+   3.0
+  ]
+ },
+ "seat": {
+  "coupon_cups.stl x=-14": 0.0,
+  "coupon_cups.stl x=+0": 0.0,
+  "coupon_cups.stl x=+14": 0.0,
+  "coupon_pockets.stl x=-14": 0.0,
+  "coupon_pockets.stl x=+0": 0.0,
+  "coupon_pockets.stl x=+14": 0.0
+ }
+}
