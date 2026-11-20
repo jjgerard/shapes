@@ -30,6 +30,31 @@
    4.0,
    3.0
   ],
+  "coupon_snap_cups.stl": [
+   50.0,
+   18.0,
+   6.0
+  ],
+  "coupon_snap_cups_slit.stl": [
+   50.0,
+   18.0,
+   6.0
+  ],
+  "coupon_snap_stick_50.stl": [
+   28.0,
+   5.0,
+   7.1
+  ],
+  "coupon_snap_stick_49.stl": [
+   28.0,
+   4.9,
+   7.1
+  ],
+  "coupon_flat.stl": [
+   32.0,
+   32.0,
+   6.0
+  ],
   "kit_tile_N1.stl": [
    31.7,
    27.7,
@@ -63,5 +88,31 @@
   "coupon_pockets.stl x=-14": 0.0,
   "coupon_pockets.stl x=+0": 0.0,
   "coupon_pockets.stl x=+14": 0.0
+ },
+ "snap": {
+  "coupon_snap_cups.stl ring 4.85 mm": {
+   "seated": 0.0,
+   "at_neck": 0.14488580502280138
+  },
+  "coupon_snap_cups.stl ring 4.70 mm": {
+   "seated": 0.0,
+   "at_neck": 0.4936924985142876
+  },
+  "coupon_snap_cups.stl ring 4.55 mm": {
+   "seated": 0.0,
+   "at_neck": 0.9886959246435177
+  },
+  "coupon_snap_cups_slit.stl ring 4.85 mm": {
+   "seated": 0.0,
+   "at_neck": 0.13297737331380452
+  },
+  "coupon_snap_cups_slit.stl ring 4.70 mm": {
+   "seated": 0.0,
+   "at_neck": 0.4543742700767126
+  },
+  "coupon_snap_cups_slit.stl ring 4.55 mm": {
+   "seated": 0.0,
+   "at_neck": 0.9095093271197593
+  }
  }
 }
