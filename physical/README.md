@@ -22,6 +22,8 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `hinge/` | The hinge coupon: `hinge_housing.stl`, `hinge_hub_arm.stl`, three lid thicknesses `hinge_lid_t*.stl`, plus `torque.png` and `parts.png`. |
 | `stow.py` | What to do with unused arms: tests leaving them on, designs a snap-in arm, builds and checks the parts, and measures the tilting-children problem. |
 | `STOW.md` | Generated: the findings and the snap-in arm design. |
+| `arm_options.py` | Compares ways for the arm to move (swing, swing with a swivel, slide) on every game tree. |
+| `ARM_OPTIONS.md` | Generated: the comparison, the swivel's load, and what the sliding model leaves out. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):

@@ -78,6 +78,7 @@ def load_trees():
 class Setting:
     length: float
     angle: float          # degrees from straight down, positive = to the right
+    dx: float = None      # set for a sliding arm: the child's sideways offset (it never tilts)
 
     @property
     def cost(self):
@@ -86,6 +87,13 @@ class Setting:
 
 def settings(lengths, angles):
     return sorted((Setting(l, a) for l in lengths for a in angles), key=lambda s: (s.cost, s.length))
+
+
+SLIDE_DROP, SLIDE_BEAM, SLIDE_STEM = 24.0, 8.0, 6.0   # a sliding arm: level to child top, beam height, stem width
+
+
+def slide_settings(dxs):
+    return sorted((Setting(abs(d), 0.0, d) for d in dxs), key=lambda t: (abs(t.dx), t.dx))
 
 
 def overlap_area(a, b):
@@ -112,9 +120,11 @@ _uid = itertools.count()
 
 
 PLUG_W, PLUG_LEN = 22.7, 12.0     # a dangling plug seen from the front
+TIP_DROP = 28.0                   # swivel axis to the top of the child: the stem that carries the plug
+TIP_BACK, TIP_FWD, TIP_HALF = 21.0, 7.6, 12.5   # the swivel housing: behind / ahead of its axis, half-width
 
 
-def layout(node, S, stats, drop=40.0, top_k=10, park=False, tilt=False):
+def layout(node, S, stats, drop=40.0, top_k=10, park=False, tilt=False, tip=False):
     """Returns (shape, ok, parts), in the node's frame: origin at the top
     centre of its body, y pointing down. Arms are snapped to the click
     settings S. parts = [(kind, geometry, info)] for drawing."""
@@ -128,7 +138,7 @@ def layout(node, S, stats, drop=40.0, top_k=10, park=False, tilt=False):
         return body, True, parts
     assign, _ = slot_assignment(node['t'], [k['t'] for k in kids])
     Sn = S[nslots] if isinstance(S, dict) else S          # settings for a piece with this many slots
-    subs = [layout(k, S, stats, drop, top_k, park, tilt) for k in kids]
+    subs = [layout(k, S, stats, drop, top_k, park, tilt, tip) for k in kids]
     ok = all(s[1] for s in subs)
     shapes = [s[0] for s in subs]
     targets = target_offsets(shapes, drop)
@@ -137,17 +147,38 @@ def layout(node, S, stats, drop=40.0, top_k=10, park=False, tilt=False):
     for sub, slot, tx in zip(shapes, assign, targets):
         px, py = pivot_x(slot, nslots), BODY_H
         opts = []
-        for st in Sn:
+        for st in (S[(nslots, slot)] if isinstance(S, dict) and (nslots, slot) in S else Sn):   # per-slot settings, if given
             a = math.radians(st.angle)
-            ex, ey = px + st.length * math.sin(a), py + st.length * math.cos(a)
+            if st.dx is not None:
+                ex, ey = px + st.dx, py + SLIDE_DROP
+            else:
+                ex, ey = px + st.length * math.sin(a), py + st.length * math.cos(a)
             if ey < py + 8:
                 continue
-            # with tilt=True the child is rigid on the arm's end and turns with it
-            child = translate(rotate(sub, -st.angle, origin=(0, 0)) if tilt else sub, ex, ey)
+            if st.dx is not None:
+                child = translate(sub, ex, ey)
+                if overlap_area(child, body) > 0.2:
+                    continue
+                beam = box(min(px, ex) - SLIDE_STEM / 2, py, max(px, ex) + SLIDE_STEM / 2, py + SLIDE_BEAM)
+                stem = box(ex - SLIDE_STEM / 2, py + SLIDE_BEAM, ex + SLIDE_STEM / 2, ey)
+                check = unary_union([child, stem])             # beams of one piece sit in different planes: they never meet
+                opts.append((math.hypot(ex - tx, ey - (py + drop)), st, unary_union([check, beam]), check.buffer(GAP / 2), (px, py, ex, ey), beam, stem))
+                continue
+            # with tilt=True the child is rigid on the arm's end and turns with it;
+            # with tip=True a swivel cartridge sits on the arm's end and the child hangs plumb below it
+            use_tip = tip and st.length > 30            # stubs never tilt, so they carry no swivel
+            if use_tip:
+                child = translate(sub, ex, ey + TIP_DROP)
+            else:
+                child = translate(rotate(sub, -st.angle, origin=(0, 0)) if tilt else sub, ex, ey)
             if overlap_area(child, body) > 0.2:
                 continue
             arm = LineString([(px, py), (ex, ey)]).buffer(ARM_T / 2).intersection(box(-1e4, py, 1e4, 1e4))
-            shp = unary_union([child, arm])
+            tipgeom = []
+            if use_tip:
+                housing = rotate(box(-TIP_HALF, -TIP_BACK, TIP_HALF, TIP_FWD), -st.angle, origin=(0, 0))
+                tipgeom = [translate(housing, ex, ey), box(ex - 3.0, ey, ex + 3.0, ey + TIP_DROP)]
+            shp = unary_union([child, arm] + tipgeom)
             opts.append((math.hypot(ex - tx, ey - (py + drop)), st, shp, shp.buffer(GAP / 2), (px, py, ex, ey)))
         opts.sort(key=lambda o: o[0])
         cands.append(opts)
@@ -158,10 +189,15 @@ def layout(node, S, stats, drop=40.0, top_k=10, park=False, tilt=False):
     for slot in unused_slots:
         px, py = pivot_x(slot, nslots), BODY_H
         opts = []
-        for st in Sn:
+        for st in (S[(nslots, slot)] if isinstance(S, dict) and (nslots, slot) in S else Sn):
             a = math.radians(st.angle)
-            ex, ey = px + st.length * math.sin(a), py + st.length * math.cos(a)
-            arm = LineString([(px, py), (ex, ey)]).buffer(ARM_T / 2).intersection(box(-1e4, py, 1e4, 1e4))
+            if st.dx is not None:
+                ex, ey = px + st.dx, py + SLIDE_DROP
+                arm = unary_union([box(min(px, ex) - SLIDE_STEM / 2, py, max(px, ex) + SLIDE_STEM / 2, py + SLIDE_BEAM),
+                                   box(ex - SLIDE_STEM / 2, py + SLIDE_BEAM, ex + SLIDE_STEM / 2, ey)])
+            else:
+                ex, ey = px + st.length * math.sin(a), py + st.length * math.cos(a)
+                arm = LineString([(px, py), (ex, ey)]).buffer(ARM_T / 2).intersection(box(-1e4, py, 1e4, 1e4))
             plug = box(ex - PLUG_W / 2, ey, ex + PLUG_W / 2, ey + PLUG_LEN)
             shp = unary_union([arm, plug])
             opts.append((0.0, st, shp, shp.buffer(GAP / 2), (px, py, ex, ey), plug))
@@ -191,7 +227,15 @@ def layout(node, S, stats, drop=40.0, top_k=10, park=False, tilt=False):
         st, (px, py, ex, ey) = o[1], o[4]
         stats.append((node['t'], slot, nslots, st))
         parts.append(('arm', LineString([(px, py), (ex, ey)]), (st, node['t'], slot, uid, sparts[0][2][1])))
-        parts += [(k, translate(rotate(g, -st.angle, origin=(0, 0)) if tilt else g, ex, ey), i) for k, g, i in sparts]
+        if st.dx is not None:
+            parts.append(('beam', o[5], (node['t'], slot, uid, sparts[0][2][1])))
+            parts.append(('stem', o[6], (node['t'], slot, uid, sparts[0][2][1])))
+        if tip and st.length > 30:
+            parts += [(k, translate(g, ex, ey + TIP_DROP), i) for k, g, i in sparts]
+            housing = rotate(box(-TIP_HALF, -TIP_BACK, TIP_HALF, TIP_FWD), -st.angle, origin=(0, 0))
+            parts.append(('tip', unary_union([translate(housing, ex, ey), box(ex - 3.0, ey, ex + 3.0, ey + TIP_DROP)]), (node['t'], slot, uid)))
+        else:
+            parts += [(k, translate(rotate(g, -st.angle, origin=(0, 0)) if tilt else g, ex, ey), i) for k, g, i in sparts]
     return unary_union([body] + [o[2] for o in found[1]]), ok, parts
 
 
@@ -199,11 +243,11 @@ def evaluate_drop(trees, S, drop):
     return evaluate(trees, S, drop)
 
 
-def evaluate(trees, S, drop=40.0, park=False, tilt=False):
+def evaluate(trees, S, drop=40.0, park=False, tilt=False, tip=False):
     results, stats = [], []
     for name, tr in trees:
         st = []
-        shape, ok, parts = layout(tr, S, st, drop, park=park, tilt=tilt)
+        shape, ok, parts = layout(tr, S, st, drop, park=park, tilt=tilt, tip=tip)
         results.append((name, ok, parts))
         stats += st
     return results, stats
@@ -246,6 +290,18 @@ def verify_parts(parts):
     for (c1, i1), (c2, i2) in itertools.combinations(arms, 2):
         if c1.distance(c2) < GAP - 0.01:
             bad.append(f'{i1[1]} arm / {i2[1]} arm only {c1.distance(c2):.1f} mm apart')
+    # swivel cartridges on the arm tips
+    for k, g, (t, slot, pu) in [p for p in parts if p[0] == 'tip']:
+        child_uid = next((i[4] for kk, gg, i in parts if kk == 'arm' and i[3] == pu and i[2] == slot), None)
+        for uid, (bg, name) in bodies.items():
+            if uid not in (pu, child_uid) and g.distance(bg) < GAP - 0.01:
+                bad.append(f'swivel on {t} arm {g.distance(bg):.1f} mm from {name}')
+        for cap, (st2, t2, slot2, pu2, cu2) in arms:
+            if (pu2, slot2) != (pu, slot) and g.distance(cap) < GAP - 0.01:
+                bad.append(f'swivel on {t} arm {g.distance(cap):.1f} mm from another arm')
+        for k2, g2, (t3, slot3, pu3) in [p for p in parts if p[0] == 'tip']:
+            if (pu3, slot3) != (pu, slot) and g.distance(g2) < GAP - 0.01:
+                bad.append('two swivels too close')
     # bare plugs hanging off unused arms
     for k, g, (t, slot, pu) in [p for p in parts if p[0] == 'plug']:
         for uid, (bg, name) in bodies.items():
