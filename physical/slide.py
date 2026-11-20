@@ -93,11 +93,13 @@ def prism_xy(pts, z0, z1):
     return H.fix(m)
 
 
-def tongue(y0, x0=0.0, x1=TONG_LEN):
+def tongue(y0, x0=0.0, x1=None):
+    x1 = TONG_LEN if x1 is None else x1
     return prism_yz([(y0 - 0.01, -NECK / 2), (y0 - 0.01, NECK / 2), (y0 + TD, HEAD / 2), (y0 + TD, -HEAD / 2)], x0, x1)
 
 
-def groove(y0, x0=-1.0, x1=GROOVE_END):
+def groove(y0, x0=-1.0, x1=None):
+    x1 = GROOVE_END if x1 is None else x1
     hm = NECK / 2 + VGAP + CLR                   # mouth half width: the tongue's flank, one layer gap and CLR away
     return prism_yz([(y0 - 0.5, -hm), (y0 - 0.5, hm), (y0, hm), (y0 + GD, hm + GD), (y0 + GD, -(hm + GD)), (y0, -hm)], x0, x1)
 

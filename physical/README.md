@@ -31,6 +31,8 @@ pieces, so a head can't skip the bar level in X′ mode.
 | `SWIVEL.md` | Generated: cartridge design, checks, layout result, weight problem. Parts in `hinge/swivel/`. |
 | `slide.py` | Designs the sliding arm (two-stage telescoping dovetail slide with detents, mount and plug insert), checks all settings on the real meshes, and re-runs the layouts with its real outline. |
 | `SLIDE.md` | Generated: why a telescope, how it works, checks, loads, layouts, what is not settled. Parts in `hinge/slide/`. |
+| `slide_coupon.py` | Builds the slide test coupon: the sliding arm at a third of the length in three clearance sets, plus a mount block. Print this first. |
+| `SLIDE_COUPON.md` | Generated: what to print, what to test and write down, how to read the results. STLs in `slide_coupon/`. |
 | `out/spokes.json` | Spoke angles and key codes, for generating printable files later. |
 
 Regenerate after any change to the game's rules (needs `shapely`):
