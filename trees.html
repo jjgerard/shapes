@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tree studio · Shapes and Language</title>
-<link rel="stylesheet" href="trees.css?v=2">
+<link rel="stylesheet" href="trees.css?v=3">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="theme-color" content="#4b2340">
 </head>
@@ -102,6 +102,9 @@
       </div>
       <div id="hint"></div>
       <svg id="board" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M36 0H0V36" fill="none" class="grid-line"/></pattern>
+        </defs>
         <g id="world">
           <g id="layer-paper"></g>
           <g id="layer-tree"></g>
@@ -118,7 +121,7 @@
         <section class="card" id="sec-sel">
           <h4>Selection</h4>
 
-          <div id="sel-none" class="muted">Click a node to select it. Drag to move it (with everything under it; hold <b>Shift</b> to move just that node). Double-click to retype it.</div>
+          <div id="sel-none" class="muted">Click a node to select it. Drag it to pull it off and join it somewhere else (<b>Build</b>) or just slide it (<b>Nudge</b>); either way everything under it comes along. Double-click to retype it.</div>
 
           <div id="sel-node" hidden>
             <label class="f">Label <input type="text" id="n-label" spellcheck="false"></label>
@@ -271,6 +274,6 @@
   <form method="dialog" class="end"><button>Got it</button></form>
 </dialog>
 
-<script src="trees.js?v=2"></script>
+<script src="trees.js?v=3"></script>
 </body>
 </html>

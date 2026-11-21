@@ -558,11 +558,11 @@ function render() {
   paintPaper();
   paintOverlay();
 }
-function paintPaper() {
+function paintPaper() {                  // just the sandbox's faint grid; the page edge is only where the export is cropped
   while (gPaper.firstChild) gPaper.removeChild(gPaper.firstChild);
-  const pb = pageBox();
-  mk('rect', { class: 'paper', x: pb.x, y: pb.y, width: pb.w, height: pb.h, fill: doc.opts.transparent ? '#f3f1ec' : doc.opts.bg }, gPaper);
+  mk('rect', { x: -6000, y: -6000, width: 12000, height: 12000, fill: 'url(#grid)' }, gPaper);
 }
+
 function paintOverlay() {
   while (gOver.firstChild) gOver.removeChild(gOver.firstChild);
   if (preview) {

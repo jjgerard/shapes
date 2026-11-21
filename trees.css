@@ -7,7 +7,7 @@
   --panel-2: #efece4;
   --line: #d8d3c7;
   --accent: #4b2340;
-  --board: #e9e6df;
+  --board: #fbfbf9;
   --bad: #b3261e;
 }
 * { box-sizing: border-box; }
@@ -109,8 +109,7 @@ button.small { padding: 4px 10px; font-size: 12px; border: 1px solid var(--line)
   position: absolute; z-index: 4; border: 2px solid var(--accent); border-radius: 4px; background: #fff; padding: 0 4px; text-align: center; outline: none;
 }
 #edit[hidden] { display: none; }
-.paper { fill: #fff; stroke: #cfc9bb; stroke-width: 0.5; vector-effect: non-scaling-stroke; }
-.paper.clear { fill: url(#checks); }
+#board .grid-line { stroke: #ecebe5; stroke-width: 1; }
 .hit { fill: transparent; cursor: pointer; }
 .hit:hover { fill: rgba(75,35,64,.07); }
 #board.armed .hit:hover { fill: rgba(47,125,79,.2); }
