@@ -4,7 +4,7 @@
 (() => {
 'use strict';
 
-const STORE = 'shapes-trees-v1';
+const STORE = 'shapes-trees-v2';     // v2: starts blank, words sit under their category
 const NS = 'http://www.w3.org/2000/svg';
 const $ = id => document.getElementById(id);
 const mk = (tag, attrs, parent) => {
@@ -1014,7 +1014,7 @@ $('btn-redo').addEventListener('click', redo);
 const EXAMPLES = [
   { name: 'What did John buy? (wh-movement, arrows)',
     src: "[CP [DP_i [D' [D what]]] [C' [C did_j] [TP [DP [D' [D John]]] [T' [T t_j] [VP [V' [V buy] [DP t_i]]]]]]]",
-    arrows: [['t_j', 'did_j', 16], ['t_i', 'DP_i', 32]], align: true },
+    arrows: [['t_j', 'did_j', 16], ['t_i', 'DP_i', 32]] },
   { name: 'The cat sat on the mat (triangle)',
     src: '[S [NP [Det the] [N cat]] [VP [V sat] [PP [P on] [NP \\roof the mat]]]]', arrows: [] },
   { name: 'LaTeX qtree: The dog barks',
@@ -1339,15 +1339,7 @@ function start() {
     fmt = saved.fmt || 'bracket';
     if (saved.ui) ui = Object.assign(ui, saved.ui);
   } else {
-    doc = { nextId: 1, roots: [], arrows: [], opts: DEFAULT_OPTS() };
-    const ex = EXAMPLES[0];
-    doc.roots = parseTree(ex.src);
-    autoPlace();
-    doc.opts.alignTerm = !!ex.align;
-    for (const [f, t, d] of ex.arrows) {
-      const a = findLabel(f), b = findLabel(t);
-      if (a && b) doc.arrows.push({ id: doc.nextId++, from: a.id, to: b.id, depth: d, label: '', dash: false });
-    }
+    doc = { nextId: 1, roots: [], arrows: [], opts: DEFAULT_OPTS() };      // a blank page
   }
   applyUI(); render(); refreshUI(); syncSource(); fit();
 }
