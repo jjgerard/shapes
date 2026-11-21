@@ -440,43 +440,54 @@ function allWords() {
   for (const id of [state.mode, ...Object.keys(MODES).filter(k => k !== state.mode)]) for (const x of MODES[id].level2) if (x.root) walk(x.root);
   return [...set];
 }
-function templateSvg(spec, scale) {
+// a template picture; every piece of a row is drawn in the same box (the category's phrase tile), so a head looks smaller than its phrase
+function templateSvg(spec, box) {
   const it = Object.assign({ x: 0, y: 0 }, spec);
-  const gm = geom(it);
-  const pad = 3;
-  const w = (gm.b[2] - gm.b[0]) * scale + pad * 2, h = (gm.b[3] - gm.b[1]) * scale + pad * 2;
-  const svg = svgEl('svg', { width: Math.ceil(w), height: Math.ceil(h), viewBox: `${gm.b[0] - pad / scale} ${gm.b[1] - pad / scale} ${w / scale} ${h / scale}` });
+  const pad = 4;
+  const hx = box.hx + pad, hy = box.hy + pad;
+  const svg = svgEl('svg', { viewBox: `${-hx} ${-hy} ${2 * hx} ${2 * hy}`, 'aria-hidden': 'true' });
   svg.appendChild(buildPiece(it));
   return svg;
+}
+function boxFor(cat) {
+  const b = geom({ kind: 'tile', cat, level: 1, x: 0, y: 0 }).b;
+  return { hx: Math.max(Math.abs(b[0]), Math.abs(b[2])), hy: Math.max(Math.abs(b[1]), Math.abs(b[3])) };
 }
 function renderShelf() {
   const root = $('shelf-scroll');
   root.textContent = '';
   const mk = (tag, cls, text) => { const d = document.createElement(tag); if (cls) d.className = cls; if (text) d.textContent = text; return d; };
-  const group = (title) => { const g = mk('div', 'group'); g.appendChild(mk('div', 'group-title', title)); root.appendChild(g); return g; };
   const tiles = trayTiles();
-  for (const [title, lv] of [['Phrases', 1], ['Bars', 1.5], ['Heads', 2]]) {
-    const list = tiles.filter(t => t.level === lv);
-    if (!list.length) continue;
-    const g = group(title), row = mk('div', 'tiles');
-    for (const t of list) {
-      const spec = { kind: 'tile', cat: t.cat, level: t.level };
+  const levels = [1, 1.5, 2].filter(l => tiles.some(t => t.level === l));
+  root.style.setProperty('--cols', levels.length);
+  const legend = mk('div', 'legend');
+  for (const l of levels) legend.appendChild(mk('span', '', state.labels === 'numbers' ? String(l) : (l === 1 ? 'XP' : l === 1.5 ? 'X′' : 'X⁰')));
+  root.appendChild(legend);
+  // one row per category: the phrase, the bar and the head of the same shape
+  for (const cat of CAT_ORDER) {
+    if (!tiles.some(t => t.cat === cat)) continue;
+    const row = mk('div', 'cat-row'), box = boxFor(cat);
+    for (const l of levels) {
+      if (!tiles.some(t => t.cat === cat && t.level === l)) { row.appendChild(mk('div', 'tpl-empty')); continue; }
+      const spec = { kind: 'tile', cat, level: l };
       const d = mk('div', 'tpl'); d.title = label(spec); d.setAttribute('role', 'button'); d.setAttribute('aria-label', 'Add ' + label(spec) + ' to the table');
-      d.appendChild(templateSvg(spec, 0.62));
+      d.appendChild(templateSvg(spec, box));
       bindShelfItem(d, spec);
       row.appendChild(d);
     }
-    g.appendChild(row);
+    root.appendChild(row);
   }
-  const gt = group('Triangles'), trow = mk('div', 'tiles');
+  root.appendChild(mk('div', 'group-title', 'Triangles'));
+  const tri = mk('div', 'stack'), tbox = { hx: ABBR.large[0] * S / 2, hy: ABBR.large[1] * S / 2 };
   for (const size of ['small', 'large']) {
     const spec = { kind: 'abbr', size };
     const d = mk('div', 'tpl'); d.title = size + ' abbreviation triangle'; d.setAttribute('role', 'button'); d.setAttribute('aria-label', 'Add a ' + size + ' abbreviation triangle');
-    d.appendChild(templateSvg(spec, size === 'large' ? 0.4 : 0.62));
-    bindShelfItem(d, spec); trow.appendChild(d);
+    d.appendChild(templateSvg(spec, tbox));
+    bindShelfItem(d, spec); tri.appendChild(d);
   }
-  gt.appendChild(trow);
-  const gw = group('Words'), wrow = mk('div', 'words');
+  root.appendChild(tri);
+  root.appendChild(mk('div', 'group-title', 'Words'));
+  const wrow = mk('div', 'words');
   const words = state.activity === 'sentence' && currentTask() ? taskWords(currentTask()) : ['Ø', ...allWords()];
   const addWord = w => {
     const d = mk('div', 'word', w); d.setAttribute('role', 'button'); d.setAttribute('aria-label', 'Add the word ' + w);
@@ -484,14 +495,14 @@ function renderShelf() {
     bindShelfItem(d, { kind: 'word', text: w }); wrow.appendChild(d);
   };
   words.forEach(addWord);
-  gw.appendChild(wrow);
+  root.appendChild(wrow);
   if (state.activity !== 'sentence') {
     const add = mk('div', 'add-word');
     add.innerHTML = '<input placeholder="add a word" maxlength="24" aria-label="Add your own word"><button>Add</button>';
     const doAdd = () => { const i = add.querySelector('input'); const v = i.value.trim(); if (!v) return; i.value = ''; addWord(v); };
     add.querySelector('button').addEventListener('click', doAdd);
     add.querySelector('input').addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
-    gw.appendChild(add);
+    root.appendChild(add);
   }
   fitShapeLabels(root);
 }
@@ -662,18 +673,17 @@ function attachWord(w) {
   if (best) { w.owner = best.t.id; w.ord = w.x; }
 }
 
-// ---- starting a drag from the shelf (a tap adds the piece; a drag places it; on a phone, drag upward)
+// ---- starting a drag from the shelf (a tap adds the piece; a drag places it; on a touch screen drag sideways, towards the table)
 function bindShelfItem(el, spec) {
   el.addEventListener('pointerdown', e => {
     if (e.button) return;
     const st = { x: e.clientX, y: e.clientY, id: e.pointerId, type: e.pointerType, started: false };
-    const sideways = !isNarrow();                   // the wide layout scrolls the shelf up and down, so a sideways move drags
     const cleanup = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel); };
     const mv = ev => {
       if (ev.pointerId !== st.id || st.started) return;
       const dx = ev.clientX - st.x, dy = ev.clientY - st.y;
       if (Math.hypot(dx, dy) < 8) return;
-      const go = st.type !== 'touch' || (sideways ? Math.abs(dx) > Math.abs(dy) : Math.abs(dy) > Math.abs(dx));
+      const go = st.type !== 'touch' || Math.abs(dx) > Math.abs(dy);          // the shelf scrolls up and down, so a sideways move picks a piece up
       cleanup();
       if (go) { st.started = true; startFromShelf(ev, spec, st.type === 'touch'); }
     };
@@ -799,7 +809,8 @@ for (const b of document.querySelectorAll('#seg-activity button')) b.addEventLis
   if (state.activity === 'sentence') $('btn-check').scrollIntoView({ inline: 'nearest', block: 'nearest' });
   setTimeout(() => render(), 0);
 });
-$('shelf-toggle').addEventListener('click', () => { state.shelfClosed = !state.shelfClosed; $('shelf-toggle').textContent = state.shelfClosed ? '▴' : '▾'; syncControls(); save(); });
+$('shelf-toggle').addEventListener('click', () => { state.shelfClosed = true; syncControls(); save(); });
+$('shelf-open').addEventListener('click', () => { state.shelfClosed = false; syncControls(); save(); });
 $('btn-check').addEventListener('click', () => {
   const r = checkTree(); const out = $('task-result');
   setResult(r.msg, r.ok ? 'ok' : 'bad');
@@ -845,7 +856,6 @@ window.addEventListener('resize', () => { if (!items().length && !state.view) ap
 state = load();
 ensureTaskValid();
 syncControls();
-$('shelf-toggle').textContent = state.shelfClosed ? '▴' : '▾';
 renderShelf(); renderTask(); applyView(); render();
 if (!items().length) { state.view = defaultView(); applyView(); }
 if (!localStorage.getItem(STORE + '-seen')) { try { localStorage.setItem(STORE + '-seen', '1'); } catch (e) { /* ignore */ } setTimeout(() => $('help').showModal(), 300); }
