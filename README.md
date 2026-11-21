@@ -25,16 +25,22 @@ It reuses `data.js` and `shapes.js`, saves in the browser, and can download the 
 
 ## Tree studio
 
-**`trees.html`** is a drawing tool for finished trees, for people who already know how trees work. Paste a labelled
-bracketing (`[S [NP [N Pat]] [VP [V sleeps]]]`) or LaTeX (`\Tree [.S ...]`, qtree or forest) and the tree appears; the text
-box follows whatever you then do on the drawing, and can be switched between brackets, qtree and forest to copy
-into a paper. On the canvas you can drag nodes (with their subtrees, or alone with Shift), double-click to retype,
-add or delete nodes, collapse a phrase to a triangle, cross text out, and draw movement arrows between nodes.
+**`trees.html`** is a drawing tool for finished trees, for people who already know how trees work. It builds trees
+the way the sandbox does: a **Parts** shelf holds XP, X′, X⁰, a triangle, words, labels and a row of category chips
+(X, C, T, v, V, D, N, P, A, Adv, or type your own). Drag a piece just under another to hang it there, just above a top node
+to become its parent, drag a node away to pull it off, drop a category chip on a node to rename it (keeping its level),
+and drag a piece back onto the shelf to put it away. (**Nudge** mode makes dragging only slide a node, to fine-tune spacing.)
+Nothing is enforced; this is for people who know the rules.
+
+The **{ } LaTeX / text** button shows or hides a text box: paste a labelled bracketing
+(`[S [NP [N Pat]] [VP [V sleeps]]]`) or LaTeX (`\Tree [.S ...]`, qtree or forest) and the tree appears; the box follows whatever
+you do on the drawing and can be switched between brackets, qtree and forest to copy into a paper. Double-click to
+retype a node, collapse a phrase to a triangle, cross text out, and draw movement arrows between nodes.
 Fonts, sizes, bold/italic and colour are set separately for labels and for words (and can be overridden per node),
 labels take `_i`, `^0`, `V'` → V′, `\emph{}` and Greek (`\phi`), and line width, spacing and arrow styling are all adjustable.
 Export as SVG, PNG (150-600 dpi) or PDF (via print); sizes are in real points. It shares nothing with the game except
-its look, and saves in the browser. Hand-dragged positions and arrows are in the pictures and the saved `.json`,
-but can't be written in qtree/forest, which place everything themselves.
+its look, and saves in the browser. Hand-placed trees and arrows are in the pictures and the saved `.json`,
+but arrows (and exact positions) can't be written in qtree/forest, which place everything themselves.
 
 ## Get it on a phone
 

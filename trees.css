@@ -16,6 +16,7 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--ink); background: var(--panel); overflow: hidden; font-size: 14px;
 }
+[hidden] { display: none !important; }
 input, textarea, select, button { font: inherit; color: inherit; }
 code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .92em; background: var(--panel-2); padding: 0 3px; border-radius: 3px; }
 #app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
@@ -38,9 +39,12 @@ select.tool { width: auto; max-width: 230px; }
 select.tool option { color: var(--ink); }
 
 /* ---- layout ---- */
-#main { display: grid; grid-template-columns: 300px 1fr 300px; min-height: 0; }
-#left, #right { background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
-#left { border-right: 1px solid var(--line); }
+#main { display: flex; min-height: 0; }
+#parts, #left, #right { background: var(--panel); display: flex; flex-direction: column; min-height: 0; flex: none; }
+#parts { width: 196px; border-right: 1px solid var(--line); }
+#left { width: 300px; border-right: 1px solid var(--line); }
+#left[hidden] { display: none; }
+#right { width: 300px; }
 #right { border-left: 1px solid var(--line); }
 .head { padding: 10px 12px 6px; font-weight: 700; display: flex; align-items: baseline; gap: 8px; }
 .head small { font-weight: 400; color: var(--muted); font-size: 12px; }
@@ -69,12 +73,33 @@ button.small { padding: 4px 10px; font-size: 12px; border: 1px solid var(--line)
 #cheat td { padding: 2px 4px 2px 0; vertical-align: top; }
 #cheat p { margin: 4px 0; color: var(--muted); line-height: 1.4; }
 
+/* ---- parts shelf ---- */
+.gt { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 8px 0 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; background: #fff; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; font-family: "Times New Roman", Times, serif; font-size: 15px; }
+.chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+#p-cat { margin-top: 4px; }
+.tiles { display: flex; flex-wrap: wrap; gap: 6px; }
+.tile {
+  min-width: 52px; padding: 8px 10px; text-align: center; background: #fff; border: 1px solid var(--line); border-radius: 8px; cursor: grab;
+  touch-action: none; user-select: none; -webkit-user-select: none; font-family: "Times New Roman", Times, serif; font-size: 18px;
+}
+.tile:hover, .chip:hover { border-color: var(--accent); }
+.tile.word { font-style: italic; }
+#parts.away { background: #f6dede; outline: 2px dashed var(--bad); outline-offset: -4px; }
+.ghost { position: fixed; z-index: 30; pointer-events: none; transform: translate(-50%, -50%); opacity: .85; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+
 /* ---- the drawing ---- */
-#stage { position: relative; background: var(--board); min-height: 0; min-width: 0; overflow: hidden; }
+#stage { flex: 1; position: relative; background: var(--board); min-height: 0; min-width: 0; overflow: hidden; }
 #board { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; display: block; user-select: none; -webkit-user-select: none; }
 #board.armed { cursor: crosshair; }
 #view { position: absolute; right: 10px; bottom: 10px; z-index: 3; display: flex; gap: 6px; }
 #view button { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; min-width: 36px; }
+#modebar { position: absolute; left: 10px; top: 10px; z-index: 3; }
+#empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--muted); line-height: 1.7; pointer-events: none; padding: 20px; }
+#empty[hidden] { display: none; }
+.snapbox { fill: rgba(47,125,79,.15); stroke: #2f7d4f; stroke-width: 1.5px; vector-effect: non-scaling-stroke; pointer-events: none; }
+.snapline { stroke: #2f7d4f; stroke-width: 1.5px; vector-effect: non-scaling-stroke; stroke-dasharray: 5 4; pointer-events: none; }
 #hint {
   position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 3; background: var(--accent); color: #fff;
   padding: 6px 14px; border-radius: 999px; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,.2); display: none; max-width: 90%; text-align: center;
@@ -139,8 +164,8 @@ dialog .end { text-align: right; margin-top: 10px; }
   body { overflow: auto; }
   #app { height: auto; min-height: 100%; }
   #main { display: flex; flex-direction: column; }
-  #stage { height: 62vh; order: -1; }
-  #left, #right { border: 0; border-top: 1px solid var(--line); }
+  #stage { height: 62vh; order: -1; flex: none; }
+  #parts, #left, #right { border: 0; border-top: 1px solid var(--line); width: auto; }
   #src { min-height: 150px; }
 }
 
