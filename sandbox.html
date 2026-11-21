@@ -15,36 +15,31 @@
 <div id="sb">
 
   <header id="bar">
-    <a class="icon-btn" href="index.html" aria-label="Back to the game" title="Back to the game">←</a>
-    <span class="brand"><img src="logo.png" alt="" class="brand-logo"><span class="brand-name">Sandbox</span></span>
-    <span class="seg" id="seg-mode" role="group" aria-label="Mode">
-      <button data-mode="prex" title="XP mode: flat phrase structure">XP</button><button data-mode="xbar" title="X′ mode: with the bar level">X′</button>
-    </span>
-    <button class="icon-btn" id="btn-undo" aria-label="Undo" title="Undo">↶</button>
-    <button class="icon-btn" id="btn-menu" aria-label="Menu" aria-haspopup="dialog" title="Menu">☰</button>
+    <div id="bar-left">
+      <a class="icon-btn" href="index.html" aria-label="Back to the game" title="Back to the game">←</a>
+      <span class="brand"><img src="logo.png" alt="" class="brand-logo"><span class="brand-name">Sandbox</span></span>
+      <span class="seg" id="seg-mode" role="group" aria-label="Mode">
+        <button data-mode="prex" title="XP mode: flat phrase structure">XP</button><button data-mode="xbar" title="X′ mode: with the bar level">X′</button>
+      </span>
+      <span class="seg" id="seg-activity" role="group" aria-label="What to do">
+        <button data-activity="tinker">Tinker</button><button data-activity="sentence"><span class="long">Build a sentence</span><span class="short">Build</span></button>
+      </span>
+      <button class="bar-btn sent-only" id="btn-check" hidden>Check</button>
+      <span class="seg sent-only" id="type-chips" role="group" aria-label="Kind of sentence" hidden></span>
+      <button class="bar-btn ghost sent-only" id="btn-answer" hidden><span class="long">Show answer</span><span class="short">Answer</span></button>
+      <button class="bar-btn ghost sent-only" id="btn-next" hidden><span class="long">Another sentence</span><span class="short">Next</span></button>
+    </div>
+    <div id="bar-right">
+      <button class="icon-btn" id="btn-undo" aria-label="Undo" title="Undo">↶</button>
+      <button class="icon-btn" id="btn-menu" aria-label="Menu" aria-haspopup="dialog" title="Menu">☰</button>
+    </div>
   </header>
 
   <section id="task">
-    <div class="task-row">
-      <span class="seg big" id="seg-activity" role="group" aria-label="What to do">
-        <button data-activity="tinker">Tinker</button><button data-activity="sentence">Build a sentence</button>
-      </span>
-      <button class="chev" id="task-toggle" aria-label="Show or hide the task" title="Show or hide">▾</button>
-    </div>
-    <div id="task-body" hidden>
-      <div class="sentence-row">
-        <div id="task-sentence"></div>
-        <button class="btn primary" id="btn-check">Check</button>
-      </div>
-      <div id="task-note"></div>
-      <div id="task-result" role="status" aria-live="polite"></div>
-      <div id="task-more">
-        <div class="chips" id="type-chips" role="group" aria-label="Kind of sentence"></div>
-        <div class="task-actions">
-          <button class="btn" id="btn-answer">Show answer</button>
-          <button class="btn" id="btn-next">Another sentence</button>
-        </div>
-      </div>
+    <div id="taskline" hidden>
+      <b id="task-sentence"></b>
+      <span id="task-note"></span>
+      <span id="task-result" role="status" aria-live="polite"></span>
     </div>
   </section>
 
