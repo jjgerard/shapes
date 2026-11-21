@@ -354,22 +354,25 @@ function checkTree() {
 }
 
 // ------------------------------------------------------------------ the task strip, the answer, the shelf
+function setResult(msg, cls) {
+  $('task-result').textContent = msg || ''; $('task-result').className = cls || '';
+  $('task-note').hidden = !!msg;                       // the result replaces the hint while it is showing
+}
 function renderTask() {
   const on = state.activity === 'sentence';
   for (const b of document.querySelectorAll('#seg-activity button')) b.classList.toggle('on', b.dataset.activity === state.activity);
-  $('task-toggle').style.display = on ? '' : 'none';
-  $('task-body').hidden = !on;
-  $('task-more').hidden = $('task').classList.contains('folded');
-  $('task-toggle').textContent = $('task').classList.contains('folded') ? '▸' : '▾';
+  for (const el of document.querySelectorAll('.sent-only')) el.hidden = !on;
+  $('taskline').hidden = !on;
   if (!on) return;
   const chips = $('type-chips'); chips.textContent = '';
+  const SHORT = { declarative: 'Statement', question: 'Question', passive: 'Passive' };
   for (const t of TYPES) {
     const b = document.createElement('button');
-    b.textContent = t.label; b.className = state.task.type === t.id ? 'on' : '';
+    b.textContent = SHORT[t.id]; b.title = t.blurb; b.className = state.task.type === t.id ? 'on' : '';
     const avail = sentencesFor(t.id, state.mode).length > 0;
     b.disabled = !avail;
     if (!avail) b.title = 'Questions need the complementizer (C), which XP mode doesn’t have. Try X′ mode.';
-    b.addEventListener('click', () => { state.task = { type: t.id, idx: 0 }; $('task-result').textContent = ''; $('task-result').className = ''; renderTask(); renderShelf(); save(); });
+    b.addEventListener('click', () => { state.task = { type: t.id, idx: 0 }; setResult(''); renderTask(); renderShelf(); save(); });
     chips.appendChild(b);
   }
   const task = currentTask();
@@ -786,24 +789,24 @@ function syncControls() {
 for (const b of document.querySelectorAll('#seg-mode button')) b.addEventListener('click', () => {
   state.mode = b.dataset.mode; ensureTaskValid(); sel = null; clearNodes();
   syncControls(); renderTask(); renderShelf(); render(); save();
-  $('task-result').textContent = ''; $('task-result').className = '';
+  setResult('');
 });
 for (const b of document.querySelectorAll('#seg-labels button')) b.addEventListener('click', () => { state.labels = b.dataset.labels; syncControls(); clearNodes(); renderShelf(); render(); save(); });
 for (const b of document.querySelectorAll('#seg-activity button')) b.addEventListener('click', () => {
   state.activity = b.dataset.activity;
-  $('task-result').textContent = ''; $('task-result').className = '';
+  setResult('');
   renderTask(); renderShelf(); save();
+  if (state.activity === 'sentence') $('btn-check').scrollIntoView({ inline: 'nearest', block: 'nearest' });
   setTimeout(() => render(), 0);
 });
-$('task-toggle').addEventListener('click', () => { $('task').classList.toggle('folded'); renderTask(); setTimeout(() => render(), 0); });
 $('shelf-toggle').addEventListener('click', () => { state.shelfClosed = !state.shelfClosed; $('shelf-toggle').textContent = state.shelfClosed ? '▴' : '▾'; syncControls(); save(); });
 $('btn-check').addEventListener('click', () => {
   const r = checkTree(); const out = $('task-result');
-  out.textContent = r.msg; out.className = r.ok ? 'ok' : 'bad';
+  setResult(r.msg, r.ok ? 'ok' : 'bad');
   if (r.ok) toast('Correct!');
 });
 $('btn-answer').addEventListener('click', showAnswer);
-$('btn-next').addEventListener('click', () => { state.task.idx++; $('task-result').textContent = ''; $('task-result').className = ''; renderTask(); renderShelf(); save(); });
+$('btn-next').addEventListener('click', () => { state.task.idx++; setResult(''); renderTask(); renderShelf(); save(); });
 $('btn-undo').addEventListener('click', undo);
 $('btn-menu').addEventListener('click', () => $('menu').showModal());
 $('m-redo').addEventListener('click', () => { redo(); });
@@ -841,7 +844,6 @@ window.addEventListener('resize', () => { if (!items().length && !state.view) ap
 // ------------------------------------------------------------------ start
 state = load();
 ensureTaskValid();
-if (isNarrow()) $('task').classList.add('folded');          // on a phone the table needs the room: chips and buttons fold away
 syncControls();
 $('shelf-toggle').textContent = state.shelfClosed ? '▴' : '▾';
 renderShelf(); renderTask(); applyView(); render();
