@@ -8,16 +8,20 @@ account, stores nothing on a server, and has no build step.
 
 ## Sandbox
 
-**`sandbox.html`** is a free workspace for building trees from the same pieces, with nothing enforced:
-a **Parts** shelf of every loose piece (the game's own shapes, the abbreviation triangles, and word magnets),
-a **Workbench** and a **Table** to build on, and a **Box** of saved assemblies. Build a phrase on the
-Workbench, put it in the Box, and drag copies out onto the Table to assemble whole trees. Pieces join with
-sticks of three lengths (20, 40 and 60 mm), as in the physical whiteboard kit (`physical/WHITEBOARD.md`).
-**XP mode** or **X′ mode** (the switch at the top) decides which pieces are on the shelf and what may join
-what, using the game's own legal edges; a wrong join makes both pieces glow red, and a structure with a
-wrong join can't be put in the box. It reuses `data.js` and `shapes.js`, saves in the browser, and can
-download a board as an SVG picture.
-Open it at `sandbox.html` next to the game.
+**`sandbox.html`** is a free workspace for building trees from the same pieces. There is one **table**
+and a shelf of **Parts** (the game's own shapes, abbreviation triangles, and word magnets): tap a piece to
+add it, or drag it onto the table. Pieces join with sticks of three lengths (20, 40 and 60 mm), as in the
+physical whiteboard kit (`physical/WHITEBOARD.md`).
+
+- **XP mode** or **X′ mode** (the switch at the top) decides which pieces are on the shelf and what may
+  join what, using the game's own legal edges. A wrong join makes both pieces glow red.
+- **Tinker** is free play. **Build a sentence** suggests a sentence (a basic statement, a question or a
+  passive), and **Check** says whether the tree is built correctly; **Show answer** draws one correct tree.
+  Questions need X′ mode (XP mode has no complementizer).
+- It works on a phone like the game does: full screen, large touch targets, the parts along the bottom
+  (swipe sideways to scroll them, drag one upward to place it), one finger to pan, two to pinch-zoom.
+
+It reuses `data.js` and `shapes.js`, saves in the browser, and can download the table as an SVG picture.
 
 ## Tree studio
 
