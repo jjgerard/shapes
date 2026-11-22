@@ -166,6 +166,12 @@ dialog .end { text-align: right; margin-top: 10px; }
 }
 #toast.on { opacity: 1; }
 #print-host { display: none; }
+table.keys { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.keys th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 10px 0 3px; }
+table.keys td { padding: 3px 12px 3px 0; vertical-align: top; }
+table.keys td:first-child { white-space: nowrap; }
+kbd { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: #fff; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
+#dlg-keys { max-height: 90vh; overflow-y: auto; }
 
 /* ---- narrow screens: stack the three panes ---- */
 @media (max-width: 900px) {

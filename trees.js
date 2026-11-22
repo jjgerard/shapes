@@ -1046,22 +1046,81 @@ $('btn-fit').addEventListener('click', fit);
 window.addEventListener('resize', () => { placeEditor(); });
 
 // ------------------------------------------------------------------ keyboard
-document.addEventListener('keydown', e => {
-  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ''));
-  const mod = e.ctrlKey || e.metaKey;
-  if (mod && !typing && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); (e.shiftKey ? redo : undo)(); return; }
-  if (mod && !typing && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); redo(); return; }
-  if (e.key === 'Escape') { if (armed) cancelArmed(); else if (sel) { sel = null; paintOverlay(); refreshUI(); } return; }
-  if (typing) return;
+function ensureVisible(id) {                 // pan just enough to keep a node in view when the keys walk off the screen
+  const ln = L.map.get(String(id));
+  if (!ln) return;
+  const W = stage.clientWidth, H = stage.clientHeight, m = 60;
+  const x = view.x + ln.x * view.k, y = view.y + ln.y * view.k;
+  let dx = 0, dy = 0;
+  if (x < m) dx = m - x; else if (x > W - m) dx = W - m - x;
+  if (y < m + 30) dy = m + 30 - y; else if (y > H - m) dy = H - m - y;
+  if (dx || dy) { view.x += dx; view.y += dy; applyView(); placeEditor(); }
+}
+function selectNode(id) { sel = { kind: 'node', id }; paintOverlay(); refreshUI(); ensureVisible(id); }
+function moveSelection(key) {                // arrows walk the tree: up to the mother, down to the first daughter, sideways between sisters
+  if (!doc.roots.length) return;
   const id = selNodeId();
-  if (id !== null) {
-    if (e.key === 'Tab') { e.preventDefault(); opAddChild(id); }
-    else if (e.key === 'Enter') { e.preventDefault(); opAddSister(id, true); }
-    else if (e.key === 'F2') { e.preventDefault(); openEditor(id, false); }
-    else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); opDelete(id, true); }
-  } else if (sel && sel.kind === 'arrow' && (e.key === 'Delete' || e.key === 'Backspace')) {
-    e.preventDefault(); edit(() => { doc.arrows = doc.arrows.filter(a => a.id !== sel.id); sel = null; });
+  if (id === null) { selectNode(doc.roots[0].id); return; }
+  const f = findNode(id);
+  if (!f) return;
+  const sibs = f.parent ? f.parent.children : doc.roots;
+  const to = key === 'ArrowUp' ? f.parent : key === 'ArrowDown' ? (f.n.tri ? null : f.n.children[0]) : key === 'ArrowLeft' ? sibs[f.idx - 1] : sibs[f.idx + 1];
+  if (to) selectNode(to.id);
+}
+function zoomBy(f) { const r = stage.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, f); }
+function toggleMode() { ui.mode = ui.mode === 'build' ? 'nudge' : 'build'; applyUI(); save(); toast(ui.mode === 'build' ? 'Build: dragging joins and pulls pieces off' : 'Nudge: dragging only slides'); }
+document.addEventListener('keydown', e => {
+  if (document.querySelector('dialog[open]')) return;
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ''));
+  const mod = e.ctrlKey || e.metaKey, k = e.key, lower = k.length === 1 ? k.toLowerCase() : k;
+  if (mod && !typing && lower === 'z') { e.preventDefault(); (e.shiftKey ? redo : undo)(); return; }
+  if (mod && !typing && lower === 'y') { e.preventDefault(); redo(); return; }
+  if (k === 'Escape') { if (armed) cancelArmed(); else if (sel) { sel = null; paintOverlay(); refreshUI(); } return; }
+  if (typing) return;
+  if (e.target.tagName === 'BUTTON' && (k === 'Enter' || k === ' ')) return;      // that is just pressing the focused button
+
+  // anywhere on the page
+  if (!mod && !e.altKey) {
+    if (k === '?') { e.preventDefault(); $('dlg-keys').showModal(); return; }
+    if (k === '0') { e.preventDefault(); fit(); return; }
+    if (k === '+' || k === '=') { e.preventDefault(); zoomBy(1.25); return; }
+    if (k === '-') { e.preventDefault(); zoomBy(0.8); return; }
+    if (lower === 'm') { e.preventDefault(); toggleMode(); return; }
+    if (k.startsWith('Arrow')) { e.preventDefault(); moveSelection(k); return; }
   }
+  const id = selNodeId();
+  if (id === null) {
+    if (sel && sel.kind === 'arrow' && (k === 'Delete' || k === 'Backspace')) {
+      e.preventDefault(); edit(() => { doc.arrows = doc.arrows.filter(a => a.id !== sel.id); sel = null; });
+    }
+    return;
+  }
+
+  // with a node selected
+  if (e.altKey && k.startsWith('Arrow')) {        // Alt + arrows: nudge by 1 pt (Shift: 5 pt)
+    e.preventDefault();
+    const st = e.shiftKey ? 5 : 1;
+    const d = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, -st], ArrowDown: [0, st] }[k];
+    edit(() => { const f = findNode(id); if (f) { f.n.dx = (f.n.dx || 0) + d[0]; f.n.dy = (f.n.dy || 0) + d[1]; } }, 'nudge');
+    return;
+  }
+  if (mod) {
+    if (lower === 'd') { e.preventDefault(); $('b-dup').click(); }
+    else if (lower === 'b') { e.preventDefault(); $('b-bold').click(); }
+    else if (lower === 'i') { e.preventDefault(); $('b-italic').click(); }
+    return;
+  }
+  if (e.altKey) return;
+  if (k === 'Tab') { e.preventDefault(); if (e.shiftKey) opWrap(id); else opAddChild(id); }          // Tab: daughter, Shift+Tab: mother
+  else if (k === 'F1') { e.preventDefault(); opAddChild(id); }                                      // as in TreeForm: F1 down,
+  else if (k === 'F2') { e.preventDefault(); opWrap(id); }                                          // F2 up
+  else if (k === 'Enter') { e.preventDefault(); opAddSister(id, !e.shiftKey); }                      // Enter: sister to the right, Shift+Enter: to the left
+  else if (lower === 'r') { e.preventDefault(); openEditor(id, false); }
+  else if (lower === 't') { e.preventDefault(); $('b-tri').click(); }
+  else if (lower === 'x') { e.preventDefault(); $('b-cross').click(); }
+  else if (lower === 'w') { e.preventDefault(); $('b-word').click(); }
+  else if (lower === 'a') { e.preventDefault(); opArrowStart(id); }
+  else if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); opDelete(id, !e.shiftKey); }   // Shift: keep what is below
 });
 
 // ------------------------------------------------------------------ the right-hand panel
@@ -1474,6 +1533,7 @@ $('x-file').addEventListener('change', async e => {
 });
 $('btn-export').addEventListener('click', () => $('dlg-export').showModal());
 $('btn-help').addEventListener('click', () => $('dlg-help').showModal());
+$('btn-keys').addEventListener('click', () => $('dlg-keys').showModal());
 
 // ------------------------------------------------------------------ saving
 let saveTimer = null;
