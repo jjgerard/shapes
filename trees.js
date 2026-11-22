@@ -150,6 +150,8 @@ class ParseError extends Error { constructor(msg, pos) { super(msg); this.pos = 
 function pre(src) {
   return src
     .replace(/\\qroof\s*\{([^}]*)\}\s*\.\s*(\S+)/g, '[.$2 \\roof {$1} ]')
+    .replace(/\\draw\b[^;]*;/g, ' ')
+    .replace(/\\path\b[^;]*;/g, ' ')
     .replace(/\\edge\s*\[\s*roof\s*\]\s*;?/g, ' \\roof ')
     .replace(/\\(?:Tree|begin\{(?:forest|tikzpicture|center|figure|tabular)\}|end\{(?:forest|tikzpicture|center|figure|tabular)\}|centering|forestset\{[^}]*\})/g, ' ')
     .replace(/(^|[^\\])%[^\n]*/g, '$1');
@@ -251,28 +253,29 @@ function toLatexText(s) {
   });
 }
 const leafWords = n => (n.children.length ? n.children.flatMap(leafWords) : [n.label]);
-function serialize(root, f, collapse) {
+function serialize(root, f, collapse, names) {
+  const nm = k => (f === 'forest' && names && names.has(k.id) ? ', name=' + names.get(k.id) : '');
   const lab = (s, atEmpty) => {
     let t = f === 'bracket' ? s : toLatexText(s);
     if (/[\s[\]]/.test(t) || (t === '' && atEmpty)) t = '{' + t + '}';
     return t;
   };
   const open = f === 'qtree' ? '[.' : '[';
-  const word = k => (f === 'forest' ? '[' + lab(k.label) + ']' : lab(k.label, true));
+  const word = k => (f === 'forest' ? '[' + lab(k.label) + nm(k) + ']' : lab(k.label, true));
   const bare = k => (k.word && !k.children.length);
   const rec = (n, ind) => {
     let kids = n.children;
     let roof = '';
     if (n.tri && n.children.length) {
-      if (collapse) { kids = [{ label: leafWords(n).join(' '), word: true, children: [] }]; }
+      if (collapse) { kids = [{ id: 't' + n.id, label: leafWords(n).join(' '), word: true, children: [] }]; }
       roof = f === 'qtree' ? '\\edge[roof]; ' : f === 'forest' ? '' : '\\roof ';
     }
-    const head = open + lab(n.label, f === 'qtree') + (n.tri && n.children.length && f === 'forest' ? ', roof' : '');
+    const head = open + lab(n.label, f === 'qtree') + (n.tri && n.children.length && f === 'forest' ? ', roof' : '') + nm(n);
     const close = f === 'qtree' ? ' ]' : ']';
     if (!kids.length) return f === 'qtree' ? head + close : head + ']';
     const simple = kids.every(k => !k.children.length);
     if (simple) {
-      return head + ' ' + roof + kids.map(k => (bare(k) ? word(k) : (f === 'qtree' ? '[.' + lab(k.label, true) + ' ]' : '[' + lab(k.label) + ']'))).join(' ') + close;
+      return head + ' ' + roof + kids.map(k => (bare(k) ? word(k) : (f === 'qtree' ? '[.' + lab(k.label, true) + ' ]' : '[' + lab(k.label) + nm(k) + ']'))).join(' ') + close;
     }
     const pad = '  '.repeat(ind + 1);
     return head + (roof ? ' ' + roof.trim() : '') + '\n' + kids.map(k => pad + (bare(k) ? word(k) : rec(k, ind + 1))).join('\n') + close;
@@ -283,7 +286,103 @@ function serialize(root, f, collapse) {
   return body;
 }
 
-const serializeAll = (roots, f) => roots.map(r => serialize(r, f, f !== 'bracket')).join('\n\n');
+// the node an arrow should start or end under: the lowest thing under (or at) it, which is where it is drawn
+function lowestKey(id, Lm) {
+  let cur = Lm.map.get(String(id));
+  while (cur && cur.kids.length) cur = cur.kids.reduce((a, b) => (b.subBot > a.subBot ? b : a));
+  return cur ? (cur.virt ? 't' + cur.node.id : cur.node.id) : null;
+}
+function serializeAll(roots, f) {
+  if (f === 'tikz') return toTikz(false);
+  if (f !== 'forest' || !doc.arrows.length) return roots.map(r => serialize(r, f, f !== 'bracket')).join('\n\n');
+  const Lm = layoutDoc();
+  const names = new Map(), ends = new Map();
+  for (const a of doc.arrows) {
+    for (const id of [a.from, a.to]) { const k = lowestKey(id, Lm); if (k !== null) names.set(k, 'n' + k); }
+    ends.set(a.id, [names.get(lowestKey(a.from, Lm)), names.get(lowestKey(a.to, Lm))]);
+  }
+  return roots.map(r => {
+    const ids = subIds(r);
+    let out = serialize(r, f, true, names);
+    const lines = [];
+    for (const a of doc.arrows) {
+      const [x, y] = ends.get(a.id) || [];
+      if (!x || !y || !ids.has(a.from) || !ids.has(a.to)) { if (x && y && (ids.has(a.from) || ids.has(a.to))) lines.push('  % an arrow between two separate trees is left out here (use the TikZ format for that)'); continue; }
+      const d = Math.round(a.depth * 10) / 10;
+      lines.push(`  \\draw[->, >=stealth, line width=${doc.opts.arrow.width}pt${a.dash ? ', dashed' : ''}] (${x}.south) .. controls +(0,-${d}pt) and +(0,-${d}pt) .. (${y}.south);`);
+      if (a.label) lines.push(`  \\path (${x}.south) -- node[midway, below=${d * 0.75}pt, font=\\itshape\\small] {${toLatexText(a.label)}} (${y}.south);`);
+    }
+    if (lines.length) out = out.replace(/\n\\end\{forest\}$/, '\n' + lines.join('\n') + '\n\\end{forest}');
+    return out;
+  }).join('\n\n');
+}
+
+// TikZ with every position written out, so what you see is exactly what you get: moved nodes, triangles and arrows included.
+const TEX_SYM = (() => {
+  const m = {};
+  for (const k of Object.keys(SYM)) if (/^[A-Za-z]+$/.test(k) && SYM[k].charCodeAt(0) > 127 && !m[SYM[k]]) m[SYM[k]] = '\\ensuremath{\\' + k + '}';
+  m['Ø'] = '\\O{}'; m['…'] = '\\ldots{}'; m['′'] = "\\ensuremath{'}"; m['\u00a0'] = '~';
+  return m;
+})();
+const texEsc = t => { let o = ''; for (const ch of t) o += TEX_SYM[ch] || ({ '&': '\\&', '%': '\\%', '$': '\\$', '#': '\\#', '_': '\\_', '{': '\\{', '}': '\\}', '~': '\\textasciitilde{}', '^': '\\textasciicircum{}', '\\': '\\textbackslash{}' }[ch] || ch); return o; };
+function texRuns(runs) {
+  return runs.map(r => {
+    let t = texEsc(r.t);
+    if (r.sub) t = `\\textsubscript{${t}}`; else if (r.sup) t = `\\textsuperscript{${t}}`;
+    if (r.it) t = `\\textit{${t}}`;
+    if (r.bd) t = `\\textbf{${t}}`;
+    if (r.strike) t = `\\sout{${t}}`;
+    return t;
+  }).join('');
+}
+function toTikz(standalone) {
+  const o = doc.opts, Lm = layoutDoc();
+  const bb = paintTree(mk('g', {}), Lm, false);
+  const n2 = v => String(Math.round(v * 100) / 100);
+  const X = x => n2(x - bb.minX), Y = y => n2(bb.maxY - y);
+  const colors = new Map();
+  const col = hex => { if (!hex || /^#0{6}$/i.test(hex)) return null; if (!colors.has(hex)) colors.set(hex, 'ts' + 'abcdefghijklmnopqrstuvwxyz'[colors.size % 26] + colors.size); return colors.get(hex); };
+  const out = [];
+  let usesSout = false;
+  const lw = o.line.width, dash = o.line.dash ? `, dash pattern=on ${n2(lw * 4)}pt off ${n2(lw * 3)}pt` : '';
+  const lc = col(o.line.color);
+  const lineOpt = `line width=${lw}pt, line cap=round, line join=round${lc ? ', color=' + lc : ''}${dash}`;
+  const all = [...Lm.map.values()];
+  out.push('  % lines');
+  for (const p of all) for (const k of p.kids) {
+    const x0 = p.x, y0 = p.bot + o.line.gap, x1 = k.x, y1 = k.top - o.line.gap;
+    if (k.virt) out.push(`  \\draw[${lineOpt}${o.triFill ? ', fill=black, fill opacity=0.08' : ''}] (${X(x0)},${Y(y0)}) -- (${X(x1 - k.w / 2 - 1)},${Y(y1)}) -- (${X(x1 + k.w / 2 + 1)},${Y(y1)}) -- cycle;`);
+    else out.push(`  \\draw[${lineOpt}] (${X(x0)},${Y(y0)}) -- (${X(x1)},${Y(y1)});`);
+  }
+  out.push('  % labels and words');
+  for (const ln of all) {
+    if (!ln.runs.length) continue;
+    if (ln.runs.some(r => r.strike)) usesSout = true;
+    const f = ln.font, c = col(f.color);
+    const style = `font=\\fontsize{${n2(f.size)}}{${n2(f.size * 1.2)}}\\selectfont${f.italic ? '\\itshape' : ''}${f.bold ? '\\bfseries' : ''}${c ? ', text=' + c : ''}`;
+    out.push(`  \\node[anchor=base, inner sep=0pt, ${style}] at (${X(ln.x)},${Y(ln.y)}) {${texRuns(ln.runs)}};`);
+  }
+  if (doc.arrows.length) out.push('  % movement arrows');
+  for (const a of doc.arrows) {
+    const g = arrowGeom(a, Lm);
+    if (!g) continue;
+    const ac = col(a.color || o.arrow.color), aw = o.arrow.width;
+    const opt = `line width=${aw}pt, line cap=round${ac ? ', color=' + ac : ''}${a.dash ? `, dash pattern=on ${n2(aw * 4)}pt off ${n2(aw * 3)}pt` : ''}`;
+    out.push(`  \\draw[${opt}] (${X(g.sx)},${Y(g.sy)}) .. controls (${X(g.sx)},${Y(g.c)}) and (${X(g.ex)},${Y(g.c)}) .. (${X(g.bx)},${Y(g.by)});`);
+    const px = -g.dy, py = g.dx, w = g.head * 0.36;
+    out.push(`  \\fill[${ac ? 'color=' + ac : 'black'}] (${X(g.ex)},${Y(g.ey)}) -- (${X(g.bx + px * w)},${Y(g.by + py * w)}) -- (${X(g.bx - px * w)},${Y(g.by - py * w)}) -- cycle;`);
+    if (a.label) {
+      const size = Math.max(6, o.lab.size * 0.8), lr = runsOf(a.label, o.prime);
+      if (lr.some(r => r.strike)) usesSout = true;
+      out.push(`  \\node[anchor=base, inner sep=0pt, font=\\fontsize{${n2(size)}}{${n2(size * 1.2)}}\\selectfont\\itshape${ac ? ', text=' + ac : ''}] at (${X(g.mid.x)},${Y(g.mid.y + size * 1.05)}) {${texRuns(lr)}};`);
+    }
+  }
+  const defs = [...colors].map(([hex, name]) => `  \\definecolor{${name}}{HTML}{${hex.slice(1).toUpperCase()}}`);
+  const body = ['\\begin{tikzpicture}[x=1pt, y=1pt]', ...defs, ...out, '\\end{tikzpicture}'].join('\n');
+  const head = `% Tree studio: TikZ with exact positions. Needs \\usepackage{tikz}${usesSout ? ' and \\usepackage{ulem}' : ''}.\n% Text uses the surrounding document's font; for ∅, Greek etc. any normal LaTeX engine is fine.\n`;
+  if (!standalone) return head + body;
+  return `\\documentclass[border=4pt]{standalone}\n\\usepackage{tikz}\n${usesSout ? '\\usepackage{ulem}\n' : ''}\\begin{document}\n${body}\n\\end{document}\n`;
+}
 
 // ------------------------------------------------------------------ finding things
 function findNode(id) {                       // { n, parent, idx }: a top node has parent null and idx = its place in doc.roots
@@ -650,8 +749,11 @@ let srcTimer = null;
 function syncSource() {
   if (document.activeElement === srcEl) return;
   srcEl.value = serializeAll(doc.roots, fmt);
+  srcEl.readOnly = fmt === 'tikz';
   srcEl.classList.remove('bad');
-  errEl.textContent = ''; errEl.className = '';
+  const note = fmt === 'tikz' ? 'TikZ is output only (every position is written out). Switch to Brackets to edit.'
+    : fmt === 'qtree' && doc.arrows.length ? 'qtree cannot draw movement arrows. Use forest or TikZ for those.' : '';
+  errEl.textContent = note; errEl.className = note ? 'ok' : '';
 }
 function applySource(text, force) {
   let roots;
@@ -944,22 +1046,81 @@ $('btn-fit').addEventListener('click', fit);
 window.addEventListener('resize', () => { placeEditor(); });
 
 // ------------------------------------------------------------------ keyboard
-document.addEventListener('keydown', e => {
-  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ''));
-  const mod = e.ctrlKey || e.metaKey;
-  if (mod && !typing && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); (e.shiftKey ? redo : undo)(); return; }
-  if (mod && !typing && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); redo(); return; }
-  if (e.key === 'Escape') { if (armed) cancelArmed(); else if (sel) { sel = null; paintOverlay(); refreshUI(); } return; }
-  if (typing) return;
+function ensureVisible(id) {                 // pan just enough to keep a node in view when the keys walk off the screen
+  const ln = L.map.get(String(id));
+  if (!ln) return;
+  const W = stage.clientWidth, H = stage.clientHeight, m = 60;
+  const x = view.x + ln.x * view.k, y = view.y + ln.y * view.k;
+  let dx = 0, dy = 0;
+  if (x < m) dx = m - x; else if (x > W - m) dx = W - m - x;
+  if (y < m + 30) dy = m + 30 - y; else if (y > H - m) dy = H - m - y;
+  if (dx || dy) { view.x += dx; view.y += dy; applyView(); placeEditor(); }
+}
+function selectNode(id) { sel = { kind: 'node', id }; paintOverlay(); refreshUI(); ensureVisible(id); }
+function moveSelection(key) {                // arrows walk the tree: up to the mother, down to the first daughter, sideways between sisters
+  if (!doc.roots.length) return;
   const id = selNodeId();
-  if (id !== null) {
-    if (e.key === 'Tab') { e.preventDefault(); opAddChild(id); }
-    else if (e.key === 'Enter') { e.preventDefault(); opAddSister(id, true); }
-    else if (e.key === 'F2') { e.preventDefault(); openEditor(id, false); }
-    else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); opDelete(id, true); }
-  } else if (sel && sel.kind === 'arrow' && (e.key === 'Delete' || e.key === 'Backspace')) {
-    e.preventDefault(); edit(() => { doc.arrows = doc.arrows.filter(a => a.id !== sel.id); sel = null; });
+  if (id === null) { selectNode(doc.roots[0].id); return; }
+  const f = findNode(id);
+  if (!f) return;
+  const sibs = f.parent ? f.parent.children : doc.roots;
+  const to = key === 'ArrowUp' ? f.parent : key === 'ArrowDown' ? (f.n.tri ? null : f.n.children[0]) : key === 'ArrowLeft' ? sibs[f.idx - 1] : sibs[f.idx + 1];
+  if (to) selectNode(to.id);
+}
+function zoomBy(f) { const r = stage.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, f); }
+function toggleMode() { ui.mode = ui.mode === 'build' ? 'nudge' : 'build'; applyUI(); save(); toast(ui.mode === 'build' ? 'Build: dragging joins and pulls pieces off' : 'Nudge: dragging only slides'); }
+document.addEventListener('keydown', e => {
+  if (document.querySelector('dialog[open]')) return;
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ''));
+  const mod = e.ctrlKey || e.metaKey, k = e.key, lower = k.length === 1 ? k.toLowerCase() : k;
+  if (mod && !typing && lower === 'z') { e.preventDefault(); (e.shiftKey ? redo : undo)(); return; }
+  if (mod && !typing && lower === 'y') { e.preventDefault(); redo(); return; }
+  if (k === 'Escape') { if (armed) cancelArmed(); else if (sel) { sel = null; paintOverlay(); refreshUI(); } return; }
+  if (typing) return;
+  if (e.target.tagName === 'BUTTON' && (k === 'Enter' || k === ' ')) return;      // that is just pressing the focused button
+
+  // anywhere on the page
+  if (!mod && !e.altKey) {
+    if (k === '?') { e.preventDefault(); $('dlg-keys').showModal(); return; }
+    if (k === '0') { e.preventDefault(); fit(); return; }
+    if (k === '+' || k === '=') { e.preventDefault(); zoomBy(1.25); return; }
+    if (k === '-') { e.preventDefault(); zoomBy(0.8); return; }
+    if (lower === 'm') { e.preventDefault(); toggleMode(); return; }
+    if (k.startsWith('Arrow')) { e.preventDefault(); moveSelection(k); return; }
   }
+  const id = selNodeId();
+  if (id === null) {
+    if (sel && sel.kind === 'arrow' && (k === 'Delete' || k === 'Backspace')) {
+      e.preventDefault(); edit(() => { doc.arrows = doc.arrows.filter(a => a.id !== sel.id); sel = null; });
+    }
+    return;
+  }
+
+  // with a node selected
+  if (e.altKey && k.startsWith('Arrow')) {        // Alt + arrows: nudge by 1 pt (Shift: 5 pt)
+    e.preventDefault();
+    const st = e.shiftKey ? 5 : 1;
+    const d = { ArrowLeft: [-st, 0], ArrowRight: [st, 0], ArrowUp: [0, -st], ArrowDown: [0, st] }[k];
+    edit(() => { const f = findNode(id); if (f) { f.n.dx = (f.n.dx || 0) + d[0]; f.n.dy = (f.n.dy || 0) + d[1]; } }, 'nudge');
+    return;
+  }
+  if (mod) {
+    if (lower === 'd') { e.preventDefault(); $('b-dup').click(); }
+    else if (lower === 'b') { e.preventDefault(); $('b-bold').click(); }
+    else if (lower === 'i') { e.preventDefault(); $('b-italic').click(); }
+    return;
+  }
+  if (e.altKey) return;
+  if (k === 'Tab') { e.preventDefault(); if (e.shiftKey) opWrap(id); else opAddChild(id); }          // Tab: daughter, Shift+Tab: mother
+  else if (k === 'F1') { e.preventDefault(); opAddChild(id); }                                      // as in TreeForm: F1 down,
+  else if (k === 'F2') { e.preventDefault(); opWrap(id); }                                          // F2 up
+  else if (k === 'Enter') { e.preventDefault(); opAddSister(id, !e.shiftKey); }                      // Enter: sister to the right, Shift+Enter: to the left
+  else if (lower === 'r') { e.preventDefault(); openEditor(id, false); }
+  else if (lower === 't') { e.preventDefault(); $('b-tri').click(); }
+  else if (lower === 'x') { e.preventDefault(); $('b-cross').click(); }
+  else if (lower === 'w') { e.preventDefault(); $('b-word').click(); }
+  else if (lower === 'a') { e.preventDefault(); opArrowStart(id); }
+  else if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); opDelete(id, !e.shiftKey); }   // Shift: keep what is below
 });
 
 // ------------------------------------------------------------------ the right-hand panel
@@ -1346,6 +1507,7 @@ $('x-png').addEventListener('click', () => {
   img.onerror = () => { toast('Could not make the PNG'); URL.revokeObjectURL(url); };
   img.src = url;
 });
+$('x-tex').addEventListener('click', () => download(new Blob([toTikz(true)], { type: 'text/x-tex' }), 'tree.tex'));
 $('x-pdf').addEventListener('click', () => {
   const { svg } = buildExport();
   const host = $('print-host');
@@ -1371,6 +1533,7 @@ $('x-file').addEventListener('change', async e => {
 });
 $('btn-export').addEventListener('click', () => $('dlg-export').showModal());
 $('btn-help').addEventListener('click', () => $('dlg-help').showModal());
+$('btn-keys').addEventListener('click', () => $('dlg-keys').showModal());
 
 // ------------------------------------------------------------------ saving
 let saveTimer = null;
