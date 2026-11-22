@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tree studio · Shapes and Language</title>
-<link rel="stylesheet" href="trees.css?v=3">
+<link rel="stylesheet" href="trees.css?v=4">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="theme-color" content="#4b2340">
 </head>
@@ -93,6 +93,10 @@
         <span class="seg" id="seg-mode" title="Build: dragging pulls a piece off and joins it somewhere else. Nudge: dragging only slides it on the page (hold Shift to slide just that node).">
           <button data-mode="build">Build</button><button data-mode="nudge">Nudge</button>
         </span>
+      </div>
+      <div id="nodebar" hidden>
+        <button id="nb-del" class="danger" title="Delete this node and everything under it (Delete key)">✕ Delete</button>
+        <button id="nb-keep" title="Delete just this node; the nodes under it move up into its place">Delete, keep below</button>
       </div>
       <div id="empty">Drag a piece from <b>Parts</b> onto the page,<br>or open <b>{ } LaTeX / text</b> and paste a tree.</div>
       <div id="view">
@@ -274,6 +278,6 @@
   <form method="dialog" class="end"><button>Got it</button></form>
 </dialog>
 
-<script src="trees.js?v=4"></script>
+<script src="trees.js?v=5"></script>
 </body>
 </html>

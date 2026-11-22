@@ -96,6 +96,12 @@ button.small { padding: 4px 10px; font-size: 12px; border: 1px solid var(--line)
 #view { position: absolute; right: 10px; bottom: 10px; z-index: 3; display: flex; gap: 6px; }
 #view button { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; min-width: 36px; }
 #modebar { position: absolute; left: 10px; top: 10px; z-index: 3; }
+#nodebar { position: absolute; z-index: 3; transform: translateX(-50%); display: flex; gap: 4px; padding: 3px; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.18); white-space: nowrap; }
+#nodebar[hidden] { display: none; }
+#nodebar button { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 3px 9px; font-size: 12.5px; cursor: pointer; }
+#nodebar button:hover { background: var(--panel-2); }
+#nodebar button.danger { color: var(--bad); border-color: #e3b9b6; }
+#nodebar button.danger:hover { background: #f6dede; }
 #empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--muted); line-height: 1.7; pointer-events: none; padding: 20px; }
 #empty[hidden] { display: none; }
 .snapbox { fill: rgba(47,125,79,.15); stroke: #2f7d4f; stroke-width: 1.5px; vector-effect: non-scaling-stroke; pointer-events: none; }
