@@ -527,7 +527,21 @@ const board = $('board'), world = $('world'), stage = $('stage');
 const gPaper = $('layer-paper'), gTree = $('layer-tree'), gOver = $('layer-over');
 const inputEdit = $('edit');
 
-function applyView() { world.setAttribute('transform', `translate(${view.x},${view.y}) scale(${view.k})`); }
+function applyView() { world.setAttribute('transform', `translate(${view.x},${view.y}) scale(${view.k})`); placeNodeBar(); }
+// a small bar beside the selected node, so deleting never means dragging
+function placeNodeBar() {
+  const bar = $('nodebar');
+  const f = sel && sel.kind === 'node' && L ? findNode(sel.id) : null;
+  const ln = f && L.map.get(String(sel.id));
+  if (!ln || (gesture && gesture.moved) || armed || editing) { bar.hidden = true; return; }
+  bar.hidden = false;
+  $('nb-keep').hidden = !f.n.children.length;
+  const x = view.x + ln.x * view.k;
+  let y = view.y + ln.top * view.k - 40;
+  if (y < 44) y = view.y + ln.bot * view.k + 10;          // no room above (the Build / Nudge switch lives there): go below
+  bar.style.left = Math.max(80, Math.min(stage.clientWidth - 80, x)) + 'px';
+  bar.style.top = y + 'px';
+}
 function pageBox() {
   const m = doc.opts.margin;
   return { x: bounds.minX - m, y: bounds.minY - m, w: bounds.maxX - bounds.minX + 2 * m, h: bounds.maxY - bounds.minY + 2 * m };
@@ -565,6 +579,7 @@ function paintPaper() {                  // just the sandbox's faint grid; the p
 
 function paintOverlay() {
   while (gOver.firstChild) gOver.removeChild(gOver.firstChild);
+  placeNodeBar();
   if (preview) {
     const ln = L.map.get(String(preview.id));
     if (ln) {
@@ -689,7 +704,7 @@ function openEditor(id, virt, selectAll) {
   editing = { id, virt: !!virt };
   inputEdit.hidden = false;
   inputEdit.value = virt ? leafWords(f.n).join(' ') : f.n.label;
-  placeEditor();
+  placeEditor(); placeNodeBar();
   inputEdit.focus();
   if (selectAll !== false) inputEdit.select();
 }
@@ -697,6 +712,7 @@ function closeEditor(commit) {
   if (!editing) return;
   const e = editing; editing = null;
   inputEdit.hidden = true;
+  placeNodeBar();
   if (!commit) return;
   const v = inputEdit.value;
   edit(() => {
@@ -881,6 +897,7 @@ function endPointer(e) {
     if (gesture && gesture.type === 'node' && gesture.moved && gesture.build) finishBuildDrop(e);
     else if (gesture && (gesture.type === 'node' || gesture.type === 'handle') && gesture.moved) { changed(); }
     gesture = null;
+    placeNodeBar();
   }
 }
 board.addEventListener('pointerup', endPointer);
@@ -1248,6 +1265,8 @@ $('btn-text').addEventListener('click', () => {
   applyView(); placeEditor();
   if (ui.text) syncSource();
 });
+$('nb-del').addEventListener('click', withNode(id => opDelete(id, true)));
+$('nb-keep').addEventListener('click', withNode(id => opDelete(id, false)));
 $('b-dup').addEventListener('click', withNode(id => edit(() => {
   const f = findNode(id), ln = L.map.get(String(id));
   if (!f || !ln) return;
