@@ -4,7 +4,7 @@
 (() => {
 'use strict';
 
-const STORE = 'shapes-trees-v1';
+const STORE = 'shapes-trees-v2';     // v2: starts blank, words sit under their category
 const NS = 'http://www.w3.org/2000/svg';
 const $ = id => document.getElementById(id);
 const mk = (tag, attrs, parent) => {
@@ -53,6 +53,8 @@ let fmt = 'bracket';          // how the text box writes the tree
 let sel = null;               // { kind:'node'|'arrow', id }
 let view = { x: 0, y: 0, k: 2 };
 let L = null, bounds = null;  // layout of the current doc and the bounds of what is drawn
+let ui = { mode: 'build', text: false, cat: 'X', zero: true };   // saved with the page, but not part of the tree
+let preview = null;           // where a piece being dragged would join: { type:'child'|'parent'|'relabel', id, cx, cy }
 let armed = null;             // { from: nodeId } while waiting for the arrow's landing node
 let undoStack = [], redoStack = [];
 let lastKey = null, lastT = 0;
@@ -186,7 +188,7 @@ const unbrace = v => {                     // {two words} -> two words
 };
 function parseTree(src) {
   const toks = tokenize(pre(src));
-  if (!toks.length) return null;
+  if (!toks.length) return [];
   let p = 0;
   const node = () => {
     const open = toks[p++];
@@ -217,14 +219,13 @@ function parseTree(src) {
     return n;
   };
   if (toks[0].t !== '[') throw new ParseError('Start with [ (a tree is a bracket with a label in it).', toks[0].pos);
-  const root = node();
-  while (p < toks.length) {
+  const roots = [];
+  while (p < toks.length) {                       // several trees in a row are several trees on the page
     const k = toks[p];
     if (k.t === ']') throw new ParseError('This ] has no matching [.', k.pos);
-    if (k.t === '[') throw new ParseError('Put the whole tree inside one outer [ … ].', k.pos);
-    p++;
+    if (k.t === '[') roots.push(node()); else p++;
   }
-  return root;
+  return roots;
 }
 function posToLineCol(src, pos) {
   // pos is in the preprocessed text; for display, find the same character count in the original, which is close enough
@@ -236,7 +237,8 @@ function posToLineCol(src, pos) {
 // keep what the user did by hand (positions, styles, arrows) when the text is edited: match nodes by position in the tree
 function adopt(nw, old) {
   nw.id = old.id;
-  for (const k of ['dx', 'dy', 'bold', 'italic', 'color', 'size', 'cross']) if (old[k] !== undefined) nw[k] = old[k];
+  if (nw.word === undefined && old.word) nw.word = true;
+  for (const k of ['dx', 'dy', 'bold', 'italic', 'color', 'size', 'cross', 'placed']) if (old[k] !== undefined) nw[k] = old[k];
   const m = Math.min(nw.children.length, old.children.length);
   for (let i = 0; i < m; i++) adopt(nw.children[i], old.children[i]);
 }
@@ -281,19 +283,23 @@ function serialize(root, f, collapse) {
   return body;
 }
 
+const serializeAll = (roots, f) => roots.map(r => serialize(r, f, f !== 'bracket')).join('\n\n');
+
 // ------------------------------------------------------------------ finding things
-function findNode(id, root) {
+function findNode(id) {                       // { n, parent, idx }: a top node has parent null and idx = its place in doc.roots
   const walk = (n, parent, idx) => {
     if (n.id === id) return { n, parent, idx };
     for (let i = 0; i < n.children.length; i++) { const r = walk(n.children[i], n, i); if (r) return r; }
     return null;
   };
-  return walk(root || doc.root, null, 0);
+  for (let i = 0; i < doc.roots.length; i++) { const r = walk(doc.roots[i], null, i); if (r) return r; }
+  return null;
 }
-const nodeIds = (n, set = new Set()) => { set.add(n.id); n.children.forEach(c => nodeIds(c, set)); return set; };
+const subIds = (n, set = new Set()) => { set.add(n.id); n.children.forEach(c => subIds(c, set)); return set; };
+const nodeIds = () => { const set = new Set(); doc.roots.forEach(r => subIds(r, set)); return set; };
 const realId = id => parseInt(String(id), 10);       // 12~t (a triangle's words) -> 12
 function pruneArrows() {
-  const ids = nodeIds(doc.root);
+  const ids = nodeIds();
   doc.arrows = doc.arrows.filter(a => ids.has(a.from) && ids.has(a.to) && a.from !== a.to);
   if (sel && sel.kind === 'arrow' && !doc.arrows.some(a => a.id === sel.id)) sel = null;
   if (sel && sel.kind === 'node' && !ids.has(sel.id)) sel = null;
@@ -333,8 +339,6 @@ function layoutDoc() {
     }
     return ln;
   };
-  const root = build(doc.root, 0);
-
   // tidy placement: each subtree is a contour (left/right edge per depth), siblings slide together until they are hgap apart
   const place = ln => {
     const me = [];
@@ -367,8 +371,6 @@ function layoutDoc() {
     for (let d = 0; d < merged.length; d++) if (merged[d]) me[d + 1] = merged[d];
     return me;
   };
-  place(root);
-
   const finish = (ln, ax, cdx, cdy) => {
     const n = ln.node;
     if (!ln.virt) { cdx += n.dx || 0; cdy += n.dy || 0; }
@@ -385,8 +387,32 @@ function layoutDoc() {
     });
     map.set(ln.id, ln);
   };
-  finish(root, 0, 0, 0);
-  return { map, root };
+  const infos = [];
+  for (const r of doc.roots) {                      // every tree on the page is laid out on its own, then moved by its own offset
+    maxDepth = 0;
+    const root = build(r, 0);
+    place(root);
+    finish(root, 0, 0, 0);
+    let minX = Infinity, maxX = -Infinity;
+    const scan = ln => { minX = Math.min(minX, ln.x - ln.w / 2); maxX = Math.max(maxX, ln.x + ln.w / 2); ln.kids.forEach(scan); };
+    scan(root);
+    infos.push({ minX, maxX });
+  }
+  return { map, infos };
+}
+
+// trees that came from the text (not dragged anywhere yet) are set out side by side
+function autoPlace() {
+  if (doc.roots[0]) doc.roots[0].placed = true;
+  if (doc.roots.every(r => r.placed)) return;
+  const Lm = layoutDoc();
+  let right = -Infinity;
+  doc.roots.forEach((r, i) => { if (r.placed) right = Math.max(right, Lm.infos[i].maxX); });
+  doc.roots.forEach((r, i) => {
+    if (r.placed) return;
+    const inf = Lm.infos[i], shift = right + 60 - inf.minX;
+    r.dx = (r.dx || 0) + shift; r.placed = true; right = inf.maxX + shift;
+  });
 }
 
 // ------------------------------------------------------------------ arrows
@@ -509,7 +535,7 @@ function pageBox() {
 function fit() {
   const W = stage.clientWidth, H = stage.clientHeight;
   const pb = pageBox();
-  const k = Math.max(0.2, Math.min((W - 70) / pb.w, (H - 70) / pb.h, 6));
+  const k = Math.max(0.2, Math.min((W - 70) / pb.w, (H - 70) / pb.h, 2.5));
   view = { k, x: (W - pb.w * k) / 2 - pb.x * k, y: (H - pb.h * k) / 2 - pb.y * k };
   applyView();
   placeEditor();
@@ -532,13 +558,23 @@ function render() {
   paintPaper();
   paintOverlay();
 }
-function paintPaper() {
+function paintPaper() {                  // just the sandbox's faint grid; the page edge is only where the export is cropped
   while (gPaper.firstChild) gPaper.removeChild(gPaper.firstChild);
-  const pb = pageBox();
-  mk('rect', { class: 'paper', x: pb.x, y: pb.y, width: pb.w, height: pb.h, fill: doc.opts.transparent ? '#f3f1ec' : doc.opts.bg }, gPaper);
+  mk('rect', { x: -6000, y: -6000, width: 12000, height: 12000, fill: 'url(#grid)' }, gPaper);
 }
+
 function paintOverlay() {
   while (gOver.firstChild) gOver.removeChild(gOver.firstChild);
+  if (preview) {
+    const ln = L.map.get(String(preview.id));
+    if (ln) {
+      mk('rect', { class: 'snapbox', x: ln.x - ln.w / 2 - 4, y: ln.top - 3, width: ln.w + 8, height: ln.bot - ln.top + 6, rx: 3 }, gOver);
+      if (preview.type !== 'relabel' && preview.cx !== undefined) {
+        const up = preview.type === 'parent';
+        mk('line', { class: 'snapline', x1: ln.x, y1: up ? ln.top : ln.bot, x2: preview.cx, y2: up ? preview.cy + 8 : preview.cy - 10 }, gOver);
+      }
+    }
+  }
   if (!sel) return;
   if (sel.kind === 'node') {
     const ln = L.map.get(String(sel.id));
@@ -588,13 +624,13 @@ const srcEl = $('src'), errEl = $('err');
 let srcTimer = null;
 function syncSource() {
   if (document.activeElement === srcEl) return;
-  srcEl.value = serialize(doc.root, fmt, fmt !== 'bracket');
+  srcEl.value = serializeAll(doc.roots, fmt);
   srcEl.classList.remove('bad');
   errEl.textContent = ''; errEl.className = '';
 }
 function applySource(text, force) {
-  let root;
-  try { root = parseTree(text); } catch (e) {
+  let roots;
+  try { roots = parseTree(text); } catch (e) {
     if (!(e instanceof ParseError)) throw e;
     const lc = posToLineCol(pre(text), e.pos);
     srcEl.classList.add('bad');
@@ -603,14 +639,13 @@ function applySource(text, force) {
     return false;
   }
   srcEl.classList.remove('bad');
-  if (!root) { errEl.className = 'ok'; errEl.textContent = 'Nothing to draw yet.'; return false; }
-  const before = snapshot();
-  const oldRoot = doc.root;
-  if (!force) adopt(root, oldRoot);
-  if (before === JSON.stringify(Object.assign({}, doc, { root }))) { errEl.className = 'ok'; errEl.textContent = 'Drawn.'; return true; }
-  edit(() => { doc.root = root; if (force) { doc.arrows = []; sel = null; } }, 'src');
-  errEl.className = 'ok';
-  errEl.textContent = 'Drawn.';
+  if (!roots.length) { errEl.className = 'ok'; errEl.textContent = 'Nothing to draw yet.'; return false; }
+  if (!force) roots.forEach((r, i) => { if (doc.roots[i]) adopt(r, doc.roots[i]); });
+  const old = doc.roots;
+  doc.roots = roots; autoPlace(); doc.roots = old;
+  errEl.className = 'ok'; errEl.textContent = 'Drawn.';
+  if (!force && JSON.stringify(roots) === JSON.stringify(old)) return true;
+  edit(() => { doc.roots = roots; if (force) { doc.arrows = []; sel = null; } }, 'src');
   const pb = pageBox(), W = stage.clientWidth, H = stage.clientHeight;
   const x0 = view.x + pb.x * view.k, y0 = view.y + pb.y * view.k;
   if (force || x0 < 0 || y0 < 0 || x0 + pb.w * view.k > W || y0 + pb.h * view.k > H) fit();
@@ -622,7 +657,7 @@ srcEl.addEventListener('blur', () => {
   if (!srcEl.classList.contains('bad')) syncSource();
 });
 $('btn-copy').addEventListener('click', async () => {
-  const text = serialize(doc.root, fmt, fmt !== 'bracket');
+  const text = serializeAll(doc.roots, fmt);
   try { await navigator.clipboard.writeText(text); toast('Copied'); }
   catch (e) { srcEl.focus(); srcEl.select(); toast('Select all and copy'); }
 });
@@ -704,7 +739,12 @@ function opWrap(id) {
     if (!f) return;
     const p = newNode('X');
     p.children = [f.n];
-    if (f.parent) f.parent.children[f.idx] = p; else doc.root = p;
+    if (f.parent) f.parent.children[f.idx] = p;
+    else {                                          // a top node: the new parent takes its place on the page, one level up
+      doc.roots[f.idx] = p;
+      p.dx = f.n.dx || 0; p.dy = (f.n.dy || 0) - doc.opts.vgap; p.placed = true;
+      delete f.n.dx; delete f.n.dy;
+    }
     nid = p.id; sel = { kind: 'node', id: nid };
   });
   if (nid !== undefined) openEditor(nid, false);
@@ -712,10 +752,15 @@ function opWrap(id) {
 function opDelete(id, subtree) {
   const f = findNode(id);
   if (!f) return;
-  if (!f.parent) { toast('That is the top node. Edit the text, or press New to start again.'); return; }
   edit(() => {
-    if (subtree || !f.n.children.length) f.parent.children.splice(f.idx, 1);
-    else f.parent.children.splice(f.idx, 1, ...f.n.children);
+    if (f.parent) {
+      if (subtree || !f.n.children.length) f.parent.children.splice(f.idx, 1);
+      else f.parent.children.splice(f.idx, 1, ...f.n.children);
+    } else if (subtree || !f.n.children.length) doc.roots.splice(f.idx, 1);
+    else {                                          // the daughters of a deleted top node stay where they are, each as its own tree
+      for (const c of f.n.children) { const ln = L.map.get(String(c.id)); c.dx = ln ? ln.x : 0; c.dy = ln ? ln.y : 0; c.placed = true; }
+      doc.roots.splice(f.idx, 1, ...f.n.children);
+    }
     sel = null;
   });
 }
@@ -762,7 +807,7 @@ board.addEventListener('pointerdown', e => {
     if (lastTap.id === tgt.dataset.nid && now - lastTap.t < 380) { sel = { kind: 'node', id }; paintOverlay(); refreshUI(); setTimeout(() => openEditor(id, virt), 30); lastTap = { t: 0, id: null }; gesture = null; return; }
     lastTap = { t: now, id: tgt.dataset.nid };
     sel = { kind: 'node', id }; paintOverlay(); refreshUI();
-    gesture = { type: 'node', id, lx: e.clientX, ly: e.clientY, before: snapshot(), moved: false, solo: shiftOf(e), sx: e.clientX, sy: e.clientY };
+    gesture = { type: 'node', id, lx: e.clientX, ly: e.clientY, before: snapshot(), moved: false, solo: ui.mode === 'nudge' && shiftOf(e), build: ui.mode === 'build' && !shiftOf(e), sx: e.clientX, sy: e.clientY };
     return;
   }
   if (tgt && tgt.dataset.aid) { sel = { kind: 'arrow', id: +tgt.dataset.aid }; paintOverlay(); refreshUI(); gesture = null; return; }
@@ -773,6 +818,7 @@ board.addEventListener('pointerdown', e => {
 board.addEventListener('pointermove', e => {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  lastPtr = { x: e.clientX, y: e.clientY };
   if (!gesture) return;
   if (gesture.type === 'pinch' && ptrs.size === 2) {
     const [a, b] = [...ptrs.values()];
@@ -790,6 +836,15 @@ board.addEventListener('pointermove', e => {
     if (!gesture.moved) {
       if (Math.hypot(e.clientX - gesture.sx, e.clientY - gesture.sy) < 4) return;
       gesture.moved = true; pushUndo(gesture.before); lastKey = null;
+      if (gesture.build) {                      // pull the piece off whatever it hangs from; it becomes a tree of its own
+        const f0 = findNode(gesture.id);
+        if (f0 && f0.parent) {
+          const ln0 = L.map.get(String(f0.n.id));
+          f0.parent.children.splice(f0.idx, 1);
+          f0.n.dx = ln0 ? ln0.x : 0; f0.n.dy = ln0 ? ln0.y : 0; f0.n.placed = true;
+          doc.roots.push(f0.n);
+        }
+      }
     }
     const ddx = (e.clientX - gesture.lx) / view.k, ddy = (e.clientY - gesture.ly) / view.k;
     gesture.lx = e.clientX; gesture.ly = e.clientY;
@@ -808,12 +863,23 @@ board.addEventListener('pointermove', e => {
     liveRender();
   }
 });
-function liveRender() { render(); refreshUI(); }
+function liveRender() {
+  render(); refreshUI();
+  if (gesture && gesture.type === 'node' && gesture.build) {
+    const ln = L.map.get(String(gesture.id)), f = findNode(gesture.id);
+    preview = ln && f ? snapCandidate(ln.x, ln.y, subIds(f.n)) : null;
+    paintOverlay();
+    $('parts').classList.toggle('away', overParts(lastPtr.x, lastPtr.y));
+  }
+}
+let lastPtr = { x: 0, y: 0 };
+const overParts = (x, y) => { const r = $('parts').getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; };
 function endPointer(e) {
   ptrs.delete(e.pointerId);
   if (ptrs.size < 2 && gesture && gesture.type === 'pinch') gesture = null;
   if (ptrs.size === 0) {
-    if (gesture && (gesture.type === 'node' || gesture.type === 'handle') && gesture.moved) { changed(); }
+    if (gesture && gesture.type === 'node' && gesture.moved && gesture.build) finishBuildDrop(e);
+    else if (gesture && (gesture.type === 'node' || gesture.type === 'handle') && gesture.moved) { changed(); }
     gesture = null;
   }
 }
@@ -858,6 +924,7 @@ function refreshUI() {
     if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
   }
   for (const b of $('seg-fmt').querySelectorAll('button')) b.classList.toggle('on', b.dataset.fmt === fmt);
+  $('empty').hidden = doc.roots.length > 0;
   $('btn-undo').disabled = !undoStack.length;
   $('btn-redo').disabled = !redoStack.length;
 
@@ -881,7 +948,6 @@ function refreshUI() {
     $('n-color').value = (ln && ln.font.color) || '#000000';
     if (document.activeElement !== $('n-size')) $('n-size').value = n.size || '';
     $('b-before').disabled = $('b-after').disabled = !nodeSel.parent;
-    $('b-del').disabled = $('b-delsub').disabled = !nodeSel.parent;
   }
   if (arrSel) {
     if (document.activeElement !== $('a-label')) $('a-label').value = arrSel.label || '';
@@ -930,8 +996,9 @@ $('b-bold').addEventListener('click', () => nodeEdit(n => { const ln = L.map.get
 $('b-italic').addEventListener('click', () => nodeEdit(n => { const ln = L.map.get(String(n.id)); n.italic = !(ln && ln.font.italic); }));
 $('n-color').addEventListener('input', e => nodeEdit(n => { n.color = e.target.value; }, 'ncolor'));
 $('n-size').addEventListener('input', e => nodeEdit(n => { const v = parseFloat(e.target.value); if (isFinite(v) && v > 0) n.size = v; else delete n.size; }, 'nsize'));
-$('b-reset').addEventListener('click', () => nodeEdit(n => { const z = x => { delete x.dx; delete x.dy; x.children.forEach(z); }; z(n); }));
-$('b-resetall').addEventListener('click', () => edit(() => { const z = x => { delete x.dx; delete x.dy; x.children.forEach(z); }; z(doc.root); }));
+const clearOffsets = x => { delete x.dx; delete x.dy; x.children.forEach(clearOffsets); };
+$('b-reset').addEventListener('click', () => nodeEdit((n, f) => { if (f.parent) clearOffsets(n); else n.children.forEach(clearOffsets); }));
+$('b-resetall').addEventListener('click', () => edit(() => { doc.roots.forEach(r => r.children.forEach(clearOffsets)); }));
 const arrEdit = (fn, key) => edit(() => { const a = doc.arrows.find(x => x.id === sel.id); if (a) fn(a); }, key);
 $('a-label').addEventListener('input', e => arrEdit(a => { a.label = e.target.value; }, 'alabel'));
 $('a-depth').addEventListener('input', e => arrEdit(a => { a.depth = parseFloat(e.target.value); }, 'adepth'));
@@ -947,7 +1014,7 @@ $('btn-redo').addEventListener('click', redo);
 const EXAMPLES = [
   { name: 'What did John buy? (wh-movement, arrows)',
     src: "[CP [DP_i [D' [D what]]] [C' [C did_j] [TP [DP [D' [D John]]] [T' [T t_j] [VP [V' [V buy] [DP t_i]]]]]]]",
-    arrows: [['t_j', 'did_j', 16], ['t_i', 'DP_i', 32]], align: true },
+    arrows: [['t_j', 'did_j', 16], ['t_i', 'DP_i', 32]] },
   { name: 'The cat sat on the mat (triangle)',
     src: '[S [NP [Det the] [N cat]] [VP [V sat] [PP [P on] [NP \\roof the mat]]]]', arrows: [] },
   { name: 'LaTeX qtree: The dog barks',
@@ -956,14 +1023,26 @@ const EXAMPLES = [
     src: "[CP [C^0 \\emptyset] [TP [DP_{i} Pat] [T' [T^0 \\emph{will}] [vP [DP_{i} t] [v' [v^0 \\textit{v}] [VP [V^0 sleep]]]]]]]", arrows: [] },
 ];
 for (const [i, ex] of EXAMPLES.entries()) { const o = document.createElement('option'); o.value = i; o.textContent = ex.name; $('examples').appendChild(o); }
-function labelFind(n, lab) { if (n.label === lab) return n; for (const c of n.children) { const r = labelFind(c, lab); if (r) return r; } return null; }
+const labelIn = (n, lab) => { if (n.label === lab) return n; for (const c of n.children) { const r = labelIn(c, lab); if (r) return r; } return null; };
+const findLabel = lab => { for (const r of doc.roots) { const n = labelIn(r, lab); if (n) return n; } return null; };
+function normDoc(d) {                                // a saved or opened document, filled in with anything an older one lacked
+  const o = Object.assign({ arrows: [], nextId: 1000000 }, d);
+  const def = DEFAULT_OPTS();
+  o.opts = Object.assign(def, d.opts);
+  for (const k of ['lab', 'word', 'line', 'arrow']) o.opts[k] = Object.assign(DEFAULT_OPTS()[k], (d.opts || {})[k]);
+  if (!o.roots) o.roots = d.root ? [d.root] : [];
+  delete o.root;
+  for (const r of o.roots) if (r.placed === undefined) r.placed = true;
+  return o;
+}
 function loadSource(text, arrows, align) {
-  const root = parseTree(text);
+  const roots = parseTree(text);
   pushUndo(snapshot());
-  doc.root = root; doc.arrows = []; sel = null;
+  doc.roots = roots; doc.arrows = []; sel = null;
+  autoPlace();
   if (align !== undefined) doc.opts.alignTerm = align;
   for (const [f, t, d] of arrows || []) {
-    const a = labelFind(root, f), b = labelFind(root, t);
+    const a = findLabel(f), b = findLabel(t);
     if (a && b) doc.arrows.push({ id: doc.nextId++, from: a.id, to: b.id, depth: d || 26, label: '', dash: false });
   }
   lastKey = null;
@@ -976,10 +1055,208 @@ $('examples').addEventListener('change', e => {
   if (ex) { loadSource(ex.src, ex.arrows, !!ex.align); fmt = /^\\Tree/.test(ex.src) ? 'qtree' : fmt; refreshUI(); syncSource(); }
 });
 $('btn-newtree').addEventListener('click', () => {
-  if (doc.root.children.length > 1 && !confirm('Start a new tree? (Undo brings the old one back.)')) return;
-  loadSource('[XP [X]]', []);
-  srcEl.focus(); srcEl.select();
+  if (doc.roots.length && !confirm('Clear the page and start again? (Undo brings it back.)')) return;
+  edit(() => { doc.roots = []; doc.arrows = []; sel = null; });
+  fit();
 });
+
+// ------------------------------------------------------------------ joining pieces
+// Where would a piece centred at (cx, cy) join? Just under a node (as a daughter, level with its other daughters),
+// or just above a top node (becoming its parent). A triangle hides what is under it, so nothing hangs from one.
+function snapCandidate(cx, cy, exclude) {
+  const o = doc.opts, thr = Math.max(26, o.vgap * 0.95);
+  let best = null;
+  for (const ln of L.map.values()) {
+    if (ln.virt || exclude.has(ln.node.id)) continue;
+    const n = ln.node;
+    if (!n.tri) {
+      let lo = ln.x, hi = ln.x;
+      for (const k of ln.kids) { lo = Math.min(lo, k.x); hi = Math.max(hi, k.x); }
+      const gapX = cx < lo ? lo - cx : cx > hi ? cx - hi : 0;
+      const d = Math.hypot(gapX, cy - (ln.y + o.vgap)) + 0.02 * Math.abs(cx - ln.x);
+      if (gapX < thr && Math.abs(cy - (ln.y + o.vgap)) < thr * 0.9 && (!best || d < best.d)) best = { type: 'child', id: n.id, d, cx, cy };
+    }
+    if (doc.roots.includes(n)) {
+      const d = Math.hypot(cx - ln.x, cy - (ln.y - o.vgap));
+      if (d < thr && (!best || d < best.d)) best = { type: 'parent', id: n.id, d, cx, cy };
+    }
+  }
+  return best;
+}
+function applySnap(n, c) {              // n is a tree of its own (in doc.roots, or about to be)
+  if (!c) return;
+  const f = findNode(c.id);
+  if (!f) return;
+  if (c.type === 'child') {
+    doc.roots = doc.roots.filter(r => r !== n);
+    delete n.dx; delete n.dy;
+    let at = f.n.children.length;
+    for (let i = 0; i < f.n.children.length; i++) { const k = L.map.get(String(f.n.children[i].id)); if (k && k.x > c.cx) { at = i; break; } }
+    f.n.children.splice(at, 0, n);
+  } else {                               // n becomes the parent of the top node f.n
+    const ln = L.map.get(String(f.n.id));
+    const T = f.n;
+    doc.roots = doc.roots.filter(r => r !== n);
+    const at = doc.roots.indexOf(T);
+    let ins = n.children.length;
+    for (let i = 0; i < n.children.length; i++) { const k = L.map.get(String(n.children[i].id)); if (k && k.x > ln.x) { ins = i; break; } }
+    n.children.splice(ins, 0, T);
+    n.dx = ln.x; n.dy = ln.y - doc.opts.vgap; n.placed = true;
+    delete T.dx; delete T.dy;
+    doc.roots[at] = n;
+  }
+}
+function finishBuildDrop(e) {
+  const f = findNode(gesture.id);
+  const ln = L.map.get(String(gesture.id));
+  $('parts').classList.remove('away');
+  if (f && overParts(e.clientX, e.clientY)) {
+    doc.roots = doc.roots.filter(r => r !== f.n);
+    sel = null;
+    toast('Put away (Undo brings it back)');
+  } else if (f && ln) {
+    applySnap(f.n, snapCandidate(ln.x, ln.y, subIds(f.n)));
+  }
+  preview = null;
+  changed();
+}
+
+// ------------------------------------------------------------------ the parts shelf
+const CATS = ['X', 'C', 'T', 'v', 'V', 'D', 'N', 'P', 'A', 'Adv'];
+const catOf = () => (ui.cat || 'X').trim() || 'X';
+function makeTile(kind) {
+  const cat = catOf();
+  switch (kind) {
+    case 'xp': return newNode(cat + 'P');
+    case 'xbar': return newNode(cat + '′');
+    case 'head': return newNode(cat + (ui.zero ? '^0' : ''));
+    case 'tri': { const n = newNode(cat + 'P', { tri: true }); n.children = [newNode('words', { word: true })]; return n; }
+    case 'word': return newNode('word', { word: true });
+    case 'label': return newNode('label');
+    case 'trace': return newNode('t', { word: true });
+    default: return newNode('∅', { word: true });
+  }
+}
+function relabelFor(label, cat) {       // keep the level (phrase / bar / head) of the node being renamed
+  if (/^.+P$/.test(label)) return cat + 'P';
+  if (/['′]$/.test(label)) return cat + '′';
+  return cat + (ui.zero ? '^0' : '');
+}
+function refreshShelf() {
+  const c = catOf();
+  const txt = { xp: c + 'P', xbar: c + '′', head: c + (ui.zero ? '⁰' : ''), tri: c + 'P △' };
+  for (const el of document.querySelectorAll('#parts [data-tile]')) if (txt[el.dataset.tile]) el.textContent = txt[el.dataset.tile];
+  for (const el of document.querySelectorAll('#cats .chip')) el.classList.toggle('on', el.dataset.chip === c);
+  if (document.activeElement !== $('p-cat')) $('p-cat').value = ui.cat;
+  $('p-zero').checked = !!ui.zero;
+}
+for (const c of CATS) { const el = document.createElement('div'); el.className = 'chip'; el.dataset.chip = c; el.textContent = c; $('cats').appendChild(el); }
+$('p-cat').addEventListener('input', e => { ui.cat = e.target.value; refreshShelf(); save(); });
+$('p-zero').addEventListener('change', e => { ui.zero = e.target.checked; refreshShelf(); save(); });
+
+const toWorld = (cx, cy) => { const r = stage.getBoundingClientRect(); return { x: (cx - r.left - view.x) / view.k, y: (cy - r.top - view.y) / view.k }; };
+const overStage = (x, y) => { const r = stage.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; };
+let pdrag = null;
+function placeTile(kind, wx, wy) {
+  let made = null;
+  edit(() => {
+    const n = makeTile(kind);
+    n.dx = wx; n.dy = wy; n.placed = true;
+    applySnapNew(n, snapCandidate(wx, wy, new Set()));
+    sel = { kind: 'node', id: n.id };
+    made = n;
+  });
+  if (made && (kind === 'word' || kind === 'label')) setTimeout(() => openEditor(made.id, false), 30);
+}
+function applySnapNew(n, c) { doc.roots.push(n); applySnap(n, c); }
+function clickTile(kind) {              // a click, not a drag: hang it under the selected node, else drop it in the middle of the view
+  const id = selNodeId(), f = id !== null ? findNode(id) : null;
+  if (f && !f.n.tri) {
+    let made;
+    edit(() => { made = makeTile(kind); f.n.children.push(made); sel = { kind: 'node', id: made.id }; });
+    if (kind === 'word' || kind === 'label') setTimeout(() => openEditor(made.id, false), 30);
+  } else {
+    const r = stage.getBoundingClientRect();
+    const w = toWorld(r.left + r.width / 2, r.top + r.height / 2);
+    placeTile(kind, w.x, w.y);
+  }
+}
+$('parts').addEventListener('pointerdown', e => {
+  const el = e.target.closest('[data-tile],[data-chip]');
+  if (!el) return;
+  e.preventDefault();
+  pdrag = { el, kind: el.dataset.tile || null, chip: el.dataset.chip || null, sx: e.clientX, sy: e.clientY, moved: false, ghost: null };
+  el.setPointerCapture(e.pointerId);
+});
+$('parts').addEventListener('pointermove', e => {
+  if (!pdrag) return;
+  if (!pdrag.moved) {
+    if (Math.hypot(e.clientX - pdrag.sx, e.clientY - pdrag.sy) < 5) return;
+    pdrag.moved = true;
+    const g = pdrag.el.cloneNode(true);
+    g.className += ' ghost';
+    g.style.width = pdrag.el.offsetWidth + 'px';
+    document.body.appendChild(g);
+    pdrag.ghost = g;
+  }
+  pdrag.ghost.style.left = e.clientX + 'px'; pdrag.ghost.style.top = e.clientY + 'px';
+  preview = null;
+  if (overStage(e.clientX, e.clientY)) {
+    if (pdrag.kind) { const w = toWorld(e.clientX, e.clientY); preview = snapCandidate(w.x, w.y, new Set()); }
+    else {
+      const hit = document.elementFromPoint(e.clientX, e.clientY);
+      const t = hit && hit.closest ? hit.closest('[data-nid]') : null;
+      if (t) preview = { type: 'relabel', id: realId(t.dataset.nid) };
+    }
+  }
+  paintOverlay();
+});
+function endPaletteDrag(e, cancel) {
+  if (!pdrag) return;
+  const d = pdrag; pdrag = null;
+  if (d.ghost) d.ghost.remove();
+  const had = preview; preview = null; paintOverlay();
+  if (cancel) return;
+  if (!d.moved) {
+    if (d.chip) { ui.cat = d.chip; refreshShelf(); save(); } else clickTile(d.kind);
+    return;
+  }
+  if (!overStage(e.clientX, e.clientY)) return;
+  if (d.kind) { const w = toWorld(e.clientX, e.clientY); placeTile(d.kind, w.x, w.y); }
+  else if (had && had.type === 'relabel') {
+    const cat = d.chip;
+    edit(() => { const f = findNode(had.id); if (f) { f.n.label = relabelFor(f.n.label, cat); sel = { kind: 'node', id: f.n.id }; } });
+  }
+}
+$('parts').addEventListener('pointerup', e => endPaletteDrag(e, false));
+$('parts').addEventListener('pointercancel', e => endPaletteDrag(e, true));
+
+// ------------------------------------------------------------------ mode switch and the text pane
+function applyUI() {
+  for (const b of $('seg-mode').querySelectorAll('button')) b.classList.toggle('on', b.dataset.mode === ui.mode);
+  $('left').hidden = !ui.text;
+  $('btn-text').classList.toggle('on', ui.text);
+  $('btn-text').setAttribute('aria-pressed', ui.text ? 'true' : 'false');
+  refreshShelf();
+}
+$('seg-mode').addEventListener('click', e => { const b = e.target.closest('button[data-mode]'); if (b) { ui.mode = b.dataset.mode; applyUI(); save(); } });
+$('btn-text').addEventListener('click', () => {
+  const before = stage.clientWidth;
+  ui.text = !ui.text;
+  applyUI(); save();
+  view.x += (stage.clientWidth - before) / 2;       // keep the drawing where it was, relative to the middle of the page
+  applyView(); placeEditor();
+  if (ui.text) syncSource();
+});
+$('b-dup').addEventListener('click', withNode(id => edit(() => {
+  const f = findNode(id), ln = L.map.get(String(id));
+  if (!f || !ln) return;
+  const clone = n => Object.assign({}, n, { id: doc.nextId++, children: n.children.map(clone) });
+  const c = clone(f.n);
+  c.dx = ln.x + 36; c.dy = ln.y + 36; c.placed = true;
+  doc.roots.push(c);
+  sel = { kind: 'node', id: c.id };
+})));
 
 // ------------------------------------------------------------------ exporting
 function buildExport() {
@@ -1034,9 +1311,9 @@ $('x-file').addEventListener('change', async e => {
   if (!f) return;
   try {
     const j = JSON.parse(await f.text());
-    if (!j || !j.doc || !j.doc.root) throw new Error('not a tree file');
+    if (!j || !j.doc || !(j.doc.roots || j.doc.root)) throw new Error('not a tree file');
     pushUndo(snapshot());
-    doc = Object.assign({ arrows: [], nextId: 1000000 }, j.doc, { opts: Object.assign(DEFAULT_OPTS(), j.doc.opts) });
+    doc = normDoc(j.doc);
     sel = null; if (j.fmt) fmt = j.fmt;
     changed(); fit(); $('dlg-export').close();
   } catch (err) { toast('That is not a saved tree'); }
@@ -1048,7 +1325,7 @@ $('btn-help').addEventListener('click', () => $('dlg-help').showModal());
 let saveTimer = null;
 function save() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify({ doc, fmt })); } catch (e) { /* full or blocked */ } }, 200);
+  saveTimer = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify({ doc, fmt, ui })); } catch (e) { /* full or blocked */ } }, 200);
 }
 let toastTimer = null;
 function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), 2200); }
@@ -1057,21 +1334,14 @@ function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add(
 function start() {
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(STORE)); } catch (e) { /* ignore */ }
-  if (saved && saved.doc && saved.doc.root) {
-    doc = Object.assign({ arrows: [], nextId: 1000000 }, saved.doc, { opts: Object.assign(DEFAULT_OPTS(), saved.doc.opts) });
-    for (const k of ['lab', 'word', 'line', 'arrow']) doc.opts[k] = Object.assign(DEFAULT_OPTS()[k], doc.opts[k]);
+  if (saved && saved.doc && (saved.doc.roots || saved.doc.root)) {
+    doc = normDoc(saved.doc);
     fmt = saved.fmt || 'bracket';
+    if (saved.ui) ui = Object.assign(ui, saved.ui);
   } else {
-    doc = { nextId: 1, root: null, arrows: [], opts: DEFAULT_OPTS() };
-    const ex = EXAMPLES[0];
-    doc.root = parseTree(ex.src);
-    doc.opts.alignTerm = !!ex.align;
-    for (const [f, t, d] of ex.arrows) {
-      const a = labelFind(doc.root, f), b = labelFind(doc.root, t);
-      if (a && b) doc.arrows.push({ id: doc.nextId++, from: a.id, to: b.id, depth: d, label: '', dash: false });
-    }
+    doc = { nextId: 1, roots: [], arrows: [], opts: DEFAULT_OPTS() };      // a blank page
   }
-  render(); refreshUI(); syncSource(); fit();
+  applyUI(); render(); refreshUI(); syncSource(); fit();
 }
 start();
 // a font that finishes loading after the first paint changes the widths: draw again once the browser is ready

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tree studio · Shapes and Language</title>
-<link rel="stylesheet" href="trees.css?v=1">
+<link rel="stylesheet" href="trees.css?v=3">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="theme-color" content="#4b2340">
 </head>
@@ -18,7 +18,8 @@
     <select class="tool" id="examples" title="Load an example tree">
       <option value="">Examples…</option>
     </select>
-    <button class="tool" id="btn-newtree" title="Start again with an empty tree">New</button>
+    <button class="tool" id="btn-newtree" title="Clear the page and start again">New</button>
+    <button class="tool" id="btn-text" aria-pressed="false" title="Show or hide the text box: paste or copy brackets / LaTeX">{ } LaTeX / text</button>
     <span class="spacer"></span>
     <button class="tool strong" id="btn-export">Export…</button>
     <button class="tool" id="btn-help">Help</button>
@@ -29,8 +30,34 @@
 
   <div id="main">
 
-    <!-- ===== left: the tree as text ===== -->
-    <aside id="left">
+    <!-- ===== far left: the parts shelf ===== -->
+    <aside id="parts">
+      <div class="head">Parts <small>drag onto the page</small></div>
+      <div class="pad">
+        <div class="gt">Category</div>
+        <div id="cats" class="chips"></div>
+        <input type="text" id="p-cat" spellcheck="false" autocomplete="off" maxlength="12" title="Type any category, e.g. Neg, Asp, Foc">
+        <div class="gt">Phrase pieces</div>
+        <div class="tiles">
+          <div class="tile" data-tile="xp" title="Phrase (XP)"></div>
+          <div class="tile" data-tile="xbar" title="Intermediate projection (X′)"></div>
+          <div class="tile" data-tile="head" title="Head (X⁰)"></div>
+          <div class="tile" data-tile="tri" title="Phrase abbreviated with a triangle"></div>
+        </div>
+        <label class="inl"><input type="checkbox" id="p-zero"> write heads as X⁰</label>
+        <div class="gt">Words &amp; labels</div>
+        <div class="tiles">
+          <div class="tile word" data-tile="word" title="A word (terminal)">word</div>
+          <div class="tile" data-tile="label" title="A bare label you type yourself">label</div>
+          <div class="tile word" data-tile="trace" title="A trace">t</div>
+          <div class="tile word" data-tile="empty" title="An empty category">∅</div>
+        </div>
+        <div class="muted">Drag a piece just under another one to hang it there, or just above a top node to become its parent. Drag a category chip onto a node to rename it. Drag a piece back onto this shelf to put it away. Click a piece to add it under the selected node.</div>
+      </div>
+    </aside>
+
+    <!-- ===== left: the tree as text (toggled from the top bar) ===== -->
+    <aside id="left" hidden>
       <div class="head">Tree as text <small>type or paste, the tree follows</small></div>
       <div class="pad">
         <div class="row">
@@ -62,6 +89,12 @@
 
     <!-- ===== middle: the drawing ===== -->
     <section id="stage">
+      <div id="modebar">
+        <span class="seg" id="seg-mode" title="Build: dragging pulls a piece off and joins it somewhere else. Nudge: dragging only slides it on the page (hold Shift to slide just that node).">
+          <button data-mode="build">Build</button><button data-mode="nudge">Nudge</button>
+        </span>
+      </div>
+      <div id="empty">Drag a piece from <b>Parts</b> onto the page,<br>or open <b>{ } LaTeX / text</b> and paste a tree.</div>
       <div id="view">
         <button id="btn-zoom-out" title="Zoom out">−</button>
         <button id="btn-zoom-in" title="Zoom in">+</button>
@@ -69,6 +102,9 @@
       </div>
       <div id="hint"></div>
       <svg id="board" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M36 0H0V36" fill="none" class="grid-line"/></pattern>
+        </defs>
         <g id="world">
           <g id="layer-paper"></g>
           <g id="layer-tree"></g>
@@ -85,7 +121,7 @@
         <section class="card" id="sec-sel">
           <h4>Selection</h4>
 
-          <div id="sel-none" class="muted">Click a node to select it. Drag to move it (with everything under it; hold <b>Shift</b> to move just that node). Double-click to retype it.</div>
+          <div id="sel-none" class="muted">Click a node to select it. Drag it to pull it off and join it somewhere else (<b>Build</b>) or just slide it (<b>Nudge</b>); either way everything under it comes along. Double-click to retype it.</div>
 
           <div id="sel-node" hidden>
             <label class="f">Label <input type="text" id="n-label" spellcheck="false"></label>
@@ -109,6 +145,7 @@
               <button class="strong" id="b-arrow" title="Draw a movement arrow from this node (the trace) to the node it moved to">↷ Movement arrow from here</button>
             </div>
             <div class="btns">
+              <button id="b-dup" title="Copy this node and everything under it onto the page">Duplicate</button>
               <button id="b-reset" title="Put this node and its subtree back where the layout wants it">Reset position</button>
               <button id="b-del" title="Delete this node; its daughters move up into its place">Delete node</button>
               <button id="b-delsub" title="Delete this node and everything under it (Delete)">Delete subtree</button>
@@ -226,8 +263,9 @@
 
 <dialog id="dlg-help">
   <h3>How the tree studio works</h3>
-  <p><b>Make a tree.</b> Paste a labelled bracketing (<code>[S [NP …] [VP …]]</code>) or LaTeX (<code>\Tree [.S …]</code>, qtree or forest) into <b>Tree as text</b>. The tree is drawn as you type. The box also follows anything you do on the drawing, in the format you pick, ready to copy into a paper.</p>
-  <p><b>Edit by hand.</b> Click a node to select it. <b>Double-click</b> to retype it. <b>Drag</b> to move it with everything under it; hold <b>Shift</b> to move only that node. With a node selected, <b>Tab</b> adds a daughter, <b>Enter</b> a sister, <b>Delete</b> removes it. Moved positions survive edits to the text.</p>
+  <p><b>Or paste a tree.</b> Open <b>{ } LaTeX / text</b>, then paste a labelled bracketing (<code>[S [NP …] [VP …]]</code>) or LaTeX (<code>\Tree [.S …]</code>, qtree or forest) in there. The tree is drawn as you type. The box also follows anything you do on the drawing, in the format you pick, ready to copy into a paper.</p>
+  <p><b>Build.</b> Drag pieces from <b>Parts</b> onto the page (XP, X′, X⁰, a triangle, words, labels, and a category chip to rename a node). Drop a piece just under another to hang it there, or just above a top node to become its parent; drag a node away to pull it off; drag a piece onto the Parts shelf to put it away. In <b>Nudge</b> mode (top of the page) dragging only slides a node on the page, to fine-tune spacing; hold Shift to slide just that node.</p>
+  <p><b>Edit by hand.</b> Click a node to select it. <b>Double-click</b> to retype it. With a node selected, <b>Tab</b> adds a daughter, <b>Enter</b> a sister, <b>Delete</b> removes it. Pieces you moved keep their place when you edit the text.</p>
   <p><b>Triangles</b> collapse a phrase to its words. <b>Movement arrows</b>: select the trace, press <i>Movement arrow from here</i>, then click where it moved to; drag the round handle to change the swing.</p>
   <p><b>Type.</b> Fonts, sizes, bold/italic and colour are separate for labels and for words, and any node can override them. Labels take <code>_i</code>, <code>^0</code>, <code>V'</code> → V′, <code>\emph{…}</code>, <code>\sout{…}</code> and Greek like <code>\phi</code>.</p>
   <p><b>View.</b> Drag the background or scroll to pan; Ctrl/⌘ + scroll or pinch to zoom; <b>Fit</b> brings everything back.</p>
@@ -236,6 +274,6 @@
   <form method="dialog" class="end"><button>Got it</button></form>
 </dialog>
 
-<script src="trees.js?v=1"></script>
+<script src="trees.js?v=4"></script>
 </body>
 </html>
