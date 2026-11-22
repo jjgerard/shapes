@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tree studio · Shapes and Language</title>
-<link rel="stylesheet" href="trees.css?v=4">
+<link rel="stylesheet" href="trees.css?v=5">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="theme-color" content="#4b2340">
 </head>
@@ -95,6 +95,7 @@
         </span>
       </div>
       <div id="nodebar" hidden>
+        <button id="nb-arrow" title="Movement arrow: then click the node it moved to (or drag the green dot on the node)">↷ Arrow</button>
         <button id="nb-del" class="danger" title="Delete this node and everything under it (Delete key)">✕ Delete</button>
         <button id="nb-keep" title="Delete just this node; the nodes under it move up into its place">Delete, keep below</button>
       </div>
@@ -270,7 +271,7 @@
   <p><b>Or paste a tree.</b> Open <b>{ } LaTeX / text</b>, then paste a labelled bracketing (<code>[S [NP …] [VP …]]</code>) or LaTeX (<code>\Tree [.S …]</code>, qtree or forest) in there. The tree is drawn as you type. The box also follows anything you do on the drawing, in the format you pick, ready to copy into a paper.</p>
   <p><b>Build.</b> Drag pieces from <b>Parts</b> onto the page (XP, X′, X⁰, a triangle, words, labels, and a category chip to rename a node). Drop a piece just under another to hang it there, or just above a top node to become its parent; drag a node away to pull it off; drag a piece onto the Parts shelf to put it away. In <b>Nudge</b> mode (top of the page) dragging only slides a node on the page, to fine-tune spacing; hold Shift to slide just that node.</p>
   <p><b>Edit by hand.</b> Click a node to select it. <b>Double-click</b> to retype it. With a node selected, <b>Tab</b> adds a daughter, <b>Enter</b> a sister, <b>Delete</b> removes it. Pieces you moved keep their place when you edit the text.</p>
-  <p><b>Triangles</b> collapse a phrase to its words. <b>Movement arrows</b>: select the trace, press <i>Movement arrow from here</i>, then click where it moved to; drag the round handle to change the swing.</p>
+  <p><b>Triangles</b> collapse a phrase to its words. <b>Movement arrows</b>: select the trace, then drag the small green dot beside it onto the node it moved to. (Or press <i>↷ Arrow</i> on the bar next to the node and click the target.) Drag the round handle on an arrow to change how far it swings.</p>
   <p><b>Type.</b> Fonts, sizes, bold/italic and colour are separate for labels and for words, and any node can override them. Labels take <code>_i</code>, <code>^0</code>, <code>V'</code> → V′, <code>\emph{…}</code>, <code>\sout{…}</code> and Greek like <code>\phi</code>.</p>
   <p><b>View.</b> Drag the background or scroll to pan; Ctrl/⌘ + scroll or pinch to zoom; <b>Fit</b> brings everything back.</p>
   <p><b>Out.</b> <b>Export</b> gives SVG, PNG, or PDF (via print). The text box gives brackets, qtree and forest. Positions you dragged and arrows are in the pictures but can’t be written in qtree or forest, which place everything themselves.</p>
@@ -278,6 +279,6 @@
   <form method="dialog" class="end"><button>Got it</button></form>
 </dialog>
 
-<script src="trees.js?v=5"></script>
+<script src="trees.js?v=6"></script>
 </body>
 </html>
