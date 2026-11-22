@@ -1534,6 +1534,14 @@ $('x-file').addEventListener('change', async e => {
 $('btn-export').addEventListener('click', () => $('dlg-export').showModal());
 $('btn-help').addEventListener('click', () => $('dlg-help').showModal());
 $('btn-keys').addEventListener('click', () => $('dlg-keys').showModal());
+// clicking the grey area outside a box closes it
+for (const d of document.querySelectorAll('dialog')) {
+  d.addEventListener('click', e => {
+    if (e.target !== d) return;
+    const r = d.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) d.close();
+  });
+}
 
 // ------------------------------------------------------------------ saving
 let saveTimer = null;
