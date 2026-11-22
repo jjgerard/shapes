@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tree studio · Shapes and Language</title>
-<link rel="stylesheet" href="trees.css?v=5">
+<link rel="stylesheet" href="trees.css?v=6">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="theme-color" content="#4b2340">
 </head>
@@ -61,8 +61,8 @@
       <div class="head">Tree as text <small>type or paste, the tree follows</small></div>
       <div class="pad">
         <div class="row">
-          <span class="seg" id="seg-fmt" title="How the tree is written in the box below. Pasting works in any of these, whichever you use.">
-            <button data-fmt="bracket">Brackets</button><button data-fmt="qtree">LaTeX qtree</button><button data-fmt="forest">forest</button>
+          <span class="seg" id="seg-fmt" title="How the tree is written in the box below. Brackets, qtree and forest can be pasted in. forest and TikZ carry movement arrows; TikZ also keeps every position exactly (output only).">
+            <button data-fmt="bracket">Brackets</button><button data-fmt="qtree">qtree</button><button data-fmt="forest">forest</button><button data-fmt="tikz">TikZ</button>
           </span>
           <button class="small" id="btn-copy" title="Copy the text">Copy</button>
         </div>
@@ -256,6 +256,7 @@
       <button class="strong" id="x-png">PNG</button>
       <label class="inl">at <select id="x-dpi"><option>150</option><option selected>300</option><option>600</option></select> dpi</label>
     </div>
+    <button class="strong" id="x-tex">TikZ <small>(.tex: compiles on its own, keeps positions and arrows)</small></button>
     <button class="strong" id="x-pdf">Print / save as PDF <small>(vector; choose “Save as PDF”)</small></button>
     <hr>
     <button id="x-json">Save this tree as a file <small>(.json, keeps positions, arrows and styles)</small></button>
@@ -279,6 +280,6 @@
   <form method="dialog" class="end"><button>Got it</button></form>
 </dialog>
 
-<script src="trees.js?v=6"></script>
+<script src="trees.js?v=7"></script>
 </body>
 </html>
