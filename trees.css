@@ -74,6 +74,7 @@ button.small { padding: 4px 10px; font-size: 12px; border: 1px solid var(--line)
 #cheat p { margin: 4px 0; color: var(--muted); line-height: 1.4; }
 
 /* ---- parts shelf ---- */
+.keys-btn { margin-left: auto; }
 .gt { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 8px 0 2px; }
 .chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .chip { padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; background: #fff; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; font-family: "Times New Roman", Times, serif; font-size: 15px; }

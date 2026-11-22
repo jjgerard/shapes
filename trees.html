@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tree studio · Shapes and Language</title>
-<link rel="stylesheet" href="trees.css?v=7">
+<link rel="stylesheet" href="trees.css?v=8">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="theme-color" content="#4b2340">
 </head>
@@ -15,25 +15,21 @@
     <span class="brand">Tree studio</span>
     <button class="tool" id="btn-undo" title="Undo (Ctrl+Z)">↶ Undo</button>
     <button class="tool" id="btn-redo" title="Redo (Ctrl+Shift+Z)">↷ Redo</button>
-    <select class="tool" id="examples" title="Load an example tree">
-      <option value="">Examples…</option>
-    </select>
     <button class="tool" id="btn-newtree" title="Clear the page and start again">New</button>
     <button class="tool" id="btn-text" aria-pressed="false" title="Show or hide the text box: paste or copy brackets / LaTeX">{ } LaTeX / text</button>
     <span class="spacer"></span>
     <button class="tool strong" id="btn-export">Export…</button>
-    <button class="tool" id="btn-keys" title="Keyboard shortcuts (?)">⌨ Keys</button>
     <button class="tool" id="btn-help">Help</button>
-    <a href="sandbox.html">Sandbox</a>
-    <a href="index.html">The game</a>
-    <a href="https://jjgerard.github.io/games/">All games</a>
+    <select class="tool" id="examples" title="Load an example tree">
+      <option value="">Examples…</option>
+    </select>
   </header>
 
   <div id="main">
 
     <!-- ===== far left: the parts shelf ===== -->
     <aside id="parts">
-      <div class="head">Parts <small>drag onto the page</small></div>
+      <div class="head">Parts <button class="small keys-btn" id="btn-keys" title="Keyboard shortcuts (or press ?)">⌨ Keys</button></div>
       <div class="pad">
         <div class="gt">Category</div>
         <div id="cats" class="chips"></div>
@@ -100,7 +96,7 @@
         <button id="nb-del" class="danger" title="Delete this node and everything under it (Delete key)">✕ Delete</button>
         <button id="nb-keep" title="Delete just this node; the nodes under it move up into its place">Delete, keep below</button>
       </div>
-      <div id="empty">Drag a piece from <b>Parts</b> onto the page,<br>or open <b>{ } LaTeX / text</b> and paste a tree.</div>
+      <div id="empty"><div>Drag a piece from <b>Parts</b> onto the page,<br>or open <b>{ } LaTeX / text</b> and paste a tree.</div></div>
       <div id="view">
         <button id="btn-zoom-out" title="Zoom out">−</button>
         <button id="btn-zoom-in" title="Zoom in">+</button>
@@ -314,6 +310,6 @@
   <form method="dialog" class="end"><button>Got it</button></form>
 </dialog>
 
-<script src="trees.js?v=8"></script>
+<script src="trees.js?v=9"></script>
 </body>
 </html>
