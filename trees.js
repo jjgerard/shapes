@@ -590,11 +590,21 @@ function paintOverlay() {
       }
     }
   }
+  if (gesture && gesture.type === 'agh' && gesture.moved && gesture.at) {
+    const f = L.map.get(String(gesture.from));
+    if (f) mk('line', { class: 'rubber', x1: f.x, y1: f.subBot + 2.5, x2: gesture.at.x, y2: gesture.at.y }, gOver);
+  }
   if (!sel) return;
   if (sel.kind === 'node') {
     const ln = L.map.get(String(sel.id));
     if (!ln) return;
     mk('rect', { class: 'selbox', x: ln.x - ln.w / 2 - 3, y: ln.top - 2, width: ln.w + 6, height: ln.bot - ln.top + 4, rx: 2 }, gOver);
+    if (!armed && !(gesture && gesture.moved) && !editing) {          // drag this dot onto the node it moved to
+      const hx = ln.x + ln.w / 2 + 11 / view.k, hy = (ln.top + ln.bot) / 2;
+      mk('circle', { class: 'agh', 'data-agh': sel.id, cx: hx, cy: hy, r: 6.5 / view.k }, gOver);
+      const t = mk('text', { class: 'agh-t', x: hx, y: hy + 3.2 / view.k, 'font-size': 9 / view.k }, gOver);
+      t.textContent = '↷';
+    }
   } else {
     const a = doc.arrows.find(x => x.id === sel.id);
     const ag = a && arrowGeom(a, L);
@@ -784,18 +794,22 @@ function opArrowStart(id) {
   armed = { from: id };
   board.classList.add('armed');
   showHint('Now click the node it moved to  (Esc to cancel)');
+  placeNodeBar();
 }
-function opArrowFinish(toId) {
-  const from = armed.from;
-  cancelArmed();
-  if (toId === from) { toast('Pick a different node'); return; }
+function makeArrow(from, to) {
+  if (to === from) { toast('Pick a different node'); return; }
   edit(() => {
-    const a = { id: doc.nextId++, from, to: toId, depth: 26, label: '', dash: false };
+    const a = { id: doc.nextId++, from, to, depth: Math.min(26 + 12 * doc.arrows.length, 100), label: '', dash: false };   // later arrows swing a bit lower, so they nest
     doc.arrows.push(a);
     sel = { kind: 'arrow', id: a.id };
   });
 }
-function cancelArmed() { armed = null; board.classList.remove('armed'); showHint(''); }
+function opArrowFinish(toId) {
+  const from = armed.from;
+  cancelArmed();
+  makeArrow(from, toId);
+}
+function cancelArmed() { armed = null; board.classList.remove('armed'); showHint(''); paintOverlay(); }
 function showHint(t) { const h = $('hint'); h.textContent = t; h.classList.toggle('on', !!t); }
 
 // ------------------------------------------------------------------ pointer: select, drag, pan, pinch
@@ -810,12 +824,13 @@ board.addEventListener('pointerdown', e => {
     gesture = { type: 'pinch', d: Math.hypot(a.x - b.x, a.y - b.y) || 1 };
     return;
   }
-  const tgt = e.target.closest ? e.target.closest('[data-nid],[data-aid],[data-ah]') : null;
+  const tgt = e.target.closest ? e.target.closest('[data-nid],[data-aid],[data-ah],[data-agh]') : null;
   if (armed) {
     if (tgt && tgt.dataset.nid) opArrowFinish(realId(tgt.dataset.nid));
     else cancelArmed();
     gesture = null; return;
   }
+  if (tgt && tgt.dataset.agh) { gesture = { type: 'agh', from: +tgt.dataset.agh, moved: false, sx: e.clientX, sy: e.clientY, at: null, target: null }; return; }
   if (tgt && tgt.dataset.ah) { gesture = { type: 'handle', id: +tgt.dataset.ah, before: snapshot(), moved: false }; return; }
   if (tgt && tgt.dataset.nid) {
     const id = realId(tgt.dataset.nid), virt = String(tgt.dataset.nid).includes('~');
@@ -869,6 +884,16 @@ board.addEventListener('pointermove', e => {
     f.n.dx = (f.n.dx || 0) + ddx; f.n.dy = (f.n.dy || 0) + ddy;
     if (gesture.solo) for (const c of f.n.children) { c.dx = (c.dx || 0) - ddx; c.dy = (c.dy || 0) - ddy; }
     liveRender();
+  } else if (gesture.type === 'agh') {
+    if (!gesture.moved && Math.hypot(e.clientX - gesture.sx, e.clientY - gesture.sy) < 4) return;
+    gesture.moved = true;
+    gesture.at = toWorld(e.clientX, e.clientY);
+    const hit = document.elementFromPoint(e.clientX, e.clientY);
+    const t = hit && hit.closest ? hit.closest('[data-nid]') : null;
+    const id = t ? realId(t.dataset.nid) : null;
+    gesture.target = id !== null && id !== gesture.from ? id : null;
+    preview = gesture.target !== null ? { type: 'relabel', id: gesture.target } : null;
+    paintOverlay();
   } else if (gesture.type === 'handle') {
     const a = doc.arrows.find(x => x.id === gesture.id);
     if (!a) return;
@@ -894,7 +919,13 @@ function endPointer(e) {
   ptrs.delete(e.pointerId);
   if (ptrs.size < 2 && gesture && gesture.type === 'pinch') gesture = null;
   if (ptrs.size === 0) {
-    if (gesture && gesture.type === 'node' && gesture.moved && gesture.build) finishBuildDrop(e);
+    if (gesture && gesture.type === 'agh') {
+      const g = gesture; gesture = null; preview = null;
+      if (g.moved && g.target !== null) makeArrow(g.from, g.target);
+      else if (!g.moved) opArrowStart(g.from);                    // just a click on the dot: then click the node it moved to
+      else { paintOverlay(); }
+    }
+    else if (gesture && gesture.type === 'node' && gesture.moved && gesture.build) finishBuildDrop(e);
     else if (gesture && (gesture.type === 'node' || gesture.type === 'handle') && gesture.moved) { changed(); }
     gesture = null;
     placeNodeBar();
@@ -1265,6 +1296,7 @@ $('btn-text').addEventListener('click', () => {
   applyView(); placeEditor();
   if (ui.text) syncSource();
 });
+$('nb-arrow').addEventListener('click', withNode(opArrowStart));
 $('nb-del').addEventListener('click', withNode(id => opDelete(id, true)));
 $('nb-keep').addEventListener('click', withNode(id => opDelete(id, false)));
 $('b-dup').addEventListener('click', withNode(id => edit(() => {

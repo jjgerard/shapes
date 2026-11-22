@@ -120,6 +120,9 @@ button.small { padding: 4px 10px; font-size: 12px; border: 1px solid var(--line)
 .hit:hover { fill: rgba(75,35,64,.07); }
 #board.armed .hit:hover { fill: rgba(47,125,79,.2); }
 .selbox { fill: rgba(75,35,64,.07); stroke: #4b2340; stroke-width: 1px; vector-effect: non-scaling-stroke; stroke-dasharray: 4 3; pointer-events: none; }
+.agh { fill: #2f7d4f; stroke: #fff; stroke-width: 1.5px; vector-effect: non-scaling-stroke; cursor: crosshair; }
+.agh-t { fill: #fff; text-anchor: middle; pointer-events: none; font-family: system-ui, sans-serif; }
+.rubber { stroke: #2f7d4f; stroke-width: 1.5px; vector-effect: non-scaling-stroke; stroke-dasharray: 5 4; fill: none; pointer-events: none; }
 .handle { fill: #fff; stroke: #4b2340; stroke-width: 1.5px; vector-effect: non-scaling-stroke; cursor: ns-resize; }
 .arrow-hit { stroke: transparent; fill: none; cursor: pointer; }
 .arrow-sel { stroke: #4b2340; fill: none; stroke-opacity: .25; pointer-events: none; }
